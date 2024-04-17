@@ -4,6 +4,7 @@ node_modules/
 /data/blog
 /data/db
 lycolia
+__cache/
 data/textparser_plugin_cache.dat
 data/system_config.dat
 data/default_setting.dat
