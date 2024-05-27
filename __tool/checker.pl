@@ -115,7 +115,7 @@ print "---Release checker-------------------------------------------------------
 # CRLF check
 #-------------------------------------------------------------------------------
 {
-	open(my $fh, "grep -rI '\r\n' skel/ js/*.js js/src/*.js lib/ info/ plugin/ theme/|");
+	open(my $fh, "grep -rI '\r\n' skel/ js/*.js lib/ info/ plugin/ theme/|");
 	my @ary = <$fh>;
 	close($fh);
 
@@ -162,7 +162,7 @@ print "---Release checker-------------------------------------------------------
 		my $str  = join('', @lines);
 		my $code = guess_encoding($str);
 		if (!$code) { next; }	# 推定できず
-		
+
 		if (ref($code)) { $code = $code->name(); }
 		if ($code eq 'utf8' || $code eq 'ascii') { next; }
 
