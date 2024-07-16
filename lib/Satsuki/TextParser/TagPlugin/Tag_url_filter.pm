@@ -57,12 +57,15 @@ sub _filter {
 	#-------------------------------------------------------------
 	# youtube
 	#-------------------------------------------------------------
-	if ($url =~ m|^https?://www\.youtube\.com/watch\?v=(\w+)$|) {
+	if ($url =~ m|^https?://www\.youtube\.com/watch\?v=(\w+)((?:&\w+=\w+)*)|) {
+		my $vid = $1;
 		my $w = 480;
 		my $h = 270;
 		if ($ary->[0] eq 'small') { $w=320; $h=180; }
 		if ($ary->[0] eq 'large') { $w=640; $h=360; }
-		return "<module name=\"youtube\" vid=\"$1\" width=\"$w\" height=\"$h\">";
+		my $opt= $2 ? substr($2,1) : '';
+		$opt =~ s/(^|&)t=(\d+)s?/${1}start=$2/g;
+		return "<module name=\"youtube\" vid=\"$vid\" width=\"$w\" height=\"$h\" opt=\"$opt\">";
 	}
 
 	#-------------------------------------------------------------
@@ -101,7 +104,7 @@ sub _filter {
 		my $tag   = $pobj->load_tag('asin');
 		$title =~ s/%([0-9a-fA-F][0-9a-fA-F])/chr(hex($1))/eg;
 		$title =~ s/[\x00-\x1F\"]//g;
-		if (!exists($tags->{asin}) || ref($tag) ne 'HASH' || ref($tag->{data}) ne 'CODE') { 
+		if (!exists($tags->{asin}) || ref($tag) ne 'HASH' || ref($tag->{data}) ne 'CODE') {
 			my $name = join(':', @$ary) || $title || $asin;
 			return "<a href=\"http://www.amazon.co.jp/dp/$asin\">$name</a>";
 		}
