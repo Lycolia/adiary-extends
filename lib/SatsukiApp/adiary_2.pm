@@ -121,7 +121,7 @@ sub load_coms_list {
 	my ($logs,$hits) =  $DB->select("${blogid}_com", \%h);
 
 	foreach(@$logs) {
-		$_->{text_nobr} = $_->{text}; 
+		$_->{text_nobr} = $_->{text};
 		$_->{text_nobr} =~ s/<br>/ /g;
 	}
 
@@ -496,7 +496,15 @@ sub regist_article {
 	$art{_text}  = $_text;		# source text
 	$art{text}   = $text;
 	$art{text_s} = ($text eq $short) ? '' : $short;
-	$self->set_description(\%art);
+
+	# OGP臨時設定用の力業
+	if ($form->{ogp} eq '') {
+		my $main_image = $self->get_main_image_from_article($text);
+		$self->set_description(\%art, $main_image);
+	} else {
+		my $main_image = $self->get_main_image_from_input($form->{ogp});
+		$self->set_description(\%art, $main_image);
+	}
 
 	#-------------------------------------------------------------
 	# DBに書き込み
@@ -564,30 +572,54 @@ sub regist_article {
 }
 
 #-------------------------------------------------------------------------------
-# ●記事のメイン画像と概要を生成
+# ●記事からメイン画像を取得
 #-------------------------------------------------------------------------------
-sub set_description {
-	my $self = shift;
-	my $h    = shift;
+sub get_main_image_from_article {
+	my ($self, $text) = @_;
 	my $ROBJ = $self->{ROBJ};
-	my $text = $h->{text};
 
 	while($text =~ /<img\s+(?:[\w-]+\s*=\s*"[^"]*"\s+)*src\s*=\s*"([^"]+)"/gi) {
 		my $img = $1;
 		my $dir = $ROBJ->{Basepath} . $self->blogimg_dir();
 		if (substr($img,0, length($dir)) ne $dir) { next; }
-		
+
 		# 代表画像
 		$img = substr($img, length($dir));
 		$img =~ s!(^|/).thumbnail/(.+)\.jpg$!$1$2!;
-		$h->{main_image} = $img;
-		last;
+		return $img;
 	}
+
+	return '';
+}
+
+sub get_main_image_from_input {
+	my ($self, $ogp) = @_;
+
+	if ($ogp =~ /^https/) {
+		# 画像URLがあるとき(基本的に編集時)
+		return $ogp;
+	} else {
+		# 記法URLがあるとき(基本的にOGP欄を書き換えたとき)
+		my @img_parts = $ogp =~ /:([^:]+)/g;
+		return $img_parts[1] . $img_parts[2];
+	}
+}
+
+#-------------------------------------------------------------------------------
+# ●記事の概要を生成
+#-------------------------------------------------------------------------------
+sub set_description {
+	my ($self, $h, $img) = @_;
+	my $ROBJ = $self->{ROBJ};
+	my $text = $h->{text};
 
 	$text = substr($text, 0, 4096);		# 長文への対策
 	$text =~ s/[\r\n]//g;
 	$ROBJ->tag_delete($text);
 	$h->{description} = $self->string_clip($text, $self->{blog}->{desc_len} || 64);
+	if ($img ne '') {
+		$h->{main_image} = $img;
+	}
 }
 
 #-------------------------------------------------------------------------------
@@ -753,8 +785,8 @@ POST_BODY
 	while($data =~ m|<member>(.*?)</member>|sg) {
 		my $member = $1;
 		my ($name, $value);
-		if ($member =~ /<name>(.*?)<\/name>/)   { $name =$1; } 
-		if ($member =~ /<value>(.*?)<\/value>/) { $value=$1; } 
+		if ($member =~ /<name>(.*?)<\/name>/)   { $name =$1; }
+		if ($member =~ /<value>(.*?)<\/value>/) { $value=$1; }
 		$xml{$name} = $value;
 	}
 	return \%xml;		# 成功
@@ -1093,7 +1125,7 @@ sub contents_next_prev_link {
 	my $self = shift;
 	my $ary  = shift;
 	my $max  = $#$ary;
-	
+
 	# ブログ記事の前後リンク
 	for(my $i=1; $i<$#$ary; $i++) {
 		$ary->[$i]->{next} = $ary->[$i+1]->{pkey};
@@ -1206,7 +1238,7 @@ sub load_arts_for_rss {
 		my $text = $escaper->escape( $_->{text_s} || $_->{text} );
 		$text =~ s/\]\]>/]]&gt;/g;
 		$_->{description} = $text;
-		
+
 		# link_keyの加工
 		$self->post_process_link_key( $_ );
 
@@ -1693,7 +1725,7 @@ sub generate_spmenu {
 	if ($#$ary != 0) {
 		my $title = $blog->{spmenu_title} || 'menu';
 		if (!@$ary) { $title = '&ensp;'; }
-		
+
 		$out = "<ul><li><a href=\"#\">$title</a>\n$out</li></ul>\n";
 	}
 	$self->update_cur_blogset('spmenu', $out);
