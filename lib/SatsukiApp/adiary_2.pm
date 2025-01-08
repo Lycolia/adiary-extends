@@ -593,16 +593,19 @@ sub get_main_image_from_article {
 }
 
 sub get_main_image_from_input {
-	my ($self, $ogp) = @_;
+        my ($self, $ogp) = @_;
 
-	if ($ogp =~ /^https/) {
-		# 画像URLがあるとき(基本的に編集時)
-		return $ogp;
-	} else {
-		# 記法URLがあるとき(基本的にOGP欄を書き換えたとき)
-		my @img_parts = $ogp =~ /:([^:]+)/g;
-		return $img_parts[1] . $img_parts[2];
-	}
+        if ($ogp =~ /:([^:]+)/) {
+			# 記法URLがあるとき(基本的にOGP欄を書き換えたとき)
+			my @img_parts = $ogp =~ /:([^:]+)/g;
+			return $img_parts[1] . $img_parts[2];
+		} elsif ($ogp =~ /^[^:]+$/) {
+			# 画像URLがあるとき(基本的に編集時)
+			return $ogp;
+        } else {
+			# 画像なし
+			return '';
+        }
 }
 
 #-------------------------------------------------------------------------------
