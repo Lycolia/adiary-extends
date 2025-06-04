@@ -772,7 +772,7 @@ sub list_line_chain {
 	my @out = ($str);
 	while(@$lines && !$h->{ substr($lines->[0],0,1) }) {
 		my $line = shift(@$lines);
-		if ($line =~ /[\n\x01\x02]$/ || ref($line) 
+		if ($line =~ /[\n\x01\x02]$/ || ref($line)
 		 || $out[$#out] =~ /[\n\x01\x02]$/ || ref($out[$#out])) {
 			push(@out, $line);
 			next;
@@ -884,7 +884,7 @@ sub parse_table {
 				$h->{data} = substr($x,1);
 			} elsif ($x eq '<' && $#cols >= 0) {	# 左連結
 				$h = $cols[$#cols];
-				$h->{cols} ++; 
+				$h->{cols} ++;
 			} elsif (($x eq '~' || $x eq '^') && $#rows >= 0 && $_ < $#{ $rows[$#rows] }) {	# 上連結
 				$h = $rows[$#rows]->[$_];
 				$h->{rows} ++;
@@ -940,7 +940,7 @@ sub parse_table {
 			if (ref($_) && ! $_->{th}) { $thead_flag=0; last; }
 		}
 	}
-	
+
 	if ($thead_flag) { push(@$ary, "<thead>\n"); }
 		    else { push(@$ary, "<tbody>\n"); }
 	while(@rows) {
@@ -1198,6 +1198,7 @@ sub parse_tag {
 		$cmd =~ s/\]/&#93;/g;
 		$cmd =~ s/:/&#58;/g;
 		if ($post_process) { $cmd = &$post_process($cmd); }
+		# imageタグの前後に空の<p></p>を入れてる要因。これを外すと画像と同じ段落に文字列を入れたときに崩れる
 		$this = $p0 . $cmd . $p1;
 		$count++;
 		if ($count>99) { last; }
@@ -1233,7 +1234,7 @@ sub special_command {
 		$cmd_line =~ s/\\([\[\]])/$1/g;
 		$cmd_line =~ s/\\:/\x00/g;
 	}
-	
+
 	my @cmd = map { s/\x00/:/g; $_ } split(':', $cmd_line);
 	my $cmd = shift(@cmd);
 	while (exists $tags->{ "$cmd:$cmd[0]" } && @cmd) {	# 連結コマンド
@@ -1450,7 +1451,7 @@ sub paragraph_processing {
 				push(@ary, "$indent\n" x $null_lines);
 				next;
 			}
-			if ($flag || $p_mode) { $null_lines--; } 
+			if ($flag || $p_mode) { $null_lines--; }
 			push(@ary, "$indent<br>\n" x $null_lines);
 			next;
 		}
@@ -1471,7 +1472,7 @@ sub paragraph_processing {
 		}
 		if ($p_mode==2) {	# 空行で段落処理
 			my $head = '';
-			if (! $in_paragraph) { $head="$indent<p$p_class>"; $in_paragraph=1; } # 段落の始まり 
+			if (! $in_paragraph) { $head="$indent<p$p_class>"; $in_paragraph=1; } # 段落の始まり
 			elsif ($br_mode==1)  { $head="$indent";   }                           # 改行処理モード
 			if ($br_mode==2 && !$next_f) {		# 段落の終わりではない
 				$this =~ s/\s\s+$/<br>/;	# 行末スペースを改行に変換
@@ -1927,7 +1928,7 @@ sub parse_class_id {
 	$str =~ s/^\s*(.*?)\s*$/$1/;
 	$str =~ s/[^\w\-: ]//g;
 	$str =~ s/\s+/ /g;
-	
+
 	my $r;
 	$r  = ($str ne '' ? " class=\"$str\"" : '');
 	$r .= ($id  ne '' ? " id=\"$id\"" : '');
