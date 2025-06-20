@@ -337,7 +337,7 @@ sub file_delete {
 	return unlink( $_[0] );
 }
 
-# rm -rf 
+# rm -rf
 sub dir_delete {	# 再起関数
 	my ($self, $dir) = @_;
 	if ($dir eq '') { return; }
@@ -637,7 +637,7 @@ sub _read_form {
 	if ($ENV{REQUEST_METHOD} ne 'POST') { return ; }
 	if (ref $self->{Form} eq 'HASH') { return $self->{Form}; }
 
-	### POST 事前スクリプトの exec 
+	### POST 事前スクリプトの exec
 	if ($self->{If_post_exec_pre}) { $self->execute( $self->{If_post_exec_pre} ); }
 	### オプションロード
 	my $options = $self->{Form_options} || {};
@@ -652,7 +652,8 @@ sub _read_form {
 	}
 	### データサイズの確認
 	my $length = $ENV{CONTENT_LENGTH};
-	my $max = $options->{total_max_size};	# 1MB
+	# 初期値262144を倍にしている
+	my $max = 524288; # $options->{total_max_size};	# 1MB
 	if ($max && $length > $max) {
 		return $self->POST_ERR_exit('Too large form data (max %.1fMB)', $max/1048576);
 	}
@@ -677,7 +678,7 @@ sub _read_form {
 	$self->{POST} = 1;		# POST であることを記録
 	$self->{Form} = $form;
 
-	# POST スクリプトの exec 
+	# POST スクリプトの exec
 	if ($self->{If_post_exec}) { $self->execute( $self->{If_post_exec} ); }
 	return $form;
 }
@@ -803,7 +804,7 @@ sub read_multipart_form {
 	$self->{POST} = 1;		# POST であることを記録
 	$self->{Form} = $form;
 
-	# POST スクリプトの exec 
+	# POST スクリプトの exec
 	if ($self->{If_post_exec}) { $self->execute( $self->{If_post_exec} ); }
 	return 1;
 }
