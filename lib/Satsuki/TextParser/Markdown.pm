@@ -520,7 +520,7 @@ sub parse_block {
 				unshift(@$lines, @buf);
 			} else {
 				# テーブル展開
-				push(@ary, "<table><thead><tr>\x02");
+				push(@ary, "<div class=\"body_table\"><table><thead><tr>\x02");
 				push(@ary, "\t<th>" . join("</th>\n\t<th>", @th) . "</th>");
 				push(@ary, "</tr></thead>\x02");
 				if (@tbl) { push(@ary, "<tbody>\x02"); }
@@ -535,7 +535,7 @@ sub parse_block {
 					push(@ary, "</tr>\x02");
 				}
 				if (@tbl) { push(@ary, "</tbody>\x02"); }
-				push(@ary, "</table>\x02");
+				push(@ary, "</table></div>\x02");
 				next;
 			}
 		}
