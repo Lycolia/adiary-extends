@@ -679,7 +679,7 @@ window.onload = () => {
 			const pasteFile = e.clipboardData.files[0];
 			const ext = pasteFile.name.match(/\.([^\.]+)$/)[1];
 			const dt = new Date();
-			const timestamp = `${dt.getFullYear()}-${dt.getMinutes() + 1}-${dt.getDate()}_${dt.getHours()}-${dt.getMinutes()}-${dt.getSeconds()}-${dt.getMilliseconds()}`
+			const timestamp = `${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDate()}_${dt.getHours()}-${dt.getMinutes()}-${dt.getSeconds()}-${dt.getMilliseconds()}`
 			const file = new File([pasteFile], `paste-image-${timestamp}.${ext}`, { type: pasteFile.type });
 			uploadFile(file, (data, folder) => {
 				upload_files_insert(data, {
