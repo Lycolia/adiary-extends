@@ -10,7 +10,7 @@ use Fcntl;
 our $VERSION    = 3.50;
 our $OUTVERSION = "3.50p";
 our $DATA_VERSION = 3.50;
-our $EXTENDS_VERSION = "0.4.0";
+our $EXTENDS_VERSION = "0.4.1";
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -52,6 +52,7 @@ sub new {
 	$self->{VERSION} = $VERSION;
 	$self->{OUTVERSION} = $OUTVERSION;
 	$self->{EXTENDS_VERSION} = $EXTENDS_VERSION;
+	$self->{HttpReferer} = $ENV{'HTTP_REFERER'} || '';
 
 	# ディフォルト値の設定
 	$self->SetDefaultValue();
