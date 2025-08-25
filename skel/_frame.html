@@ -64,6 +64,7 @@
 	<title><@v.subtitle><@if(v.subtitle ne '',' - ')><@v.title></title>
 <@v.extra_header>
 <@if(!v.system_mode, s.html_header_txt)>
+<script src='<@Basepath><@v.script_dir>prism-core.min.js'></script>
 <script src='<@Basepath><@v.script_dir>prism-autoloader.min.js'></script>
 <script src='<@Basepath><@v.script_dir>prism-line-numbers.min.js'></script>
 <script src='<@Basepath><@v.script_dir>prism-toolbar.min.js'></script>
