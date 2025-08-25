@@ -1,9 +1,10 @@
+__cache/*.cache
 node_modules/
 !/data/.htaccess
 !/data/index.html
 /data/blog
 /data/db
-lycolia
+pub/lycolia
 __cache/
 data/textparser_plugin_cache.dat
 data/system_config.dat
