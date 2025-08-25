@@ -17,7 +17,7 @@ $(function(){
 
 	this.CommentEnableTime = 10000;	// msec
 	this.CommentEnableKeys = 10;
-	this.SyntaxHighlightTheme = 'adiary';
+	this.SyntaxHighlightTheme = '00_adiary';
 
 	// load adiary vars
 	let data = this.asys_vars;
@@ -230,7 +230,7 @@ $$.init(function(){
 
 	let css = this.get_value_from_css('syntax-highlight-theme') || this.SyntaxHighlightTheme;
 	css = css.replace(/\.css$/, '').replace(/[^\w\-]/g, '');
-	const css_file = this.PubdistDir + 'highlight-js/'+ css +'.css';
+	const css_file = this.PubdistDir + 'highlight-styles/'+ css +'.css';
 
 	const $style = $('#syntaxhighlight-theme');
 	if ($style.length)
@@ -238,7 +238,23 @@ $$.init(function(){
 
 	this.prepend_css(css_file).attr('id', 'syntaxhighlight-theme');
 
-	this.load_script(this.ScriptDir + 'highlight.pack.js', function(){
+	this.load_script(this.ScriptDir + 'highlight.min.js', function(){
+		const buf = [];
+		hljs.addPlugin({
+			'before:highlightElement': ({el, language}) => {
+				el.innerHTML = el.innerHTML.replace(/\x1b/g, "");
+				for(const com of $(el).find('span.comment, strong.comment')){
+					buf.push(com.outerHTML);
+					com.innerHTML = "\x1b" + buf.length + "\x1b";
+				}
+			},
+			'after:highlightElement': ({ el, result, text }) => {
+				el.innerHTML = el.innerHTML.replace(/\x1b(?:\<span [^>]*>)?(\d+)(?:\<\/span>)?\x1b/g, (all, m1) => {
+					return buf[m1 - 1];
+				});
+			}
+		});
+
 		$codes.each(function(i, block) {
 			hljs.highlightBlock(block);
 
@@ -264,20 +280,33 @@ $$.init(function(){
 //●MathJaxの自動ロード
 ////////////////////////////////////////////////////////////////////////////////
 $$.init(function(){
-	const MathJaxURL = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML';
-	if (! $('span.math, div.math').length ) return;
+	const $math = $('span.math, div.math');
+	if (! $math.length ) return;
 
+	const MathJaxURL = 'https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js';
 	window.MathJax = {
-		TeX: { equationNumbers: {autoNumber: "AMS"} },
-		tex2jax: {
-			inlineMath: [],
-			displayMath: [],
+		tex: {
+			tags: "ams",
+			inlineMath:  [["\x01\x01", "\x01\x01"]],
+			displayMath: [["\x01\x02", "\x01\x02"]],
+			processEscapes: false,
 			processEnvironments: false,
-			processRefs: false
+			processRefs: false,
+			autoload: {
+				color: [],
+				colorv2: ['color']
+			}
 		},
-		extensions: ['jsMath2jax.js']
+		extensions: ["TeX/AMSmath.js", "TeX/AMSsymbol.js"]
 	};
-	this.load_script( MathJaxURL );
+	this.load_script(MathJaxURL, async function(){
+      		for(const dom of $math) {
+			const deli = dom.tagName === 'SPAN' ? "\x01\x01" : "\x01\x02";
+			dom.innerHTML = deli + dom.innerHTML + deli;
+		}
+		await MathJax.typesetPromise($math);
+		$math.trigger('mathjax-complite');
+	});
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -788,46 +817,7 @@ $$.init( function(){
 ////////////////////////////////////////////////////////////////////////////////
 //●twitterウィジェットのデザイン変更スクリプト
 ////////////////////////////////////////////////////////////////////////////////
-$$.twitter_css_fix = function(css_text){
-	var try_max  = 25;
-	var try_msec = 200;
-	function callfunc() {
-		var r=1;
-		if (try_max--<1) return;
-		try{
-			r = css_fix(css_text);
-		} catch(e) { ; }
-		if (r) setTimeout(callfunc, try_msec);
-	}
-	setTimeout(callfunc, try_msec);
-
-	function css_fix(css_text) {
-		var iframes = $('iframe');
-		var iframe;
-		var $doc;
-		for (var i=0; i<iframes.length; i++) {
-			iframe = iframes[i];
-			if (iframe.id.substring(0, 15) != 'twitter-widget-') continue;
-
-			var $doc = $(iframe.contentDocument || iframe.document);
-			break;
-		}
-		if (!$doc) return -1;
-		console.log($doc);
-
-		// wait load tweets
-	//	var tweet = $doc.find('.timeline-Tweet');
-	//	if (tweet.length < 1) return -2;
-
-		$(iframe).css('min-width', 0);
-		var css = $('<style>').attr({
-			id: 'add-tw-css',
-			type: 'text/css'
-		});
-		css.html(css_text);
-		$doc.find('head').append(css);
-	}
-}
+$$.twitter_css_fix = function(){}
 
 ////////////////////////////////////////////////////////////////////////////////
 //●月別過去ログリストのリロード

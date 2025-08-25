@@ -617,8 +617,10 @@ sub set_description {
 	my $text = $h->{text};
 
 	$text = substr($text, 0, 4096);		# 長文への対策
-	$text =~ s/[\r\n]//g;
 	$ROBJ->tag_delete($text);
+	$text =~ s/\s+/ /g;
+	$text =~ s/^ //;
+	$text =~ s/ $//;
 	$h->{description} = $self->string_clip($text, $self->{blog}->{desc_len} || 64);
 	if ($img ne '') {
 		$h->{main_image} = $img;
