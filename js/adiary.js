@@ -17,7 +17,6 @@ $(function(){
 
 	this.CommentEnableTime = 10000;	// msec
 	this.CommentEnableKeys = 10;
-	this.SyntaxHighlightTheme = '00_adiary';
 
 	// load adiary vars
 	let data = this.asys_vars;
@@ -218,62 +217,6 @@ $$.css_init(function(){
 			+ 	'url("data:image/png;base64,' + btoa(png) + '")'
 			+ '}';
 	$style.html(css);
-});
-
-////////////////////////////////////////////////////////////////////////////////
-//●syntax highlight機能の自動ロード
-////////////////////////////////////////////////////////////////////////////////
-$$.init(function(){
-	const $codes = $('pre.syntax-highlight');
-	if (!$codes.length) return;
-	if (window.alt_SyntaxHighlight) return window.alt_SyntaxHighlight();
-
-	let css = this.get_value_from_css('syntax-highlight-theme') || this.SyntaxHighlightTheme;
-	css = css.replace(/\.css$/, '').replace(/[^\w\-]/g, '');
-	const css_file = this.PubdistDir + 'highlight-styles/'+ css +'.css';
-
-	const $style = $('#syntaxhighlight-theme');
-	if ($style.length)
-		return $('#syntaxhighlight-theme').attr('href', css_file);
-
-	this.prepend_css(css_file).attr('id', 'syntaxhighlight-theme');
-
-	this.load_script(this.ScriptDir + 'highlight.min.js', function(){
-		const buf = [];
-		hljs.addPlugin({
-			'before:highlightElement': ({el, language}) => {
-				el.innerHTML = el.innerHTML.replace(/\x1b/g, "");
-				for(const com of $(el).find('span.comment, strong.comment')){
-					buf.push(com.outerHTML);
-					com.innerHTML = "\x1b" + buf.length + "\x1b";
-				}
-			},
-			'after:highlightElement': ({ el, result, text }) => {
-				el.innerHTML = el.innerHTML.replace(/\x1b(?:\<span [^>]*>)?(\d+)(?:\<\/span>)?\x1b/g, (all, m1) => {
-					return buf[m1 - 1];
-				});
-			}
-		});
-
-		$codes.each(function(i, block) {
-			hljs.highlightBlock(block);
-
-			var $obj = $(block);
-			if (! $obj.hasClass('line-number')) return;
-
-			var num = parseInt($obj.data('number'));
-			if (!num || num == NaN) num=1;
-
-			var $div = $('<div>').addClass('line-number-block');
-			var cnt  = $obj.text().split("\n").length -1;
-			var line = '';
-			for(var i=0; i<cnt; i++) {
-				line += (num+i).toString() + "\n";
-			}
-			$div.text(line);
-			$obj.prepend( $div );
-		});
-	});
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -639,14 +582,14 @@ $$.word_highlight = function(id) {
 		var nodes = [];
 		for(var i=0; i<_nodes.length; i++)
 			nodes.push(_nodes[i]);
-		
+
 		// テキストノードの書き換えループ
 		for(var i=0; i<nodes.length; i++) {
 			if (nodes[i].nodeType == 3) {
 				var text = nodes[i].nodeValue;
 				if (text == undefined || text.match(/^[\s\n\r]*$/)) continue;
 				do_highlight_string(nodes[i], words);
-				h_cnt++; if (h_cnt>999) break; 
+				h_cnt++; if (h_cnt>999) break;
 				continue;
 			}
 			if (! nodes[i].hasChildNodes() ) continue;
@@ -828,7 +771,7 @@ $$.init( function(){
 	selbox.change(function(evt){
 		var obj = $(evt.target);
 		if(!obj.data('url')) return;	// for security
-		var val = obj.val(); 
+		var val = obj.val();
 		if (val=='') return;
 		if (self.Static)
 			return window.location = self.myself + 'q/' + val + '.html';
@@ -849,7 +792,7 @@ $$.init(function(){
  	if (!this.SpecialQuery) return;
  	const myself   = this.myself;
  	const sp_query = this.SpecialQuery;
- 
+
  	$('a').each( function(idx,dom) {
 		var obj = $(dom);
 		var url = obj.attr('href');
