@@ -64,6 +64,21 @@
 	<title><@v.subtitle><@if(v.subtitle ne '',' - ')><@v.title></title>
 <@v.extra_header>
 <@if(!v.system_mode, s.html_header_txt)>
+<script src='<@Basepath><@v.script_dir>prism-autoloader.min.js'></script>
+<script src='<@Basepath><@v.script_dir>prism-line-numbers.min.js'></script>
+<script src='<@Basepath><@v.script_dir>prism-toolbar.min.js'></script>
+<script src='<@Basepath><@v.script_dir>prism-copy-to-clipboard.min.js'></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('pre > code').forEach((codeEl) => {
+      codeEl.className = codeEl.className === '' ? 'language-none' : codeEl.className;
+      codeEl.className = codeEl.className.replace(/^language-sh$/, 'language-bash');
+      codeEl.parentNode.className = 'line-numbers';
+    });
+
+    window.Prism.highlightAll();
+  });
+</script>
 </head>
 <body id="body" class="<@if(v.blog_admin, 'blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.system_mode, ' system')><@if(v.sphone,' sp')>">
 <@>
@@ -138,6 +153,5 @@
 	"GA_ID":	"<@if(!v.system_mode && s.gaid, s.gaid)>"
 }
 --></div>
-
 </body>
 </html>

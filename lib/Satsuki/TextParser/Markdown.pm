@@ -236,20 +236,13 @@ sub parse_block {
 			}
 
 			$self->tag_escape($lang, $file);
-			my $class='';
-			if ($self->{satsuki_syntax_h}) {	# [S]
-				if ($lang ne '') {
-					$class = ' ' . $lang;
-				}
-				$class = " class=\"syntax-highlight$class\"";
-			}
 			if ($file ne '') {
 				$file = " title=\"$file\"";
 			}
 			my $first = shift(@code);
-			push(@ary, "<div class=\"highlight\"><pre$class$file>$first");
+			push(@ary, "<pre><code class=\"language-$lang\">$first");
 			push(@ary, @code);
-			push(@ary, "</pre></div>\x02");
+			push(@ary, "</code></pre>\x02");
 			next;
 		}
 
