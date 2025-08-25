@@ -17,7 +17,6 @@ $(function(){
 
 	this.CommentEnableTime = 10000;	// msec
 	this.CommentEnableKeys = 10;
-	this.SyntaxHighlightTheme = 'adiary';
 
 	// load adiary vars
 	let data = this.asys_vars;
@@ -221,63 +220,36 @@ $$.css_init(function(){
 });
 
 ////////////////////////////////////////////////////////////////////////////////
-//●syntax highlight機能の自動ロード
-////////////////////////////////////////////////////////////////////////////////
-$$.init(function(){
-	const $codes = $('pre.syntax-highlight');
-	if (!$codes.length) return;
-	if (window.alt_SyntaxHighlight) return window.alt_SyntaxHighlight();
-
-	let css = this.get_value_from_css('syntax-highlight-theme') || this.SyntaxHighlightTheme;
-	css = css.replace(/\.css$/, '').replace(/[^\w\-]/g, '');
-	const css_file = this.PubdistDir + 'highlight-js/'+ css +'.css';
-
-	const $style = $('#syntaxhighlight-theme');
-	if ($style.length)
-		return $('#syntaxhighlight-theme').attr('href', css_file);
-
-	this.prepend_css(css_file).attr('id', 'syntaxhighlight-theme');
-
-	this.load_script(this.ScriptDir + 'highlight.pack.js', function(){
-		$codes.each(function(i, block) {
-			hljs.highlightBlock(block);
-
-			var $obj = $(block);
-			if (! $obj.hasClass('line-number')) return;
-
-			var num = parseInt($obj.data('number'));
-			if (!num || num == NaN) num=1;
-
-			var $div = $('<div>').addClass('line-number-block');
-			var cnt  = $obj.text().split("\n").length -1;
-			var line = '';
-			for(var i=0; i<cnt; i++) {
-				line += (num+i).toString() + "\n";
-			}
-			$div.text(line);
-			$obj.prepend( $div );
-		});
-	});
-});
-
-////////////////////////////////////////////////////////////////////////////////
 //●MathJaxの自動ロード
 ////////////////////////////////////////////////////////////////////////////////
 $$.init(function(){
-	const MathJaxURL = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML';
-	if (! $('span.math, div.math').length ) return;
+	const $math = $('span.math, div.math');
+	if (! $math.length ) return;
 
+	const MathJaxURL = 'https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js';
 	window.MathJax = {
-		TeX: { equationNumbers: {autoNumber: "AMS"} },
-		tex2jax: {
-			inlineMath: [],
-			displayMath: [],
+		tex: {
+			tags: "ams",
+			inlineMath:  [["\x01\x01", "\x01\x01"]],
+			displayMath: [["\x01\x02", "\x01\x02"]],
+			processEscapes: false,
 			processEnvironments: false,
-			processRefs: false
+			processRefs: false,
+			autoload: {
+				color: [],
+				colorv2: ['color']
+			}
 		},
-		extensions: ['jsMath2jax.js']
+		extensions: ["TeX/AMSmath.js", "TeX/AMSsymbol.js"]
 	};
-	this.load_script( MathJaxURL );
+	this.load_script(MathJaxURL, async function(){
+      		for(const dom of $math) {
+			const deli = dom.tagName === 'SPAN' ? "\x01\x01" : "\x01\x02";
+			dom.innerHTML = deli + dom.innerHTML + deli;
+		}
+		await MathJax.typesetPromise($math);
+		$math.trigger('mathjax-complite');
+	});
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -610,14 +582,14 @@ $$.word_highlight = function(id) {
 		var nodes = [];
 		for(var i=0; i<_nodes.length; i++)
 			nodes.push(_nodes[i]);
-		
+
 		// テキストノードの書き換えループ
 		for(var i=0; i<nodes.length; i++) {
 			if (nodes[i].nodeType == 3) {
 				var text = nodes[i].nodeValue;
 				if (text == undefined || text.match(/^[\s\n\r]*$/)) continue;
 				do_highlight_string(nodes[i], words);
-				h_cnt++; if (h_cnt>999) break; 
+				h_cnt++; if (h_cnt>999) break;
 				continue;
 			}
 			if (! nodes[i].hasChildNodes() ) continue;
@@ -788,46 +760,7 @@ $$.init( function(){
 ////////////////////////////////////////////////////////////////////////////////
 //●twitterウィジェットのデザイン変更スクリプト
 ////////////////////////////////////////////////////////////////////////////////
-$$.twitter_css_fix = function(css_text){
-	var try_max  = 25;
-	var try_msec = 200;
-	function callfunc() {
-		var r=1;
-		if (try_max--<1) return;
-		try{
-			r = css_fix(css_text);
-		} catch(e) { ; }
-		if (r) setTimeout(callfunc, try_msec);
-	}
-	setTimeout(callfunc, try_msec);
-
-	function css_fix(css_text) {
-		var iframes = $('iframe');
-		var iframe;
-		var $doc;
-		for (var i=0; i<iframes.length; i++) {
-			iframe = iframes[i];
-			if (iframe.id.substring(0, 15) != 'twitter-widget-') continue;
-
-			var $doc = $(iframe.contentDocument || iframe.document);
-			break;
-		}
-		if (!$doc) return -1;
-		console.log($doc);
-
-		// wait load tweets
-	//	var tweet = $doc.find('.timeline-Tweet');
-	//	if (tweet.length < 1) return -2;
-
-		$(iframe).css('min-width', 0);
-		var css = $('<style>').attr({
-			id: 'add-tw-css',
-			type: 'text/css'
-		});
-		css.html(css_text);
-		$doc.find('head').append(css);
-	}
-}
+$$.twitter_css_fix = function(){}
 
 ////////////////////////////////////////////////////////////////////////////////
 //●月別過去ログリストのリロード
@@ -838,7 +771,7 @@ $$.init( function(){
 	selbox.change(function(evt){
 		var obj = $(evt.target);
 		if(!obj.data('url')) return;	// for security
-		var val = obj.val(); 
+		var val = obj.val();
 		if (val=='') return;
 		if (self.Static)
 			return window.location = self.myself + 'q/' + val + '.html';
@@ -859,7 +792,7 @@ $$.init(function(){
  	if (!this.SpecialQuery) return;
  	const myself   = this.myself;
  	const sp_query = this.SpecialQuery;
- 
+
  	$('a').each( function(idx,dom) {
 		var obj = $(dom);
 		var url = obj.attr('href');

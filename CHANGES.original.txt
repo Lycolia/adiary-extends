@@ -1,5 +1,16 @@
 [UTF-8][Japanese]
 
+*Ver3.51 : 2025/07/22 - 2025/08/xx
+
+-highlight.jsを最新版に入れ替えました。[https://github.com/nabe-abk/adiary/blob/master/js/highlight.lang-list.txt:対応言語リスト]。
+-pre記法（ブロック記法）使用時、標準でシンタックスハイライトが効くように変更しました。((古い記事に対して有効にしたい場合は、ブログの再構築をしてください。))
+-【記法】Google Chart APIの廃止に伴い、{{[tex], [qr]}}記法のリンク先を変更しました。
+-【テーマ】シンタックスハイライト記法使用時のpreの表示を調整しました。
+-【Ver3.51a】
+--【Fix】記事中から画像がなくなっても main_image が削除されない。
+--MathJaxをv4.0へアップデート。
+--意味がなくなっていたTwitterウィジェットCSS細工ルーチンを削除。
+
 *Ver3.50 : 2023/02/02 - 2024/05/27
 
 -[bf:Perl 5.14.0以降]が必要です。((Perl 5.8では動作しなくなりました。古いPerlを使用しているレンタルサーバの場合、レンタルサーバの設定画面からPerlを最新版に切り替えてください。))
@@ -61,6 +72,7 @@
 -【Ver3.50o】
 --【Fix】{[google:image]}タグと{[google:video]}タグの中身が逆だったので修正。（[https://adiary.adiary.jp/0422#c40:Thanks to n]）
 --フィルター記法にて、YouTubeの再生開始時間等を指定可能にしました。
+-【Ver3.50p】フィルター記法で https://x.com のリンクに対応しました。（[https://github.com/nabe-abk/adiary/pull/12:Thanks to kjimba]）
 
 *Ver3.40 : 2022/12/16
 
