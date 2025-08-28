@@ -63,6 +63,7 @@ MITライセンスやPerlライセンスだと大変助かります。
     * Color Picker (MIT / GPL)
   * Lightbox2 (MIT)
   * [Fancybox v3.5.7](https://github.com/fancyapps/fancybox) (GPLv3)
+  * [Prism.js](https://prismjs.com/) (MIT)
 
 ## Perl
 
