@@ -62,7 +62,7 @@ MITライセンスやPerlライセンスだと大変助かります。
     * dynatree  (MIT)
     * Color Picker (MIT / GPL)
   * Lightbox2 (MIT)
-  * highlight.js (BSD)
+  * [Fancybox v3.5.7](https://github.com/fancyapps/fancybox) (GPLv3)
 
 ## Perl
 

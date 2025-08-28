@@ -64,6 +64,9 @@
 	<title><@v.subtitle><@if(v.subtitle ne '',' - ')><@v.title></title>
 <@v.extra_header>
 <@if(!v.system_mode, s.html_header_txt)>
+<link rel="stylesheet" href="<@Basepath><@v.script_dir>jquery.fancybox.min.css">
+<script src="<@Basepath><@v.script_dir>jquery-3.2.1.min.js"></script>
+<script src="<@Basepath><@v.script_dir>jquery.fancybox.min.js"></script>
 <script src='<@Basepath><@v.script_dir>prism-core.min.js'></script>
 <script src='<@Basepath><@v.script_dir>prism-autoloader.min.js'></script>
 <script src='<@Basepath><@v.script_dir>prism-line-numbers.min.js'></script>
@@ -71,6 +74,8 @@
 <script src='<@Basepath><@v.script_dir>prism-copy-to-clipboard.min.js'></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    $('[data-fancybox]').fancybox();
+
     document.querySelectorAll('pre > code').forEach((codeEl) => {
       codeEl.className = codeEl.className === '' ? 'language-none' : codeEl.className;
       codeEl.className = codeEl.className.replace(/^language-sh$/, 'language-bash');
