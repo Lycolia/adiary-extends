@@ -10,7 +10,7 @@ package Satsuki::TextParser::TagPlugin::Tag_image;
 # ●使い方
 #   通常の記法プラグインと違い、オプション部（文字コード部）に image と
 # 指定することで使用する。
-# 
+#
 #（設定例）
 #	img       = 画像, image, 1, http://image.xxx.jp/image/$1_small.jpg
 #	img#large = 画像, image, 1, http://image.xxx.jp/image/$1_large.jpg
@@ -117,6 +117,15 @@ sub image {
 	$tag2{title} = $name;
 	my $attr = $pobj->make_attr($ary, \%tag2, exists($tags->{"$tag_name#ext"}) ? '' : 'image');
 	   $name = $pobj->make_name($ary, $name);
+
+	# ファイル名と$nameが同じ場合、それは初期値で無価値なものなので、altやtitleを空文字にする
+	$link =~ /([^\/]+)$/;
+	my $filename = $1;
+	if ($filename eq $name) {
+		$name = '';
+		$attr =~ s/title="[^"]*"/title=""/;
+		warn "IFIN";
+	}
 
 	my $tag = "<a href=\"$link\"$attr><img alt=\"$name\"$size src=\"$url\"></a>";
 	## if (!$caption) { return $tag; }

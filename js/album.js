@@ -97,7 +97,7 @@ var set = {
 			data.name  = '.trashbox/';
 			data.fix   = true;
 			data.icon  = 'trashbox.png';
-		} 
+		}
 
 		// 選択中のノード
 		var sel = tree.dynatree("getActiveNode");
@@ -494,7 +494,7 @@ function drop_to_tree(node, srcNode, hitMode, ui, draggable) {
 
 function move_folder(node, srcNode) {
 	node = (typeof(node) == 'string') ? tree.dynatree("getTree").getNodeByKey(node) : node;
-	
+
 	var from = srcNode.getParent().data.key;
 	var to   = node.data.key;
 	if (to.indexOf(cur_folder) == 0) return false;	// 自分自身やその子へは移動できない
@@ -648,7 +648,7 @@ function edit_file_name(li) {
 		key_event_stop = false;
 		li.text( li.data('name') );
 	});
-	
+
 }
 
 //------------------------------------------------------------------------------
@@ -902,14 +902,13 @@ function update_view(flag, selected) {
 		});
 		if (file.isImg) {
 			link.attr({
-				'data-lightbox': 'roadtrip',
-				'data-title': file.name
+				'data-fancybox': 'roadtrip',
+				'data-caption': file.name
 			});
 		}
 		var img  = $('<img>', {
 			src: encode_link( fspath + '.thumbnail/' + file.name + '.jpg') + thumbq ,
 			title: file.name,
-			'data-title': file.name,
 			'data-isimg': file.isImg ? 1 : 0
 		});
 		if (allow_edit) {
@@ -939,8 +938,8 @@ function update_view(flag, selected) {
 		});
 		if (file.isImg) {
 			link.attr({
-				'data-lightbox': 'roadtrip',
-				'data-title': file.name,
+				'data-fancybox': 'roadtrip',
+				'data-caption': file.name,
 			});
 		}
 		var span = $('<span>').addClass('fileline').data({
@@ -1011,7 +1010,7 @@ function update_view(flag, selected) {
 			});
 			var e = document.createEvent('MouseEvent');
 			e.initEvent("click", true, false);
-			dl[0].dispatchEvent( e ); 
+			dl[0].dispatchEvent( e );
 			return;
 		}
 
@@ -1068,7 +1067,7 @@ function update_view(flag, selected) {
 		dbl_click = true;
 		obj.click();
 	}
-	
+
 	// 選択ファイル情報更新
 	update_selected_files();
 }
@@ -1306,7 +1305,6 @@ function album_delete_files() {
 }
 $(document).on('keydown', function(evt) {
 	if (key_event_stop) return;
-	if ($('#lightbox').is(':visible')) return;
 	if ($('div.ui-dialog').is(':visible')) return;
 	if (evt.keyCode != 46) return;
 
@@ -1419,7 +1417,7 @@ function upload_post_process(text) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// ●ajaxでファイルアップロード 
+// ●ajaxでファイルアップロード
 ////////////////////////////////////////////////////////////////////////////////
 function ajax_upload(files) {
 	uploading = true;
