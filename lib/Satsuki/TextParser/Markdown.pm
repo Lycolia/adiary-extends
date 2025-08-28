@@ -694,8 +694,7 @@ sub parse_inline {
 			my $url   = "==$3==";
 			my $title = substr($4,1);
 			chop($title);
- warn "DEBUG 1: $_\n" ;
- warn "DEBUG 2: $url\n";
+
 			# <URL>形式の場合は<>を除去
 			if ($url =~ /<(.+)>/) {
 				$url = $1;
