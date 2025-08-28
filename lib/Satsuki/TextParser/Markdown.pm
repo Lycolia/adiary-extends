@@ -671,6 +671,42 @@ sub parse_inline {
 			}
 		}
 
+		# 直接リンク記法 - [text](<https://example.com/hoge_(fuga)>)を処理できる方式
+		$_ =~ s{(!?)\[([^\]]*)\]\(<([^>]+)>(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
+		{
+			my $is_img= $1;
+			my $text  = $2;
+			my $url   = $3;
+			my $title = substr($4,1);
+			chop($title);
+
+			$self->tag_escape($url, $title);
+			if ($title ne '') { $title = " title=\"$title\""; }
+			$is_img ? "<img src=\"$url\" alt=\"$text\"$title />"
+				: "<a href=\"$url\"$title>$text</a>";
+		}eg;
+
+		# 直接リンク記法 - [text](https://example.com/hoge_\(fuga\))を処理できる方式
+		$_ =~ s{(!?)\[([^\]]*)\]\(([^\)\"\']*?)(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
+		{
+			my $is_img= $1;
+			my $text  = $2;
+			my $url   = "==$3==";
+			my $title = substr($4,1);
+			chop($title);
+ warn "DEBUG 1: $_\n" ;
+ warn "DEBUG 2: $url\n";
+			# <URL>形式の場合は<>を除去
+			if ($url =~ /<(.+)>/) {
+				$url = $1;
+			}
+
+			$self->tag_escape($url, $title);
+			if ($title ne '') { $title = " title=\"$title\""; }
+			$is_img ? "<img src=\"$url\" alt=\"$text\"$title />"
+				: "<a href=\"$url\"$title>$text</a>";
+		}eg;
+
 		# 自動リンク記法
 		$_ =~ s!<((?:https?|ftp):[^'"> ]+)>!<a href="$1">$1</a>!ig;
 
@@ -682,20 +718,6 @@ sub parse_inline {
 			$mail = $self->encode_email($mail);
 			"<a href=\"$mailto$mail\">$mail</a>";
 		|eg;
-
-		# 直接リンク記法
-		$_ =~ s{(!?)\[([^\]]*)\]\(([^\)\"\']*?)(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
-		{
-			my $is_img= $1;
-			my $text  = $2;
-			my $url   = $3;
-			my $title = substr($4,1);
-			chop($title);
-			$self->tag_escape($url, $title);
-			if ($title ne '') { $title = " title=\"$title\""; }
-			$is_img ? "<img src=\"$url\" alt=\"$text\"$title />"
-				: "<a href=\"$url\"$title>$text</a>";
-		}eg;
 
 		# 参照リンク記法の処理 [M] 間に許されるのはスペース1個のみ
 		$_ =~ s{(!?)(\[([^\]]*)\] ?\[([^\]]*)\])}
