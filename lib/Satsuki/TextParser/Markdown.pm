@@ -514,7 +514,7 @@ sub parse_block {
 			} else {
 				# テーブル展開
 				push(@ary, "<div class=\"body_table\"><table><thead><tr>\x02");
-				push(@ary, "\t<th>" . join("</th>\n\t<th>", @th) . "</th>");
+				push(@ary, "\t<th>" . join("</th>\n\t<th>", map { s/^\s+|\s+$//gr } @th) . "</th>");
 				push(@ary, "</tr></thead>\x02");
 				if (@tbl) { push(@ary, "<tbody>\x02"); }
 				foreach(@tbl) {
@@ -522,6 +522,7 @@ sub parse_block {
 					push(@ary, "<tr>\x02");
 					foreach(@class) {
 						my $t = shift(@cols);
+						$t =~ s/^\s+|\s+$//g;
 						my $c = $_ ? " class=\"$_\"" : '';
 						push(@ary, "\t<td$c>$t</td>");
 					}
