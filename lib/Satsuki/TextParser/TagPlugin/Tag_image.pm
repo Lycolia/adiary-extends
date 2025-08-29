@@ -124,7 +124,6 @@ sub image {
 	if ($filename eq $name) {
 		$name = '';
 		$attr =~ s/title="[^"]*"/title=""/;
-		warn "IFIN";
 	}
 
 	my $tag = "<a href=\"$link\"$attr><img alt=\"$name\"$size src=\"$url\"></a>";

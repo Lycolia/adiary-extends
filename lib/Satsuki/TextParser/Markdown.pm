@@ -692,7 +692,7 @@ sub parse_inline {
 		{
 			my $is_img= $1;
 			my $text  = $2;
-			my $url   = "==$3==";
+			my $url   = $3;
 			my $title = substr($4,1);
 			chop($title);
 
