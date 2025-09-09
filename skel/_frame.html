@@ -75,7 +75,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const fancybox = $('[data-fancybox]');
-    if (fancybox.length > 0) {
+    if (fancybox.length > 0 && 'fancybox' in fancybox) {
       fancybox.fancybox();
     }
 
