@@ -74,17 +74,22 @@
 <script src="<@Basepath><@v.script_dir>prism-copy-to-clipboard.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    $('[data-fancybox]').fancybox();
+    const fancybox = $('[data-fancybox]');
+    if (fancybox.length > 0) {
+      fancybox.fancybox();
+    }
 
     document.querySelectorAll('pre > code').forEach((codeEl) => {
       codeEl.className = codeEl.className === '' ? 'language-none' : codeEl.className;
       codeEl.className = codeEl.className.replace(/^language-sh$/, 'language-bash');
+      codeEl.className = codeEl.className.replace(/^language-pwsh$/, 'language-powershell');
       codeEl.parentNode.className = 'line-numbers';
     });
 
     window.Prism.highlightAll();
   });
 </script>
+
 </head>
 <body id="body" class="<@if(v.blog_admin, 'blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.system_mode, ' system')><@if(v.sphone,' sp')>">
 <@>
