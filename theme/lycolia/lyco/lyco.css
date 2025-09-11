@@ -366,7 +366,7 @@ div.art-info span.tags:after {
 div.art-info span.tag:not(:last-child):after {
 	content:		',';
 }
-span.tag:not(:last-child) {
+span.tag:not(:last-child):not(code span) {
 	margin-right:		0.5em;
 }
 
