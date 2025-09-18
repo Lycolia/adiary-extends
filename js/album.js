@@ -1281,7 +1281,7 @@ function load_selected_files() {
 
 	var files = [];
 	for(var i=0; i<sel.length; i++) {
-		files.push( $(sel[i]).data('title') );
+		files.push(sel[i].title);
 	}
 	return files;
 }
