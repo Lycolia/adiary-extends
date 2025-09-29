@@ -9,9 +9,9 @@
 			data/db/hoge_art/0000.datではctype=wikiがx=2, ctypeなしがx=1と思われる
 			ソース上ctype=linkがあるので、恐らくこれがx=3だが、使われているかどうかは怪しい
 		-->
-		<@ifexec(x==1,      begin)><span>投稿日：</span><time class="write-date" datetime="<@print_tmf('%Y-%m-%d', t.tm)>"><@print_tmf('%Y/%m/%d', t.tm)></time><$end>
-		<@ifexec(x==2,      begin)><span>投稿日：</span><time class="write-date" datetime="<@print_tmf('%Y-%m-%d', t.update_tm)>"><@print_tmf('%Y/%m/%d', t.update_tm)></time><$end>
-		<@ifexec(x==3,      begin)><span>投稿日：</span><time class="write-date" datetime="<@t.year>-<@t.mon>-<@t.day>"><@t.year>/<@t.mon>/<@t.day></time><$end>
+		<@ifexec(x==1,      begin)><span>投稿日：<time class="write-date" datetime="<@print_tmf('%Y-%m-%d', t.tm)>"><@print_tmf('%Y/%m/%d', t.tm)></time></span><$end>
+		<@ifexec(x==2,      begin)><span>投稿日：<time class="write-date" datetime="<@print_tmf('%Y-%m-%d', t.update_tm)>"><@print_tmf('%Y/%m/%d', t.update_tm)></time></span><$end>
+		<@ifexec(x==3,      begin)><span>投稿日：<time class="write-date" datetime="<@t.year>-<@t.mon>-<@t.day>"><@t.year>/<@t.mon>/<@t.day></time></span><$end>
 		<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
 		<@ifexec(ps.author, begin)><span class="author" title="<@t.id>"><@t.name></span><$end>
 		<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
