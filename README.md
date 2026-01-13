@@ -1,13 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect x="0" y="0" width="64" height="64" rx="12" ry="12" fill="#899aff"></rect>
-  <text x="18" y="52" transform="rotate(-10, 25, 62)" font-family="Meiryo, serif" font-size="64" font-weight="bold" fill="#fff">
-    a
-  </text>
-  <text x="25" y="55" transform="rotate(-30, 50, 50)" font-family="Meiryo, serif" font-size="32" font-weight="bold" fill="#001382">
-    ex
-  </text>
-</svg>
-
+<div align="center">
+  <img src="pub-dist/default-logo.svg" height="64" width="64">
+</div>
 
 # adiary-extends
 
