@@ -78,6 +78,8 @@ sub parse {
 	$self->{sections} = [];
 	$self->{links}    = {};
 	$self->{ids}      = {};
+	$self->{footnotes}     = {};	# 脚注定義 [^id]: content
+	$self->{footnote_order}= [];	# 脚注の出現順序
 
 	# parse main
 	$lines = $self->parse_block ($lines);
@@ -88,6 +90,9 @@ sub parse {
 	#-----------------------------------------
 	my $all = join("\n", @$lines);
 	$all =~ s|\n+\n</section>\x02|\n</section>\x02\n|g;
+
+	# Markdown脚注の出力
+	$self->output_markdown_footnotes(\$all);
 
 	# [S] <toc>
 	if ($self->{satsuki_tags} && $self->{satsuki_obj}) {
@@ -559,6 +564,29 @@ TEXT
 		}
 
 		#---------------------------------------------------------------
+		# [MD Extra] 脚注定義 [^id]: content
+		#---------------------------------------------------------------
+		if ($x =~ /^\[\^([^\]]+)\]:\s*(.*)$/) {
+			$self->p_block_end(\@ary, \@p_block, $pmode);
+			my $fn_id   = $1;
+			my $content = $2;
+
+			# 複数行の脚注内容を収集（インデントされた行）
+			while(@$lines && $lines->[0] =~ /^(    |\t)(.*)$/) {
+				my $cont_line = $2;
+				$content .= "\n" . $cont_line;
+				shift(@$lines);
+			}
+
+			# 脚注を保存
+			$self->{footnotes}{$fn_id} = $content;
+
+			# 次が空行なら除去する
+			if (@$lines && $lines->[0] eq '') { shift(@$lines); }
+			next;
+		}
+
+		#---------------------------------------------------------------
 		# リンク定義。[M] 参照名が空文字の場合は無効
 		#---------------------------------------------------------------
 		if ($x =~ /^ ? ? ?\[([^\]]+)\]:\s*(.*?)\s*(?:\s*("[^\"]*"|'[^\']*')\s*)?\s*$/) {
@@ -739,6 +767,27 @@ sub parse_inline {
 			}
 		}eg;
 
+		# [MD Extra] 脚注参照 [^id]
+		$_ =~ s{\[\^([^\]]+)\]}{
+			my $fn_id = $1;
+			if (exists $self->{footnotes}{$fn_id}) {
+				# 出現順序を記録
+				if (!grep { $_ eq $fn_id } @{$self->{footnote_order}}) {
+					push(@{$self->{footnote_order}}, $fn_id);
+				}
+				my $num = 1 + (grep { $_ eq $fn_id } @{$self->{footnote_order}} ? 0 : 0);
+				for my $i (0..$#{$self->{footnote_order}}) {
+					if ($self->{footnote_order}[$i] eq $fn_id) { $num = $i + 1; last; }
+				}
+				my $id = "fn-$fn_id";
+				my $title_text = $self->{footnotes}{$fn_id};
+				$self->tag_escape($title_text);
+				"<sup id=\"fnref-$fn_id\"><a href=\"#$id\" title=\"$title_text\">[$num]</a></sup>";
+			} else {
+				"[^$fn_id]";
+			}
+		}eg;
+
 		# [S] さつき記法のタグ処理
 		if ($self->{satsuki_tags}) {
 			$_ = $satsuki->parse_tag( $_, \&escape_special_char );
@@ -820,6 +869,34 @@ sub tag_escape {
 		$_ =~ s/"/&quot;/g;
 	}
 	return $_[0];
+}
+
+#-------------------------------------------------------------------------------
+# ●Markdown脚注の出力
+#-------------------------------------------------------------------------------
+sub output_markdown_footnotes {
+	my $self = shift;
+	my $text_ref = shift;
+	my $order = $self->{footnote_order};
+	if (!@$order) { return; }
+
+	my $footnotes = $self->{footnotes};
+	my @out;
+	push(@out, '<div class="footnotes">');
+	push(@out, '<hr />');
+	push(@out, '<ol>');
+
+	foreach my $fn_id (@$order) {
+		my $content = $footnotes->{$fn_id};
+		$self->tag_escape($content);
+		my $id = "fn-$fn_id";
+		push(@out, "<li id=\"$id\">$content <a href=\"#fnref-$fn_id\">&#8617;</a></li>");
+	}
+
+	push(@out, '</ol>');
+	push(@out, '</div>');
+
+	$$text_ref .= "\n" . join("\n", @out);
 }
 
 #-------------------------------------------------------------------------------
