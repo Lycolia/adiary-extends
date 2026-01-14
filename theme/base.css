@@ -128,6 +128,11 @@ h5, h6 {
 }
 pre {
 	white-space:	pre-wrap;
+	overflow-x:		auto;
+}
+
+div.math {
+	overflow-x:		auto;
 }
 
 /* nowrap */
