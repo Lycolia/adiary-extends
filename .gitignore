@@ -1,14 +1,51 @@
-__cache/*.cache
-node_modules/
+#--------------------------------------
+# ignore default
+#--------------------------------------
+/*
+
+# github files
+!/.github
+
+#--------------------------------------
+# root files
+#--------------------------------------
+!/.htaccess.sample
+!/adiary.cgi
+!/adiary.fcgi
+!/adiary.env.cgi.sample
+!/adiary.conf.cgi.sample
+!/adiary.httpd.pl
+!/CHANGES.txt
+!/index.html
+!/README.md
+
+#--------------------------------------
+# adiary files
+#--------------------------------------
+!/info/
+!/js/
+!/lib/
+!/plugin/
+!/pub-dist/
+!/skel/
+!/theme/
+
+#--------------------------------------
+# private directory
+#--------------------------------------
+!/__cache/.htaccess
+!/__cache/index.html
+
 !/data/.htaccess
 !/data/index.html
-/data/blog
-/data/db
-pub/lycolia
-__cache/
-data/textparser_plugin_cache.dat
-data/system_config.dat
-data/default_setting.dat
-skel.local/*.html
-adiary.conf.cgi
-adiary.env.cgi
+
+!/pub/.gitkeep
+
+!/skel.local/.htaccess
+!/skel.local/README.txt
+
+#--------------------------------------
+# ignore files
+#--------------------------------------
+/info/textparser_site_tags.txt
+/plugin/@3rd-party/
