@@ -3,16 +3,13 @@
 		<@ifexec(ps.hatena_bicon, begin)>
 		<a class="http-bookmark" href="https://b.hatena.ne.jp/entry/<@url>"><img src="//b.st-hatena.com/entry/image/<@url>" alt="はてブ数"></a>
 		<$end>
-		<$x = if(t.priority, ps.wiki_tm, ps.tmdate)>
-		<!--
-			x=1 記事、x=2 ページ
-			data/db/hoge_art/0000.datではctype=wikiがx=2, ctypeなしがx=1と思われる
-			ソース上ctype=linkがあるので、恐らくこれがx=3だが、使われているかどうかは怪しい
-		-->
-		<@ifexec(x==1,      begin)><span>投稿日：<time class="write-date" datetime="<@t.year>-<@t.mon>-<@t.day>"><@t.year>/<@t.mon>/<@t.day></time></span><$end>
-		<@ifexec(x==2,      begin)><span>投稿日：<time class="write-date" datetime="<@print_tmf('%Y-%m-%d', t.update_tm)>"><@print_tmf('%Y/%m/%d', t.update_tm)></time></span><$end>
-		<@ifexec(x==3,      begin)><span>投稿日：<time class="write-date" datetime="<@t.year>-<@t.mon>-<@t.day>"><@t.year>/<@t.mon>/<@t.day></time></span><$end>
-		<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
-		<@ifexec(ps.author, begin)><span class="author" title="<@t.id>"><@t.name></span><$end>
-		<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
+		<div>
+			<@ifexec(t.shown_upd_date==1, begin)><span>更新日：<time class="update-date" datetime="<@t.upd_year>-<@t.upd_mon>-<@t.upd_day>"><@t.upd_year>/<@t.upd_mon>/<@t.upd_day></time></span><br><$end>
+			<span>投稿日：<time class="write-date" datetime="<@t.year>-<@t.mon>-<@t.day>"><@t.year>/<@t.mon>/<@t.day></time></span>
+		</div>
+		<div>
+			<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
+			<@ifexec(ps.author, begin)><span class="author" title="<@t.id>"><@t.name></span><$end>
+			<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
+		</div>
 	</div>
