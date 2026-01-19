@@ -269,8 +269,7 @@ article.wiki div.body {
 }
 /* 記事ヘッダ */
 div.art-info {
-	display: flex;
-	justify-content: space-between;
+	text-align: right;
 	line-height:		100%;
 	font-size:		90%;
 	padding:		0;
