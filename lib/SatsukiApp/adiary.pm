@@ -10,7 +10,7 @@ use Fcntl;
 our $VERSION    = 3.51;
 our $OUTVERSION = "3.52dev";
 our $DATA_VERSION = 3.50;
-our $EXTENDS_VERSION = "0.12.4";
+our $EXTENDS_VERSION = "0.13.0";
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -1181,6 +1181,15 @@ sub post_process_article {
 	my $year = $art->{year} = substr($yyyymmdd, 0, 4);
 	my $mon  = $art->{mon}  = substr($yyyymmdd, 4, 2);
 	my $day  = $art->{day}  = substr($yyyymmdd, 6, 2);
+
+	# 更新日をテンプレートに出す用の処理
+	my $update_ymd = $ROBJ->time2timehash($art->{update_tm});
+	$art->{upd_year} = $update_ymd->{year};
+	$art->{upd_mon}  = $update_ymd->{mon};
+	$art->{upd_day}  = $update_ymd->{day};
+
+	# 更新日の表示制御フラグ
+	$art->{shown_upd_date} = "$year$mon$day" != "$art->{upd_year}$art->{upd_mon}$art->{upd_day}";
 
 	# コンテンツkey関連
 	my $key = $art->{link_key};
