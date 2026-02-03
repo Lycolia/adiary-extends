@@ -506,6 +506,7 @@ sub regist_article {
 		$self->set_description(\%art, $main_image);
 	}
 
+		$ROBJ->debug("$art{main_image}");
 	#-------------------------------------------------------------
 	# DBに書き込み
 	#-------------------------------------------------------------
@@ -624,6 +625,8 @@ sub set_description {
 	$h->{description} = $self->string_clip($text, $self->{blog}->{desc_len} || 64);
 	if ($img ne '') {
 		$h->{main_image} = $img;
+	} else {
+		$h->{main_image} = '';
 	}
 }
 
