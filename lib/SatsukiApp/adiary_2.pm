@@ -505,8 +505,6 @@ sub regist_article {
 		my $main_image = $self->get_main_image_from_input($form->{ogp});
 		$self->set_description(\%art, $main_image);
 	}
-
-		$ROBJ->debug("$art{main_image}");
 	#-------------------------------------------------------------
 	# DBに書き込み
 	#-------------------------------------------------------------
