@@ -908,7 +908,7 @@ function update_view(flag, selected) {
 		}
 		var img  = $('<img>', {
 			src: encode_link( fspath + '.thumbnail/' + file.name + '.jpg') + thumbq ,
-			title: file.name,
+			'data-title': file.name,
 			'data-isimg': file.isImg ? 1 : 0
 		});
 		if (allow_edit) {
