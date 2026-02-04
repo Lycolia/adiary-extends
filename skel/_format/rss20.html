@@ -21,12 +21,12 @@
 	<pubDate><@h.rfc_update></pubDate>
 	<lastBuildDate><@rfc_date(TM)></lastBuildDate>
 	<generator>https://adiary.org/#<@v.VERSION></generator>
-	<docs>http://blogs.law.harvard.edu/tech/rss</docs> 
+	<docs>http://blogs.law.harvard.edu/tech/rss</docs>
 <@forexec(t, logs, begin)>
 	<$url = ServerURL . v.myself2 . t.elink_key>
 	<item>
 		<title><@t.title></title>
-		<link><@url>#rss-tm<@t.update_tm></link>
+		<link><@url></link>
 		<guid><@url></guid>
 		<category><@t.tags></category>
 		<pubDate><@t.rfc_date></pubDate>
