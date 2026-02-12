@@ -780,7 +780,7 @@ sub parse_inline {
 					if ($self->{footnote_order}[$i] eq $fn_id) { $num = $i + 1; last; }
 				}
 				my $id = "fn-$fn_id";
-				my $title_text = $self->{footnotes}{$fn_id};
+				my $title_text = $self->strip_markdown($self->{footnotes}{$fn_id});
 				$self->tag_escape($title_text);
 				"<sup id=\"fnref-$fn_id\"><a href=\"#$id\" title=\"$title_text\">[$num]</a></sup>";
 			} else {
@@ -888,7 +888,9 @@ sub output_markdown_footnotes {
 
 	foreach my $fn_id (@$order) {
 		my $content = $footnotes->{$fn_id};
-		$self->tag_escape($content);
+		my @lines = split(/\n/, $content);
+		my $parsed = $self->parse_inline(\@lines);
+		$content = join("\n", @$parsed);
 		my $id = "fn-$fn_id";
 		push(@out, "<li id=\"$id\">$content <a href=\"#fnref-$fn_id\">&#8617;</a></li>");
 	}
@@ -938,6 +940,34 @@ sub generate_link_id {
 	}
 	$ids->{$id} = 1;
 	return $id;
+}
+
+#-------------------------------------------------------------------------------
+# ●Markdownの記法を除去してプレーンテキストにする
+#-------------------------------------------------------------------------------
+sub strip_markdown {
+	my $self = shift;
+	my $text = shift;
+	$text =~ s/\n/ /g;
+	# 画像 ![alt](url) → alt
+	$text =~ s/!\[([^\]]*)\]\([^\)]*\)/$1/g;
+	# リンク [text](url) → text
+	$text =~ s/\[([^\]]*)\]\([^\)]*\)/$1/g;
+	# 参照リンク [text][ref] → text
+	$text =~ s/\[([^\]]*)\]\[[^\]]*\]/$1/g;
+	# 太字
+	$text =~ s/\*\*(.*?)\*\*/$1/g;
+	$text =~ s/__(.*?)__/$1/g;
+	# 斜体
+	$text =~ s/\*([^\*]*)\*/$1/g;
+	$text =~ s/_([^_]*)_/$1/g;
+	# 取り消し線
+	$text =~ s/~~(.*?)~~/$1/g;
+	# インラインコード
+	$text =~ s/`+([^`]+?)`+/$1/g;
+	# 脚注参照
+	$text =~ s/\[\^[^\]]+\]//g;
+	return $text;
 }
 
 1;
