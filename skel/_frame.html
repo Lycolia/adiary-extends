@@ -164,5 +164,13 @@
 	"GA_ID":	"<@if(!v.system_mode && s.gaid, s.gaid)>"
 }
 --></div>
+<@> imgのaltを吸い上げてFancyboxのキャプションに設定する装置
+<script>
+$("[data-fancybox]").fancybox({
+  caption: function (instance, item) {
+    return $(this).find("img").attr("alt") || "";
+  },
+});
+</script>
 </body>
 </html>
