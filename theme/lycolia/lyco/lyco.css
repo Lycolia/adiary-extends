@@ -481,6 +481,7 @@ dt { font-weight:	bold; }
 	margin:			0px;
 	padding:		2px;
 	border-bottom:		1px dashed #000;
+	vertical-align: top;
 }
 .body table th,
 .ui-dialog table th {
