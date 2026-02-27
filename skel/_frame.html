@@ -82,6 +82,8 @@
     document.querySelectorAll('pre > code').forEach((codeEl) => {
       codeEl.className = codeEl.className === '' ? 'language-none' : codeEl.className;
       codeEl.className = codeEl.className.replace(/^language-sh$/, 'language-bash');
+      codeEl.className = codeEl.className.replace(/^language-bat$/, 'language-batch');
+      codeEl.className = codeEl.className.replace(/^language-cmd$/, 'language-batch');
       codeEl.className = codeEl.className.replace(/^language-pwsh$/, 'language-powershell');
       codeEl.parentNode.className = 'line-numbers';
     });
