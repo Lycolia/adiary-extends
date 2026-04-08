@@ -1300,7 +1300,7 @@ sub resolve_host {
 	$self->{Resolve_host} = 1;
 	$ENV{REMOTE_HOST} = '';
 
-	if ($ip !~ /\./) {
+	if ($ip =~ /\./) {
 		#  IPv4
 		# 逆引き
 		my $ip_bin = pack('C4', split(/\./, $ip));
