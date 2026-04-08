@@ -1300,22 +1300,28 @@ sub resolve_host {
 	$self->{Resolve_host} = 1;
 	$ENV{REMOTE_HOST} = '';
 
-	# 逆引き
-	my $ip_bin = pack('C4', split(/\./, $ip));
-	if ($host eq '') {
-		if ($ip eq '') { return ; }
-		$host = gethostbyaddr($ip_bin, 2);
-		if ($host eq '') { return ; }
-	}
+	if ($ip !~ /\./) {
+		#  IPv4
+		# 逆引き
+		my $ip_bin = pack('C4', split(/\./, $ip));
+		if ($host eq '') {
+			if ($ip eq '') { return ; }
+			$host = gethostbyaddr($ip_bin, 2);
+			if ($host eq '') { return ; }
+		}
 
-	# 2重引き
-	my @addr = gethostbyname($host);
-	splice(@addr, 0, 4);	# [0]-[3] を捨てて address リストのみ残す
-	my $ok;
-	foreach(@addr) {
-		if ($_ eq $ip_bin) { $ok=1; last; }
+		# 2重引き
+		my @addr = gethostbyname($host);
+		splice(@addr, 0, 4);	# [0]-[3] を捨てて address リストのみ残す
+		my $ok;
+		foreach(@addr) {
+			if ($_ eq $ip_bin) { $ok=1; last; }
+		}
+		if (!$ok) { return ; }
+	} else {
+		# IPv6
+		$ENV{REMOTE_HOST} = '';
 	}
-	if (!$ok) { return ; }
 	return ($ENV{REMOTE_HOST} = $host);
 }
 
