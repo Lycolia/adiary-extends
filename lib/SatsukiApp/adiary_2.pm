@@ -1961,6 +1961,11 @@ sub set_ip_host_agent {
 	my ($self, $h, $default) = @_;
 	my $ROBJ = $self->{ROBJ};
 
+	if ($ENV{REMOTE_ADDR} =~ /:/) {
+		# IPv6なら強制的に空文字にする
+		$ENV{REMOTE_HOST} = '';
+	}
+
 	my $flag = $default->{ip};
 	$h->{ip}    = $flag ? $default->{ip}    : $ENV{REMOTE_ADDR};
 	$h->{host}  = $flag ? $default->{host}  : $ENV{REMOTE_HOST};
