@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use POSIX qw(strftime);
 use DBI;
 
 # 以下のコマンドでIP::Geolocation::MMDBをインストールしていることが前提
@@ -66,9 +67,9 @@ if ($is_allowed_country || $is_allowed_bot) {
         my $sql = 'INSERT INTO deny_log (url, country, remote_addr, user_agent, timestamp) VALUES (?, ?, ?, ?, ?);';
         my $uri = $ENV{REQUEST_URI} // 'unknown';
         my $remote_addr = $ENV{REMOTE_ADDR} // 'unknown';
-        my $time = localtime();
+        my $timestamp = strftime("%Y-%m-%d %H:%M:%S", localtime);
         my $prepared = $dbh->prepare($sql);
-        $prepared->execute($uri, $country_code, $remote_addr, $user_agent, $time);
+        $prepared->execute($uri, $country_code, $remote_addr, $user_agent, $timestamp);
         $dbh->disconnect();
     }
 
