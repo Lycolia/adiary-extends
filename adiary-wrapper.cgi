@@ -66,7 +66,7 @@ if ($is_allowed_country || $is_allowed_bot) {
         my $remote_addr = $ENV{REMOTE_ADDR} // 'unknown';
         my $time = localtime();
         my $prepared = $dbh->prepare($sql);
-        $prepared->execute($uri, $country_code, $remote_addr, $time);
+        $prepared->execute($uri, $country_code, $remote_addr, $user_agent, $time);
         $dbh->disconnect();
     }
 
