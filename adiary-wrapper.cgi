@@ -69,7 +69,6 @@ if ($is_allowed_country || $is_allowed_bot) {
         $prepared->execute($uri, $country_code, $remote_addr, $time);
         $dbh->disconnect();
     }
-}
 
     print "Status: 403 Forbidden\n";
     print "Content-Type: text/plain; charset=UTF-8\n\n";
