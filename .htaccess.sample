@@ -9,7 +9,7 @@ Options +FollowSymLinks
 
 # RewriteEngine	On
 # RewriteCond	%{REQUEST_FILENAME}	!-f
-# RewriteRule	^(.*)$			adiary.cgi/$1	[L]
+# RewriteRule	^(.*)$			adiary-wrapper.cgi/$1	[L]
 
 # 常にタイマーを表示
 # SetENV SatsukiTimer 1

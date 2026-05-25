@@ -10,6 +10,7 @@
 # root files
 #--------------------------------------
 !/.htaccess.sample
+!/adiary-wrapper.cgi
 !/adiary.cgi
 !/adiary.fcgi
 !/adiary.env.cgi.sample
