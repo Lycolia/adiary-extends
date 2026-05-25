@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use DBI;
 
 # 以下のコマンドでIP::Geolocation::MMDBをインストールしていることが前提
 # cpanm -l extlib IP::Geolocation::MMDB
@@ -57,15 +58,18 @@ if ($is_allowed_country || $is_allowed_bot) {
     # 未知のSNS BOTを将来的に許可するためにログを集めておく
     if ($user_agent !~ /Windows|Mac OS|Linux|Android|iOS|iPhone|iPad/i) {
         # SNSBOTに間違いなく含まれない文字列が入ってるものはログに入れない
-        my $deny_ua_log_file = './deny_ua.log';
-        if (open my $fh, '>>', $deny_ua_log_file) {
-           my $time = localtime();
-           my $remote = $ENV{REMOTE_ADDR} // 'unknown';
-           my $uri = $ENV{REQUEST_URI} // 'unknown';
-           print $fh "[$time]\t\"$user_agent\"\t$country_code\t$remote\t$uri\n";
-           close $fh;
-        }
+        # DBファイルの生成処理もあるとよさそう
+        my $dbh = DBI->connect('dbi:SQLite:dbname=deny_log.db');
+        # ハンドリング方法が分からないのでこけた時の時は考慮してない
+        my $sql = 'INSERT INTO deny_log (url, country, remote_addr, user_agent, timestamp) VALUES (?, ?, ?, ?);'
+        my $uri = $ENV{REQUEST_URI} // 'unknown';
+        my $remote_addr = $ENV{REMOTE_ADDR} // 'unknown';
+        my $time = localtime();
+        my $prepared = $dbh->prepare($sql);
+        $prepared->execute($uri, $country_code, $remote_addr, $time);
+        $dbh->disconnect();
     }
+}
 
     print "Status: 403 Forbidden\n";
     print "Content-Type: text/plain; charset=UTF-8\n\n";

@@ -11,6 +11,7 @@
 #--------------------------------------
 !/.htaccess.sample
 !/adiary-wrapper.cgi
+!/deny_log.db
 !/adiary.cgi
 !/adiary.fcgi
 !/adiary.env.cgi.sample
