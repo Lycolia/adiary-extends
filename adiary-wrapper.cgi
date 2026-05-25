@@ -61,7 +61,7 @@ if ($is_allowed_country || $is_allowed_bot) {
         # DBファイルの生成処理もあるとよさそう
         my $dbh = DBI->connect('dbi:SQLite:dbname=deny_log.db');
         # ハンドリング方法が分からないのでこけた時の時は考慮してない
-        my $sql = 'INSERT INTO deny_log (url, country, remote_addr, user_agent, timestamp) VALUES (?, ?, ?, ?);';
+        my $sql = 'INSERT INTO deny_log (url, country, remote_addr, user_agent, timestamp) VALUES (?, ?, ?, ?, ?);';
         my $uri = $ENV{REQUEST_URI} // 'unknown';
         my $remote_addr = $ENV{REMOTE_ADDR} // 'unknown';
         my $time = localtime();
