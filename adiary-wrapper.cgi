@@ -59,7 +59,9 @@ if ($is_allowed_country || $is_allowed_bot) {
     if ($user_agent !~ /Windows|Mac OS|Linux|Android|iOS|iPhone|iPad/i) {
         # SNSBOTに間違いなく含まれない文字列が入ってるものはログに入れない
         # DBファイルの生成処理もあるとよさそう
-        my $dbh = DBI->connect('dbi:SQLite:dbname=deny_log.db');
+        my $dbh =  DBI->connect("dbi:SQLite:dbname=./deny_log.db", '', '.', {
+            RaiseError => 1
+        });
         # ハンドリング方法が分からないのでこけた時の時は考慮してない
         my $sql = 'INSERT INTO deny_log (url, country, remote_addr, user_agent, timestamp) VALUES (?, ?, ?, ?, ?);';
         my $uri = $ENV{REQUEST_URI} // 'unknown';
