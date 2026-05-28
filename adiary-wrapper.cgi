@@ -37,7 +37,8 @@ my @allowed_bot_patterns = (
     qr/hatena/i,
     qr/github/i,
     qr/tumblr/i,
-    qr/meta/i
+    qr/meta/i,
+    qr/bluesky/i,
 );
 
 # 許可するBOTかチェック
