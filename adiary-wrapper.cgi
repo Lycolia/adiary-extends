@@ -41,6 +41,7 @@ my @allowed_bot_patterns = (
     qr/bluesky/i,
     # rururu.appのクローラー
     qr/faraday/i,
+    qr/notionembedder/i,
 );
 
 # 許可するBOTかチェック
