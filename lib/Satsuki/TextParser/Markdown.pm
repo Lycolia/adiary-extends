@@ -817,7 +817,11 @@ sub parse_inline {
 		# escape special charactor "<" ">"
 		if ($self->{escape_spchar}) {
 			$_ =~ s!(.*?)(</[\w\-]+>|<[\w\-]+(?:\s+[\w\-]+(?:\s*=\s*(?:[^\s\"]+|"[^\"]*"))?)*\s*/?>|$)!
-				(($1 =~ s/</&lt;/rg) =~ s/>/&gt;/rg) . $2;
+				my $t   = $1;
+				my $tag = $2;
+				$t =~ s/</&lt;/g;
+				$t =~ s/>/&gt;/g;
+				$t . $tag;
 			!eg;
 		}
 	}
