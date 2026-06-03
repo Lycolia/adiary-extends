@@ -42,7 +42,10 @@ sub init_for_httpd {
 	$self->{myself2} = $path;
 
 	my $port = int($ENV{SERVER_PORT});
-	my $protocol = ($port == 443) ? 'https://' : 'http://';
+	my $https = (lc($ENV{HTTP_X_FORWARDED_PROTO}) eq 'https')
+		|| (lc($ENV{HTTPS}) eq 'on')
+		|| ($port == 443);
+	my $protocol = $https ? 'https://' : 'http://';
 	$self->{ServerURL} = $protocol . $ENV{SERVER_NAME} . (($port != 80 && $port != 443) ? ":$port" : '');
 }
 

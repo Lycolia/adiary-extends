@@ -209,7 +209,10 @@ sub init_path {
 	# プロトコル判別
 	if (!$self->{ServerURL}) {
 		my $port = int($ENV{SERVER_PORT});
-		my $protocol = ($port == 443) ? 'https://' : 'http://';
+		my $https = (lc($ENV{HTTP_X_FORWARDED_PROTO}) eq 'https')
+			|| (lc($ENV{HTTPS}) eq 'on')
+			|| ($port == 443);
+		my $protocol = $https ? 'https://' : 'http://';
 		$self->{ServerURL} = $protocol . $ENV{SERVER_NAME} . (($port != 80 && $port != 443) ? ":$port" : '');
 	} else {
 		substr($self->{ServerURL},-1) eq '/' && chop($self->{ServerURL});
@@ -624,7 +627,7 @@ sub regist_skeleton {
 	my $self = shift;
 	my $dir  = shift;
 	my $level = shift || 0;
-	if ($dir eq '') { 
+	if ($dir eq '') {
 		$self->error("Skeleton dir is '' in regist_skeleton (level=%d)", $level);
 		return;
 	}
