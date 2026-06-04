@@ -1007,7 +1007,7 @@ sub update_contents_list {
 	my %arts = map {$_->{pkey} => $_} @$arts;
 	my $unit = $self->{blog_cache_unit} || $pkey_max;
 	my $max  = int(($pkey_max+$unit-1)/$unit);
-	for(my $cnt=0; $cnt<$max; $cnt++) {
+	for(my $cnt=0; $cnt<=$max; $cnt++) {
 		my $base = $cnt*$unit;
 		my $end  = $base+$unit;
 		my %list;
