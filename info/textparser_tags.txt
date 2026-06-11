@@ -242,7 +242,6 @@ pubdist = text:${pubdist}
 #------------------------------------------------------------------------------
 em	= html:em
 bf	= html:strong
-warn	= html:strong.warning
 s	= html:del
 del	= html:del
 ins	= html:ins
@@ -319,3 +318,25 @@ scriptsize = html:span.xx-small
 
 *tex-off
 ::tex_mode=0
+
+#------------------------------------------------------------------------------
+# お知らせ・警告・エラーバナー
+#------------------------------------------------------------------------------
+
+info = 情報バナー, UTF-8, 1, block:
+<div class="notice_banner info">
+    <div><svg width="25" viewBox="0 0 24 24" aria-label="fontSize small"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path></svg></div>
+    <div class="message">#1</div>
+</div>
+
+warn = 警告バナー, UTF-8, 1, block:
+<div class="notice_banner warn">
+    <div><svg width="25" viewBox="0 0 24 24" aria-label="fontSize small"><path d="M12 5.99 19.53 19H4.47zM12 2 1 21h22zm1 14h-2v2h2zm0-6h-2v4h2z"></path></svg></div>
+    <div class="message">#1</div>
+</div>
+
+error = エラーバナー, UTF-8, 1, block:
+<div class="notice_banner error">
+    <div><svg width="25" viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m3.59-13L12 10.59 8.41 7 7 8.41 10.59 12 7 15.59 8.41 17 12 13.41 15.59 17 17 15.59 13.41 12 17 8.41z"></path></svg></div>
+    <div class="message">#1</div>
+</div>

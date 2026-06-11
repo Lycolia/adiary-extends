@@ -887,3 +887,134 @@ article h2, article div.body,#com {
 	border-width:		1px;
 }
 -------------------- */
+
+
+/*** 画像の横に文字を回り込ませる **************************/
+/* a.image { float: left; padding-right: 1em; } */
+
+/* サムネイルのみ回り込ませる */
+/* a.image.small { float: left; padding-right: 1em; } */
+
+/*** 字下げや段落間のスペース処理 **************************/
+/*
+div.body p {
+	text-indent:		1em;
+	margin:			1em 0 1em 0;
+}
+*/
+/*** ドロップダウンメニュー ********************************/
+/* 文字の変更 */ /*
+.dropdown-menu li {
+	font-size:	11pt;
+	font-family:	sans-serif;
+	font-weight:	bold;
+	padding:	0;
+	text-align:	center;
+} */
+/* 文字の変更（メニュー2項目目以降） */ /*
+.dropdown-menu li li {
+	font-weight:	bold;
+	padding:	0;
+	text-align:	center;
+} */
+
+/*** 追加のスタイル ****************************************/
+
+div.body-main img {
+  margin: 5px 5px 0 0;
+  vertical-align: bottom;
+}
+
+div.body-main p~figure {
+  margin-top: 1em;
+}
+
+div.body-main code:not(pre code) {
+  padding: .2em .3em;
+  margin: 0 .2em;
+  border-radius: 5px;
+  background: #f1f2f3;
+  color: #404040;
+  font-size: .9em;
+}
+
+div.body-main blockquote {
+  margin: 0;
+  padding-left: 0 0 20px 0;
+  color: #333;
+  border-left: 4px solid #ddd;
+  border-bottom: 0;
+  border-right: 0;
+  border-top: 0;
+  border-radius: 0px;
+  font-style: italic;
+}
+
+.body_table {
+  overflow-x: auto;
+  th, td {
+    white-space: pre;
+  }
+}
+
+.table-wrap {
+  overflow-x: scroll;
+}
+
+.table-wrap td {
+  white-space: nowrap;
+}
+
+span.commentator.author.login-user {
+  font-weight: bold;
+  color: #cc3300;
+}
+
+.notice_banner {
+    display: flex;
+    border-radius: 4px;
+    padding: 0.5em;
+    margin: 1em 0.5em;
+    align-items: center;
+    font-weight: bold;
+
+    &.info {
+        /* #66d1ff */
+        background-color: #e5f6fd;
+        color: #014361;
+		border: 1px solid #49abd4;
+
+		svg {
+			fill: #0288d1;
+		}
+    }
+
+    &.warn {
+        background-color: #fff4e5;
+        color: #663c00;
+		border: 1px solid #ffb70f;
+
+		svg {
+			fill: #ed6c02;
+		}
+    }
+
+    &.error {
+        background-color: #fdeded;
+        color: #5f2120;
+		border: 1px solid #ff6685;
+
+		svg {
+			fill: #d32f2f;
+		}
+    }
+
+    .message {
+        margin-left: 0.5em;
+    }
+
+    div:first-child {
+        margin-top: 5px;
+    }
+
+}
