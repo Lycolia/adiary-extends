@@ -17,9 +17,6 @@
 
 - Apache またはそれと互換性のあるWebサーバ
 - Perl 5.14.0以降（pure Perl可）
-- `/extlib/`にIP::Geolocation::MMDBがインストールされていること
-- adiaryディレクトリ直下に`DBIP-City.mmdb`があること
-  - [ダウンロードはここから](https://db-ip.com/db/download/ip-to-city-lite)
 
 # インストール方法
 
