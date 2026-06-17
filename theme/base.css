@@ -176,11 +176,8 @@ img.mahjong {
 .middle		{ vertical-align: middle; }
 
 /* インデント */
-p, p.i, .indent p { text-indent: 1em; }
 p.ni, .noindent p { text-indent: 0; }
-ul li > p, ol li > p {
-	text-indent:	0;
-}
+
 ul li > p:first-child,
 ol li > p:first-child {
 	margin-top:	0;

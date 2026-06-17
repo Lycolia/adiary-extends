@@ -876,48 +876,6 @@ nav.tree {
 	background-color:	#aac;			/* $c=btndisable */
 }
 
-/******************************************************************************/
-/*--------------------------------------------------------------------
-■枠線カスタマイズ
---------------------------------------------------------------------*/
-/*
-$option2:title=border-size
-$option2=1px-border
-article h2, article div.body,#com {
-	border-width:		1px;
-}
--------------------- */
-
-
-/*** 画像の横に文字を回り込ませる **************************/
-/* a.image { float: left; padding-right: 1em; } */
-
-/* サムネイルのみ回り込ませる */
-/* a.image.small { float: left; padding-right: 1em; } */
-
-/*** 字下げや段落間のスペース処理 **************************/
-/*
-div.body p {
-	text-indent:		1em;
-	margin:			1em 0 1em 0;
-}
-*/
-/*** ドロップダウンメニュー ********************************/
-/* 文字の変更 */ /*
-.dropdown-menu li {
-	font-size:	11pt;
-	font-family:	sans-serif;
-	font-weight:	bold;
-	padding:	0;
-	text-align:	center;
-} */
-/* 文字の変更（メニュー2項目目以降） */ /*
-.dropdown-menu li li {
-	font-weight:	bold;
-	padding:	0;
-	text-align:	center;
-} */
-
 /*** 追加のスタイル ****************************************/
 
 div.body-main img {
