@@ -40,7 +40,7 @@ sub new {
 	$tags->{audio}->{data} = \&audio_video;
 	$tags->{video}->{data} = \&audio_video;
 	#---end
-	
+
 	$tags->{audio}->{name} = 'audio';
 	$tags->{audio}->{mime} = \%audio_mime;
 	$tags->{video}->{name} = 'video';
@@ -92,8 +92,8 @@ sub audio_video {
 	}
 	if (!$src) { return''; }
 
-	$width  = $width  ?  " width=\"$width\""  : '';
-	$height = $height ? " height=\"$height\"" : '';
+	$width  = $width  ?  " width=\"$width\""  : ' width="480"';
+	$height = $height ? " height=\"$height\"" : ' height="270"';
 
 	return "<$tname$width$height controls>$src(Browser not support $tname tag) <a class=\"$tname\" href=\"$url0\">$url0</a></$tname>";
 }
