@@ -1,4 +1,3 @@
-
 <div align="center">
   <img src="pub-dist/default-logo.svg" height="64" width="64">
 </div>
