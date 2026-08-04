@@ -263,7 +263,7 @@ sub parse_block {
 			$x = '## ' . pop(@p_block);
 		}
 
-		if ($x =~ /^(#+)\s*(.*?)\s*\#*$/) {
+		if ($x =~ /^(#+)\s+(.*?)$/) {
 			$self->p_block_end(\@ary, \@p_block, $pmode);
 			my $level = length($1);
 			my $title = $2;
