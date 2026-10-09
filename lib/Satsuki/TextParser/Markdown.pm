@@ -483,9 +483,12 @@ sub parse_block {
 		#---------------------------------------------------------------
 		# [GFM] テーブル
 		#---------------------------------------------------------------
-		if ($self->{gfm_ext} && $blank
+		# [GFM] 段落の途中からでも始められる（リスト項目内のテキストの直後など）。
+		# その場合は誤検出を避けるため、2行目が区切り行（|-|:-:|など）であることを厳密に確認する
+		if ($self->{gfm_ext}
 		 && $x =~ /^\s*\|/
 		 && $lines->[0] =~ /^\s*|(?:\s*:?\-{3,}:?\s*\|)+\s*$/
+		 && ($blank || $lines->[0] =~ /^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$/)
 		) {
 			my @buf = ($x);
 			while(@$lines && $lines->[0] =~ /\|/) {
@@ -523,6 +526,7 @@ sub parse_block {
 				unshift(@$lines, @buf);
 			} else {
 				# テーブル展開
+				$self->p_block_end(\@ary, \@p_block, $pmode);
 				push(@ary, "<div class=\"body_table\"><table><thead><tr>\x02");
 				push(@ary, "\t<th>" . join("</th>\n\t<th>", map { s/^\s+|\s+$//gr } @th) . "</th>");
 				push(@ary, "</tr></thead>\x02");
