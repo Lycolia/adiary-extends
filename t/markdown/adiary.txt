@@ -1,0 +1,71 @@
+=== 目次
+--- options: sectioning=1
+--- input
+# 見出し
+
+[*toc]
+--- expected
+<section>
+<h3 id="見出し"><a href="/0001#見出し">見出し</a></h3>
+<ul class="toc">
+	<li><a href="/0001#見出し">見出し</a></li>
+</ul>
+</section>
+
+=== 続きを読む
+--- input
+前
+
+====
+
+後
+--- expected
+<p>前</p>
+<!--%SeeMore%-->
+<p>後</p>
+
+=== 画像アルバムの画像
+--- input
+[image:S:adiary/2026/01/:a.png:キャプション]
+--- expected
+<p><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="キャプション" data-fancybox="k1"><img alt="キャプション" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a></p>
+
+=== 画像を並べても参照リンクにならない
+--- input
+[image:S:adiary/2026/01/:a.png:A][image:S:adiary/2026/01/:b.png:B]
+--- expected
+<p><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="A" data-fancybox="k1"><img alt="A" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a><a href="pub/blog/image/adiary/2026/01/b.png" class="tag-image-S" title="B" data-fancybox="k1"><img alt="B" src="pub/blog/image/adiary/2026/01/.thumbnail/b.png.jpg"></a></p>
+
+=== 画像のキャプションがあるときだけ figure で囲む
+# キャプションは、画像の後の2つ目以降の引数に # を付けて書く
+# （<p> の中に <figure> が入るのは既知の問題。使用数0のため未対応）
+--- input
+[image:S:adiary/2026/01/:a.png:代替:#説明]
+--- expected
+<p><figure><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="代替" data-fancybox="k1"><img alt="代替" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a><figcaption>説明</figcaption></figure></p>
+
+=== YouTube
+--- input
+[youtube:abc-DEF_123]
+--- expected
+<p><module name="youtube" vid="abc-DEF_123"></p>
+
+=== URLの埋め込み（YouTube）
+--- input
+[&https://www.youtube.com/watch?v=n_D__CT5-H0&t=4279s]
+--- expected
+<p><module name="youtube" vid="n_D__CT5-H0" width="480" height="270" opt="start=4279"></p>
+
+=== バナー
+--- input
+[info:お知らせ]
+--- expected
+<p><div class="notice_banner info">    <div><svg width="25" viewBox="0 0 24 24" aria-label="fontSize small"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path></svg></div>    <div class="message">お知らせ</div></div></p>
+
+=== 非対応: 注釈 ((注釈)) は文章
+--- todo: 作り直しで対応（非対応の記法を文章として表示）
+--- input
+本文((注釈))
+--- expected
+<p>本文((注釈))</p>
+
