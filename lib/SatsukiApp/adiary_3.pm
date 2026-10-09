@@ -413,6 +413,7 @@ sub image_upload_form {
 			$count_f++;
 			next;
 		}
+		$fname = $_->{name};	# リネームされた場合は保存したファイル名
 		$count_s++;
 		$ROBJ->message('Upload: %s', $fname);
 		push(@files, $fname);
@@ -488,9 +489,18 @@ sub do_upload {
 	my $file_size = $file_h->{size};
 	my $tmp_file  = $file_h->{tmp};		# 読み込んだファイルデータ(tmp file)
 
+	# 中間拡張子が許可されていなければ、中間の . を _ に置き換える
+	#   photo.edited.jpg → photo_edited.jpg
+	if (! $self->album_check_ext($file_name) && $file_name =~ /^(.+)\.([^\.]+)$/) {
+		my $base = $1;
+		my $ext  = $2;
+		$base =~ tr/./_/;
+		$file_name = "$base.$ext";
+	}
+
 	# 拡張子チェック
 	if (! $self->album_check_ext($file_name)) {
-		$ROBJ->message("File extension error : %s", $file_name);
+		$ROBJ->message("File extension error : %s", $file_h->{name});
 		return 3;
 	}
 
@@ -499,34 +509,24 @@ sub do_upload {
 	if (-e $save_file && !$file_h->{overwrite}) {	# 同じ名前のファイルが存在する
 		# リネームして保存
 		my $timestamp = $ROBJ->time2timehash(time);
-		my $safe_filename = $ROBJ->fs_encode($file_name);
-		$safe_filename =~ /^(?<name>.*?)\.(?<ext>[^\.]+)$/;
-		my $full_filename = $+{name} . $timestamp->{year} . $timestamp->{mon} . $timestamp->{day} . $timestamp->{hour} . $timestamp->{min} . $timestamp->{sec} . "." . $+{ext};
-		my $rename_file = $dir . $full_filename;
-
-		my $fail;
-		if ($tmp_file) {
-			if ($ROBJ->file_move($tmp_file, $rename_file)) { $fail=21; }
-		} else {
-			if ($ROBJ->fwrite_lines($rename_file, $file_h->{data})) { $fail=22; }
-		}
-
-		if ($fail) {	# 保存失敗
-			$ROBJ->message("File can't write '%s'", $file_name);
-			return $fail;
-		}
-	} else {
-		my $fail;
-		if ($tmp_file) {
-			if ($ROBJ->file_move($tmp_file, $save_file)) { $fail=21; }
-		} else {
-			if ($ROBJ->fwrite_lines($save_file, $file_h->{data})) { $fail=22; }
-		}
-		if ($fail) {	# 保存失敗
-			$ROBJ->message("File can't write '%s'", $file_name);
-			return $fail;
-		}
+		$file_name =~ /^(?<name>.*?)\.(?<ext>[^\.]+)$/;
+		$file_name = $+{name} . $timestamp->{year} . $timestamp->{mon} . $timestamp->{day} . $timestamp->{hour} . $timestamp->{min} . $timestamp->{sec} . "." . $+{ext};
+		$save_file = $dir . $ROBJ->fs_encode($file_name);
 	}
+
+	my $fail;
+	if ($tmp_file) {
+		if ($ROBJ->file_move($tmp_file, $save_file)) { $fail=21; }
+	} else {
+		if ($ROBJ->fwrite_lines($save_file, $file_h->{data})) { $fail=22; }
+	}
+	if ($fail) {	# 保存失敗
+		$ROBJ->message("File can't write '%s'", $file_name);
+		return $fail;
+	}
+	# 実際に保存したファイル名を呼び出し元へ返す
+	$file_h->{name} = $file_name;
+
 	# サムネイル削除
 	$ROBJ->file_delete( "${dir}.thumbnail/$file_name.jpg" );
 	return 0;	# 成功
