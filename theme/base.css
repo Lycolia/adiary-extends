@@ -272,6 +272,9 @@ ol.lower-alpha	> li { list-style-type: lower-alpha; }
 ol.upper-roman	> li { list-style-type: upper-roman; }
 ol.lower-roman	> li { list-style-type: lower-roman; }
 
+/* チェックボックス付きリスト（Markdown の - [ ] / - [x]）。リストの記号を出さない */
+li.task-list-item { list-style-type: none; }
+
 /* option list */
 .body table.option-list th {
 	font-weight:	normal;

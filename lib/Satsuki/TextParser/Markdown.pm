@@ -26,7 +26,6 @@ sub new {
 	$self->{sectioning}   = 1;	# sectionタグを適時挿入する
 	$self->{gfm_ext}      = 1;	# GitHub Flavored Markdown拡張を使用する
 	$self->{strict_list}  = 1;	# リスト開始記号が異なる時、違うブロックと判定する（標準非準拠）
-	$self->{section_link} = 0;	# 見出しタグにリンクを挿入する
 
 	$self->{satsuki_tags}     = 0;	# satsuki記法のタグを有効にする
 	$self->{satsuki_syntax_h} = 1;	# syntaxハイライトをsatsuki記法に準拠させる
@@ -400,20 +399,26 @@ sub parse_block {
 			if (@$li) { push(@ul, $li); }
 
 			# [GFM] checkbox list
+			# 項目には task-list-item クラスを付ける（リストの記号を消すため。GitHubと同じクラス名）
+			my %task;
 			if ($self->{gfm_ext}) {
 				foreach my $li (@ul) {
-					if ($li->[0] =~ /^\[( |x)\](.*)/) {
+					# [GFM] [ ] / [x] / [X] の後に空白が必要。チェックボックスの記号は表示しない
+					if ($li->[0] =~ /^\[([ xX])\](?: +(.*)|$)/) {
+						my $checked = $1 ne ' ';
 						$li->[0] = '<label><input type="checkbox"'
-							 . ($1 eq 'x' ? ' checked>' : '>')
-							 . $li->[0] . '</label>';
+							 . ($checked ? ' checked>' : '>')
+							 . $2 . '</label>';
+						$task{$li} = 1;
 					}
 				}
 			}
 
 			# nest
 			foreach my $li (@ul) {
+				my $li_tag = $task{$li} ? '<li class="task-list-item">' : '<li>';
 				if ($#$li == 0) {
-					push(@ary, $p{$li} ? "<li><p>$li->[0]</p></li>" : "<li>$li->[0]</li>");
+					push(@ary, $p{$li} ? "$li_tag<p>$li->[0]</p></li>" : "$li_tag$li->[0]</li>");
 					next;
 				}
 				# [M] リストネスト時は先頭スペースを最大3つ除去する
@@ -425,7 +430,7 @@ sub parse_block {
 
 				my $blk = $self->parse_nest_block( $li );
 				if ($blk->[$#$blk] eq '') { pop(@$blk); }
-				$blk->[0] = '<li>' . $blk->[0];
+				$blk->[0] = $li_tag . $blk->[0];
 				$blk->[$#$blk] .= '</li>';
 				push(@ary, @$blk);
 			}
@@ -483,9 +488,12 @@ sub parse_block {
 		#---------------------------------------------------------------
 		# [GFM] テーブル
 		#---------------------------------------------------------------
-		if ($self->{gfm_ext} && $blank
+		# [GFM] 段落の途中からでも始められる（リスト項目内のテキストの直後など）。
+		# その場合は誤検出を避けるため、2行目が区切り行（|-|:-:|など）であることを厳密に確認する
+		if ($self->{gfm_ext}
 		 && $x =~ /^\s*\|/
 		 && $lines->[0] =~ /^\s*|(?:\s*:?\-{3,}:?\s*\|)+\s*$/
+		 && ($blank || $lines->[0] =~ /^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$/)
 		) {
 			my @buf = ($x);
 			while(@$lines && $lines->[0] =~ /\|/) {
@@ -523,6 +531,7 @@ sub parse_block {
 				unshift(@$lines, @buf);
 			} else {
 				# テーブル展開
+				$self->p_block_end(\@ary, \@p_block, $pmode);
 				push(@ary, "<div class=\"body_table\"><table><thead><tr>\x02");
 				push(@ary, "\t<th>" . join("</th>\n\t<th>", map { s/^\s+|\s+$//gr } @th) . "</th>");
 				push(@ary, "</tr></thead>\x02");
@@ -675,6 +684,12 @@ sub parse_inline {
 
 	# Satsuki parser obj
 	my $satsuki = $self->{satsuki_obj};
+
+	# [S] 画像タグはキャプションが無ければ <figure> で囲まない。
+	# 画像は段落の中に出力されるため、<p> の中に <figure> が入るとHTMLとして不正になる。
+	# （このパーサーの処理中だけ有効。他の記法やテーマ向けの出力は変えない）
+	my $tag_opt = $satsuki || {};
+	local $tag_opt->{image_no_figure} = 1;
 
 	# 注釈
 	my @footnote;

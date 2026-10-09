@@ -887,6 +887,13 @@ div.body-main p~figure {
   margin-top: 1em;
 }
 
+/* 記事中の画像（[image:...]）。Markdownの記事では <figure> で囲まず段落の中に出るため、
+   画像のリンクに <figure> と同じ余白を付ける */
+div.body-main a[class^="tag-image"] {
+  display: inline-block;
+  margin-top: 1em;
+}
+
 div.body-main code:not(pre code) {
   padding: .2em .3em;
   margin: 0 .2em;
