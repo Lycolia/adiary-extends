@@ -26,7 +26,6 @@ sub new {
 	$self->{sectioning}   = 1;	# sectionタグを適時挿入する
 	$self->{gfm_ext}      = 1;	# GitHub Flavored Markdown拡張を使用する
 	$self->{strict_list}  = 1;	# リスト開始記号が異なる時、違うブロックと判定する（標準非準拠）
-	$self->{section_link} = 0;	# 見出しタグにリンクを挿入する
 
 	$self->{satsuki_tags}     = 0;	# satsuki記法のタグを有効にする
 	$self->{satsuki_syntax_h} = 1;	# syntaxハイライトをsatsuki記法に準拠させる
