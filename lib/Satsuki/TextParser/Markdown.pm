@@ -402,10 +402,12 @@ sub parse_block {
 			# [GFM] checkbox list
 			if ($self->{gfm_ext}) {
 				foreach my $li (@ul) {
-					if ($li->[0] =~ /^\[( |x)\](.*)/) {
+					# [GFM] [ ] / [x] / [X] の後に空白が必要。チェックボックスの記号は表示しない
+					if ($li->[0] =~ /^\[([ xX])\](?: +(.*)|$)/) {
+						my $checked = $1 ne ' ';
 						$li->[0] = '<label><input type="checkbox"'
-							 . ($1 eq 'x' ? ' checked>' : '>')
-							 . $li->[0] . '</label>';
+							 . ($checked ? ' checked>' : '>')
+							 . $2 . '</label>';
 					}
 				}
 			}
