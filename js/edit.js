@@ -214,6 +214,110 @@ adiary.load_contents_list($upsel);
 }
 
 //##############################################################################
+// ■サムネイル（OGP画像）の選択
+//##############################################################################
+// name="ogp" の入力欄が実体。空なら記事の最初の画像（サーバー側で自動選択）
+{
+	const $picker = $('#thumbnail-picker');
+	const $ogp    = $('#ogp-input');
+	const imgdir  = $('#image-dir').text();		// 画像ディレクトリ（相対）
+	const img_url = adiary.Basepath + imgdir;
+	const img_ext = /\.(?:jpe?g|png|gif|webp|apng|bmp|tiff?|ico)$/i;
+
+	// [image:S:folder/:file:caption] 記法と、画像ディレクトリ内を指すURLを出現順に拾う
+	const dir_re = imgdir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const img_re = new RegExp('\\[image:[^:\\]]*:([^:\\]]*/):([^:\\]]+)|' + dir_re + '([^\\s"\'<>()\\]]+)', 'g');
+
+	// 画像ディレクトリからの相対パスの一覧を返す（サムネイルは元画像に戻す）
+	function find_images(text) {
+		const list = [];
+		img_re.lastIndex = 0;
+		let m;
+		while((m = img_re.exec(text))) {
+			let path = (m[3] !== undefined) ? m[3] : m[1] + m[2];
+			path = path.replace(/(^|\/)\.thumbnail\/(.+)\.jpg$/, '$1$2');
+			if (img_ext.test(path) && list.indexOf(path) < 0) list.push(path);
+		}
+		return list;
+	}
+
+	// 入力欄の値を画像パスに正規化（記法で入力された場合にも対応）
+	function current_value() {
+		const val = $ogp.val().trim();
+		if (val.indexOf(':') < 0) return val;
+		return find_images(val)[0] || val;
+	}
+
+	function thumb_url(path) {
+		const x = path.lastIndexOf('/');
+		const enc = function(s){ return s.split('/').map(encodeURIComponent).join('/') };
+		return img_url + enc(path.substr(0, x+1) + '.thumbnail/' + path.substr(x+1) + '.jpg');
+	}
+	function full_url(path) {
+		return img_url + path.split('/').map(encodeURIComponent).join('/');
+	}
+
+	function make_item(path, label, value, selected) {
+		const $li = $('<li>').attr('data-value', value).attr('title', label || path);
+		if (selected) $li.addClass('selected');
+		if (path) {
+			const $img = $('<img>').attr({ src: thumb_url(path), alt: '', loading: 'lazy' });
+			$img.one('error', function(){ $img.attr('src', full_url(path)) });
+			$li.append($img);
+		}
+		if (label) $li.append( $('<span>').addClass('label').text(label) );
+		return $li;
+	}
+
+	let images = [];
+	function render() {
+		const cur = current_value();
+		$picker.empty();
+
+		// 自動（記事の最初の画像）
+		const auto_label = $('#thumbnail-auto').text();
+		const $auto = make_item(images[0], auto_label, '', cur == '');
+		$auto.attr('title', auto_label + ' : ' + (images.length ? $('#thumbnail-auto-help').text() : $('#thumbnail-none').text()));
+		$picker.append($auto);
+
+		images.forEach(function(path){
+			$picker.append( make_item(path, '', path, cur == path) );
+		});
+		// 記事にない画像が指定されている
+		if (cur != '' && images.indexOf(cur) < 0) {
+			$picker.append( make_item(cur.indexOf(':') < 0 ? cur : '', $('#thumbnail-direct-label').text(), cur, true) );
+		}
+	}
+
+	$picker.on('click', 'li', function(evt){
+		$ogp.val( $(evt.currentTarget).attr('data-value') );
+		render();
+	});
+	$ogp.on('input', render);
+
+	// 記事本文の変更を反映（アルバムからの挿入等はinputイベントが来ないので定期確認）
+	let last_text;
+	function rescan() {
+		const text = $edit.val();
+		if (text === last_text) return;
+		last_text = text;
+		const list = find_images(text);
+		if (list.join("\n") === images.join("\n")) return;
+		images = list;
+		render();
+	}
+	rescan();
+	render();
+	setInterval(rescan, 1500);
+
+	// 保存済みの値が記事の最初の画像と同じなら「自動」扱いにする
+	if (images.length && current_value() == images[0]) {
+		$ogp.val('');
+		render();
+	}
+}
+
+//##############################################################################
 // ■公開状態の変更
 //##############################################################################
 {

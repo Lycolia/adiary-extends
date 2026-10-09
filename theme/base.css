@@ -562,6 +562,54 @@ article.edit span.tag {
 #tag-select-details summary {
 	cursor:			pointer;
 }
+/* サムネイル選択 */
+ul#thumbnail-picker {
+	list-style:		none;
+	display:		flex;
+	flex-wrap:		wrap;
+	gap:			6px;
+	margin:			4px 0;
+	padding:		0;
+}
+#thumbnail-picker li {
+	position:		relative;
+	width:			80px;
+	height:			60px;
+	margin:			0;
+	padding:		0;
+	border:			2px solid #ccc;
+	border-radius:		4px;
+	overflow:		hidden;
+	cursor:			pointer;
+	background-color:	#f4f4f4;
+}
+#thumbnail-picker li:hover {
+	border-color:		#93b3ff;
+}
+#thumbnail-picker li.selected {
+	border-color:		#36c;
+	box-shadow:		0 0 0 1px #36c;
+}
+#thumbnail-picker img {
+	width:			100%;
+	height:			100%;
+	object-fit:		cover;
+	display:		block;
+}
+#thumbnail-picker .label {
+	position:		absolute;
+	left:			0;
+	right:			0;
+	bottom:			0;
+	font-size:		9pt;
+	text-align:		center;
+	color:			#fff;
+	background-color:	rgba(0,0,0,0.55);
+}
+#thumbnail-direct summary {
+	cursor:			pointer;
+	font-size:		9pt;
+}
 
 /*--------------------------------------------------------------------
 ●フォームポップアップ
