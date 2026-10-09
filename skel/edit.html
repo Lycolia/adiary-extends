@@ -281,6 +281,8 @@
 <div style="display:none"><!-- display none -->
 <span id="new-tag-append">追加</span>
 <span id="new-tag-cancel">キャンセル</span>
+<span id="new-tag-close">閉じる</span>
+<span id="new-tag-create">「%t」を新規タグとして追加</span>
 <span id="edit-confirm">他にこの記事を編集している人がいますが、編集を継続しますか？%u</span>
 <span id="msg-multiline">複数行を一度に処理できません。</span>
 <span id="msg-upload-error">アップロードに失敗しました。</span>
@@ -292,12 +294,19 @@
 
 <@> タグ追加フォーム
 <form id="tag-select-form">
+<div>
+<input id="input-new-tag" type="text" class="w200 mono" placeholder="入力して絞り込み" autocomplete="off">
+<ul id="tag-candidates"></ul>
+</div>
+<details id="tag-select-details">
+<summary>一覧から選ぶ</summary>
 <div><select name="taglist" id="tag-select" data-url="<@Basepath><@v.blogpub_dir>taglist.json?<@v.blog.json_tm>">
-	<option value="" class="special" data-new="1">【タグを選択か入力】</option>
+	<option value="" class="special" data-new="1">【タグを選択】</option>
 </select></div>
+</details>
 <div style="margin-top: 1em;">
-入力 <input id="input-new-tag" type="text" class="w200 mono"><br>
-※階層の区切りは「<span class="mono">::</span>」です。<br>※「,」は使用できません。</span>
+※↑↓で選択、Enterで追加します。続けて追加できます。<br>
+※階層の区切りは「<span class="mono">::</span>」です。<br>※「,」は使用できません。
 </div>
 </form>
 

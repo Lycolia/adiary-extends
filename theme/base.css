@@ -521,6 +521,47 @@ article.edit span.tag {
 	padding:		0px 4px;
 	margin-right:		6px;
 }
+/* タグ追加ダイアログ */
+#tag-select-form #input-new-tag {
+	width:			100%;
+	box-sizing:		border-box;
+}
+.ui-dialog ul#tag-candidates {
+	list-style:		none;
+	margin:			4px 0;
+	padding:		0;
+	max-height:		16em;
+	overflow-y:		auto;
+}
+#tag-candidates:empty {
+	display:		none;
+}
+#tag-candidates li {
+	display:		flex;
+	justify-content:	space-between;
+	padding:		2px 6px;
+	cursor:			pointer;
+	border-radius:		4px;
+}
+#tag-candidates li:hover {
+	background-color:	#e4e8f4;
+}
+#tag-candidates li.selected {
+	background-color:	#c8d4f8;
+}
+#tag-candidates li .qt {
+	color:			#888;
+	margin-left:		1em;
+}
+#tag-candidates li.new-tag {
+	color:			#36c;
+}
+#tag-select-details {
+	margin-top:		0.5em;
+}
+#tag-select-details summary {
+	cursor:			pointer;
+}
 
 /*--------------------------------------------------------------------
 ●フォームポップアップ

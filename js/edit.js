@@ -14,7 +14,18 @@ const $upsel  = $secure('#upnode-select');
 const $edit   = $('#editarea');
 const CSRF_key = $('#csrf-key').val();
 
-adiary.load_tags_list($tagsel);
+// タグ一覧 [{ name: "親::子", qt: 使用数 }, ...]
+const all_tags = [];
+adiary.load_tags_list($tagsel, function(data){
+	const r_func = function(ary, head) {
+		for(var i=0; i<ary.length; i++) {
+			const name = head + ary[i].title;
+			all_tags.push({ name: name, lc: name.toLowerCase(), qt: ary[i].qt || 0 });
+			if (ary[i].children) r_func( ary[i].children, name + '::' );
+		}
+	};
+	r_func(data, '');
+});
 adiary.load_contents_list($upsel);
 
 //##############################################################################
@@ -73,40 +84,119 @@ adiary.load_contents_list($upsel);
 	//--------------------------------------------------------------------------------
 	const $addtag  = $secure('#edit-add-tag');
 	const $tagform = $secure('#tag-select-form').detach();
+	const $inp     = $tagform.find('#input-new-tag');
+	const $cands   = $tagform.find('#tag-candidates');
+	const max_cands = 20;
 	var $div;
+
+	//--------------------------------------------------------------------------------
+	// ●候補の絞り込み
+	//--------------------------------------------------------------------------------
+	// 空白区切りの全語を含むタグを、完全一致→階層名の先頭一致→使用数の多い順に並べる
+	function match_rank(t, lc, words) {
+		if (t.lc == lc) return 2;
+		const segs = t.lc.split('::');
+		return words.every(function(w){
+			return segs.some(function(s){ return s.indexOf(w) == 0 });
+		}) ? 1 : 0;
+	}
+	function update_candidates() {
+		$cands.empty();
+		const text  = $inp.val().trim();
+		const words = text.toLowerCase().split(/\s+/).filter(function(w){ return w != '' });
+		if (!words.length) return;
+
+		const added = {};
+		$('#tags input[name="tag_ary"]').each(function(i, obj){ added[obj.value] = true; });
+
+		const lc = text.toLowerCase();
+		const hits = all_tags.filter(function(t){
+			if (added[t.name]) return false;
+			for(var i=0; i<words.length; i++)
+				if (t.lc.indexOf(words[i]) < 0) return false;
+			return true;
+		});
+		hits.forEach(function(t){ t.rank = match_rank(t, lc, words) });
+		hits.sort(function(a, b){
+			return (b.rank - a.rank) || (b.qt - a.qt);
+		});
+
+		for(var i=0; i<hits.length && i<max_cands; i++) {
+			const $li = $('<li>').attr('data-tag', hits[i].name);
+			$li.append( $('<span>').text(hits[i].name) );
+			$li.append( $('<span>').addClass('qt').text(hits[i].qt) );
+			$cands.append($li);
+		}
+		// 一致するタグがなければ新規タグとして追加
+		const exists = all_tags.some(function(t){ return t.name == text });
+		if (!exists && !added[text] && text.indexOf(',') < 0) {
+			const msg = $('#new-tag-create').text().replace('%t', text);
+			$cands.append( $('<li>').addClass('new-tag').attr('data-tag', text).text(msg) );
+		}
+		$cands.children().first().addClass('selected');
+	}
+
+	function move_selected(dir) {
+		const $li  = $cands.children();
+		if (!$li.length) return;
+		const cur  = $li.index( $li.filter('.selected') );
+		const next = (cur + dir + $li.length) % $li.length;
+		$li.removeClass('selected');
+		const $next = $li.eq(next).addClass('selected');
+		$next[0].scrollIntoView({ block: 'nearest' });
+	}
+
+	// 追加したらダイアログは閉じずに次の入力へ
+	function append_and_continue(tag) {
+		if (tag == '' || tag.indexOf(',') >= 0) return;
+		tag_append( tag );
+		$inp.val('');
+		update_candidates();
+		$inp.focus();
+	}
+
+	function append_selected() {
+		const $sel = $cands.children('.selected');
+		if ($sel.length) return append_and_continue( $sel.attr('data-tag') );
+		append_and_continue( $inp.val().trim() );
+	}
+
+	$inp.on('input', update_candidates);
+	$inp.on('keydown', function(evt){
+		// IME変換中のキー操作は無視
+		if (evt.originalEvent.isComposing || evt.keyCode == 229) return;
+		if (evt.keyCode == 38) { move_selected(-1); return false; }	// ↑
+		if (evt.keyCode == 40) { move_selected( 1); return false; }	// ↓
+		if (evt.keyCode != 13) return;
+		append_selected();
+		return false;
+	});
+	$cands.on('click', 'li', function(evt){
+		append_and_continue( $(evt.currentTarget).attr('data-tag') );
+	});
+
 	$addtag.click( function(){
 		$div = $('<div>').append( $tagform );
 
-		// 入力要素
-		var $inp = $tagform.find('#input-new-tag');
-
-		//enterで確定させる
-		function tag_append_func() {
-			var tag = $inp.val();
-			if (tag.match(',')) return false;
-			tag_append( tag );
-			$div.adiaryDialog('close');
-			return false;
-		}
-		$inp.keydown(function(evt){
-			if (evt.keyCode != 13) return;
-			return tag_append_func();
-		});
-
 		// ボタンの設定
 		var buttons = {};
-		var ok_func = buttons[$('#new-tag-append').text()] = tag_append_func;
-		buttons[ adiary.msg('cancel') ] = function(){
+		buttons[ $('#new-tag-append').text() ] = append_selected;
+		buttons[ $('#new-tag-close').text() ] = function(){
 			$div.adiaryDialog( 'close' );
 		};
 		$div.adiaryDialog({
 			modal:	true,
+			width:	Math.min(420, $(window).width() - 20),
 			minHeight: 200,
 			title:   $addtag.data('title'),
 			buttons: buttons,
+			open: function(){
+				$inp.focus();
+			},
 			beforeClose: function(){
 				$tagsel.val('');
 				$inp.val('');
+				$cands.empty();
 				$tagform.detach();
 			}
 		});
@@ -118,7 +208,8 @@ adiary.load_contents_list($upsel);
 	$tagsel.change(function(){
 		if ($(':selected', $tagsel).data('new')) return;
 		tag_append( $tagsel.val() );
-		$div.adiaryDialog( 'close' );
+		$tagsel.val('');
+		update_candidates();
 	});
 }
 
