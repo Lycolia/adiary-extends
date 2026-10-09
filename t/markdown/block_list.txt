@@ -143,8 +143,8 @@
 - [x] 完了
 --- expected
 <ul>
-<li><label><input type="checkbox">未完了</label></li>
-<li><label><input type="checkbox" checked>完了</label></li>
+<li class="task-list-item"><label><input type="checkbox">未完了</label></li>
+<li class="task-list-item"><label><input type="checkbox" checked>完了</label></li>
 </ul>
 
 === チェックボックス（大文字のX）
@@ -152,7 +152,7 @@
 - [X] 完了
 --- expected
 <ul>
-<li><label><input type="checkbox" checked>完了</label></li>
+<li class="task-list-item"><label><input type="checkbox" checked>完了</label></li>
 </ul>
 
 === チェックボックス（2行目以降もそのまま）
@@ -161,8 +161,18 @@
   説明
 --- expected
 <ul>
-<li><label><input type="checkbox">未完了</label><br />
+<li class="task-list-item"><label><input type="checkbox">未完了</label><br />
 説明</li>
+</ul>
+
+=== チェックボックスと普通の項目が混在
+--- input
+- [x] 完了
+- 普通の項目
+--- expected
+<ul>
+<li class="task-list-item"><label><input type="checkbox" checked>完了</label></li>
+<li>普通の項目</li>
 </ul>
 
 === ]の後に空白が無いものはチェックボックスにしない

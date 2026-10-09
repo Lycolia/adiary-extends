@@ -399,6 +399,8 @@ sub parse_block {
 			if (@$li) { push(@ul, $li); }
 
 			# [GFM] checkbox list
+			# 項目には task-list-item クラスを付ける（リストの記号を消すため。GitHubと同じクラス名）
+			my %task;
 			if ($self->{gfm_ext}) {
 				foreach my $li (@ul) {
 					# [GFM] [ ] / [x] / [X] の後に空白が必要。チェックボックスの記号は表示しない
@@ -407,14 +409,16 @@ sub parse_block {
 						$li->[0] = '<label><input type="checkbox"'
 							 . ($checked ? ' checked>' : '>')
 							 . $2 . '</label>';
+						$task{$li} = 1;
 					}
 				}
 			}
 
 			# nest
 			foreach my $li (@ul) {
+				my $li_tag = $task{$li} ? '<li class="task-list-item">' : '<li>';
 				if ($#$li == 0) {
-					push(@ary, $p{$li} ? "<li><p>$li->[0]</p></li>" : "<li>$li->[0]</li>");
+					push(@ary, $p{$li} ? "$li_tag<p>$li->[0]</p></li>" : "$li_tag$li->[0]</li>");
 					next;
 				}
 				# [M] リストネスト時は先頭スペースを最大3つ除去する
@@ -426,7 +430,7 @@ sub parse_block {
 
 				my $blk = $self->parse_nest_block( $li );
 				if ($blk->[$#$blk] eq '') { pop(@$blk); }
-				$blk->[0] = '<li>' . $blk->[0];
+				$blk->[0] = $li_tag . $blk->[0];
 				$blk->[$#$blk] .= '</li>';
 				push(@ary, @$blk);
 			}
