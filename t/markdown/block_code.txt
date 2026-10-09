@@ -72,3 +72,13 @@ x^2
 <pre><code class="language-math">x^2
 </code></pre>
 
+=== 非対応: 字下げしたフェンスは文章
+--- input
+   ```
+   code
+   ```
+--- expected
+<p>```<br />
+code<br />
+```</p>
+

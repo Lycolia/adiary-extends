@@ -220,3 +220,91 @@ b
 </ul>
 <p>b</p>
 
+=== 深い入れ子（5段）の後に浅い段へ戻る
+--- input
+- a
+  - b
+    - c
+      - d
+        - e
+    - f
+- g
+--- expected
+<ul>
+<li>a
+<ul>
+<li>b
+<ul>
+<li>c
+<ul>
+<li>d
+<ul>
+<li>e</li>
+</ul></li>
+</ul></li>
+<li>f</li>
+</ul></li>
+</ul></li>
+<li>g</li>
+</ul>
+
+=== 3段目の兄弟の項目の下に子を持つ
+--- input
+- a
+  - b
+    - c
+    - d
+      - e
+- g
+--- expected
+<ul>
+<li>a
+<ul>
+<li>b
+<ul>
+<li>c</li>
+<li>d
+<ul>
+<li>e</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>g</li>
+</ul>
+
+=== 項目内のコードフェンスでコードの字下げを保つ
+--- input
+- 例
+  ```json
+  {
+    "a": {
+      "b": 1
+    }
+  }
+  ```
+--- expected
+<ul>
+<li>例
+<pre><code class="language-json">{
+  "a": {
+    "b": 1
+  }
+}
+</code></pre></li>
+</ul>
+
+=== 非対応: 項目内で記号の幅より深く字下げしたフェンスは文章
+# フェンスは項目の内容の開始位置（「- 」なら2スペース）に揃えて書く
+--- input
+- 例
+    ```
+    Host
+    ```
+--- expected
+<ul>
+<li>例<br />
+```<br />
+Host<br />
+```</li>
+</ul>
+
