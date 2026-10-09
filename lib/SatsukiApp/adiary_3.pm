@@ -1039,12 +1039,16 @@ sub edit_articles {
 	my $event_name;
 	my $cevent_name;
 	if ($mode eq 'delete') {
-		# 削除
+		# 削除（ゴミ箱へ移動できた記事のみ削除する）
 		$event_name  = 'ARTICLES_DELETE';
 		$cevent_name = 'COMMENTS_DELETE';
 
+		$keylist = $self->move_articles_to_trash($keylist);
+		if (!@$keylist) {
+			return wantarray ? (1,0) : 1;
+		}
 		$DB->delete_match("${blogid}_tagart", 'a_pkey', $keylist);
-		# $DB->delete_match("${blogid}_rev", 'a_pkey', $keylist);
+		# 更新履歴はゴミ箱から戻すときのために残す（ゴミ箱から削除するときに消す）
 		$com = $DB->delete_match("${blogid}_com", 'a_pkey', $keylist);
 		$cnt = $DB->delete_match("${blogid}_art", 'pkey', $keylist);
 
@@ -1133,6 +1137,184 @@ sub edit_articles {
 		$self->call_event('ARTCOM_STATE_CHANGE',  $keylist);
 	}
 
+	return wantarray ? (0, $cnt) : 0;
+}
+
+################################################################################
+# ■ゴミ箱
+################################################################################
+# _trash    : 記事テーブルと同じカラム + deleted_tm, deleted_id
+# _trashcom : コメントテーブルと同じカラム
+# pkeyは元の記事/コメントのpkeyをそのまま使う（pkeyは再利用されないので戻せる）
+#-------------------------------------------------------------------------------
+# ●記事をゴミ箱へ移動（記事データ自体は呼び出し元で削除する）
+#-------------------------------------------------------------------------------
+# ret: ゴミ箱へ移動できた記事のpkey配列
+sub move_articles_to_trash {
+	my ($self, $keylist) = @_;
+	my $ROBJ = $self->{ROBJ};
+	my $DB   = $self->{DB};
+	my $blogid   = $self->{blogid};
+	my $art_cols = $self->table_info_cols( $self->art_table_info($blogid) );
+	my $com_cols = $self->table_info_cols( $self->com_table_info($blogid) );
+
+	my $arts = $DB->select_match("${blogid}_art", 'pkey', $keylist, '*cols', $art_cols);
+	my @moved;
+	foreach my $art (@$arts) {
+		my $pkey = $art->{pkey};
+		# 前回戻すのに失敗した残骸があれば消しておく
+		$DB->delete_match("${blogid}_trashcom", 'a_pkey', $pkey);
+		$DB->delete_match("${blogid}_trash",    'pkey',   $pkey);
+
+		$art->{deleted_tm} = $ROBJ->{TM};
+		$art->{deleted_id} = $ROBJ->{Auth}->{id};
+		if (!$DB->insert("${blogid}_trash", $art)) {
+			$ROBJ->message("Can't move to trash: %s", $art->{title});
+			next;
+		}
+		my $coms = $DB->select_match("${blogid}_com", 'a_pkey', $pkey, '*cols', $com_cols);
+		my $fail;
+		foreach(@$coms) {
+			if (!$DB->insert("${blogid}_trashcom", $_)) { $fail=1; last; }
+		}
+		if ($fail) {
+			$DB->delete_match("${blogid}_trashcom", 'a_pkey', $pkey);
+			$DB->delete_match("${blogid}_trash",    'pkey',   $pkey);
+			$ROBJ->message("Can't move to trash: %s", $art->{title});
+			next;
+		}
+		push(@moved, $pkey);
+	}
+	return \@moved;
+}
+
+#-------------------------------------------------------------------------------
+# ●ゴミ箱の記事一覧
+#-------------------------------------------------------------------------------
+sub load_trash_list {
+	my $self = shift;
+	my $DB   = $self->{DB};
+	if (!$self->{allow_edit}) { return []; }
+
+	my @opt;
+	if ($self->{blog}->{edit_by_author_only} && !$self->{blog_admin}) {
+		@opt = ('id', $self->{ROBJ}->{Auth}->{id});	# 自分の記事のみ
+	}
+	return $DB->select_match("$self->{blogid}_trash", @opt, '*sort', '-deleted_tm',
+		'*cols', [qw(pkey title tags ctype link_key name id yyyymmdd coms_all enable deleted_tm deleted_id)]);
+}
+
+# 操作できるゴミ箱の記事に絞る
+sub filter_trash_keys {
+	my ($self, $keylist) = @_;
+	if (ref($keylist) ne 'ARRAY') { $keylist = [ $keylist ]; }
+	$keylist = [ grep { $_ > 0 } map { int($_) } @$keylist ];
+	if (!@$keylist) { return []; }
+
+	my @opt;
+	if ($self->{blog}->{edit_by_author_only} && !$self->{blog_admin}) {
+		@opt = ('id', $self->{ROBJ}->{Auth}->{id});
+	}
+	my $ary = $self->{DB}->select_match("$self->{blogid}_trash", 'pkey', $keylist, @opt, '*cols', ['pkey']);
+	return [ map { $_->{pkey} } @$ary ];
+}
+
+#-------------------------------------------------------------------------------
+# ●ゴミ箱から戻す
+#-------------------------------------------------------------------------------
+sub restore_articles {
+	my ($self, $keylist) = @_;
+	my $ROBJ = $self->{ROBJ};
+	my $DB   = $self->{DB};
+	my $blogid = $self->{blogid};
+	if (!$self->{allow_edit}) { $ROBJ->message('Operation not permitted'); return 5; }
+
+	$keylist = $self->filter_trash_keys($keylist);
+	if (!@$keylist) { return wantarray ? (0,0) : 0; }
+
+	my $art_cols = $self->table_info_cols( $self->art_table_info($blogid) );
+	my $com_cols = $self->table_info_cols( $self->com_table_info($blogid) );
+	my $arts = $DB->select_match("${blogid}_trash", 'pkey', $keylist, '*cols', $art_cols);
+
+	my @restored;
+	my $com_cnt = 0;
+	foreach my $art (@$arts) {
+		my $pkey = $art->{pkey};
+		if ($DB->select_match_limit1("${blogid}_art", 'pkey', $pkey, '*cols', ['pkey'])) {
+			$ROBJ->message("Article already exists: %s", $art->{title});
+			next;
+		}
+		# content keyが他の記事に使われていたら既定のkeyにする
+		if ($DB->select_match_limit1("${blogid}_art", 'link_key', $art->{link_key}, '*cols', ['pkey'])) {
+			$ROBJ->message("Content key '%s' is already used. Changed to '%s'.", $art->{link_key}, "0$pkey");
+			$art->{link_key} = "0$pkey";
+		}
+		if (!$DB->insert("${blogid}_art", $art)) {
+			$ROBJ->message("Can't restore: %s", $art->{title});
+			next;
+		}
+
+		# コメント
+		my $coms = $DB->select_match("${blogid}_trashcom", 'a_pkey', $pkey, '*cols', $com_cols);
+		foreach(@$coms) {
+			if ($DB->select_match_limit1("${blogid}_com", 'pkey', $_->{pkey}, '*cols', ['pkey'])) { next; }
+			$DB->insert("${blogid}_com", $_) && $com_cnt++;
+		}
+
+		# タグ
+		my @tag = $self->normalize_tag( $art->{tags} );
+		if (@tag) {
+			my $t_pkeys = $self->regist_tags($blogid, \@tag);
+			foreach(ref($t_pkeys) ? @$t_pkeys : ()) {	# 失敗時は -1
+				$DB->insert("${blogid}_tagart", {
+					a_pkey   => $pkey,
+					a_enable => $art->{enable},
+					t_pkey   => $_
+				});
+			}
+		}
+
+		$DB->delete_match("${blogid}_trashcom", 'a_pkey', $pkey);
+		$DB->delete_match("${blogid}_trash",    'pkey',   $pkey);
+		push(@restored, $pkey);
+	}
+
+	# イベント処理（タグ一覧、コンテンツ一覧、RSS等の再生成）
+	if (@restored) {
+		$self->call_event('ARTICLES_RESTORE',     \@restored);
+		$self->call_event('ARTICLE_STATE_CHANGE', \@restored);
+		if ($com_cnt) {
+			$self->call_event('COMMENT_STATE_CHANGE', \@restored);
+		}
+		$self->call_event('ARTCOM_STATE_CHANGE',  \@restored);
+	}
+	my $cnt = $#restored + 1;
+	return wantarray ? (0, $cnt) : 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●ゴミ箱から完全に削除
+#-------------------------------------------------------------------------------
+# $all : ゴミ箱を空にする（ブログ管理者のみ）
+sub purge_trash {
+	my ($self, $keylist, $all) = @_;
+	my $ROBJ = $self->{ROBJ};
+	my $DB   = $self->{DB};
+	my $blogid = $self->{blogid};
+	if (!$self->{allow_edit}) { $ROBJ->message('Operation not permitted'); return 5; }
+
+	if ($all) {
+		if (!$self->{blog_admin}) { $ROBJ->message('Operation not permitted'); return 5; }
+		my $ary = $DB->select_match("${blogid}_trash", '*cols', ['pkey']);
+		$keylist = [ map { $_->{pkey} } @$ary ];
+	} else {
+		$keylist = $self->filter_trash_keys($keylist);
+	}
+	if (!@$keylist) { return wantarray ? (0,0) : 0; }
+
+	$DB->delete_match("${blogid}_rev",      'a_pkey', $keylist);
+	$DB->delete_match("${blogid}_trashcom", 'a_pkey', $keylist);
+	my $cnt = $DB->delete_match("${blogid}_trash", 'pkey', $keylist);
 	return wantarray ? (0, $cnt) : 0;
 }
 

@@ -318,6 +318,177 @@ adiary.load_contents_list($upsel);
 }
 
 //##############################################################################
+// ■更新履歴
+//##############################################################################
+{
+	const $btn    = $secure('#edit-revision');
+	const $dialog = $secure('#revision-dialog').detach();
+	const $list   = $dialog.find('#revision-list');
+	const $title  = $dialog.find('#revision-title');
+	const $body   = $dialog.find('#revision-body');
+	const max_cells = 4000000;	// 差分計算の上限（行数の積）
+	let cur_rev;			// 表示中の版
+
+	function ajax_revision(data, callback) {
+		data.action = 'ajax_revision';
+		data.csrf_check_key = CSRF_key;
+		$.ajax({
+			type: 'POST',
+			url:  adiary.myself + '?etc/ajax_dummy',
+			dataType: 'json',
+			data: data,
+			success: callback,
+			error: function(){ callback(null) }
+		});
+	}
+
+	function format_tm(tm) {
+		const d = new Date(tm * 1000);
+		const z = function(n){ return (n < 10 ? '0' : '') + n };
+		return d.getFullYear() + '/' + z(d.getMonth()+1) + '/' + z(d.getDate())
+			+ ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+	}
+
+	//--------------------------------------------------------------------------
+	// ●行単位の差分（a → b）。大きすぎる場合は null
+	//--------------------------------------------------------------------------
+	function line_diff(a, b) {
+		// 前後の共通部分は比較しない
+		let s = 0;
+		while(s < a.length && s < b.length && a[s] === b[s]) s++;
+		let ea = a.length, eb = b.length;
+		while(ea > s && eb > s && a[ea-1] === b[eb-1]) { ea--; eb--; }
+		const A = a.slice(s, ea), B = b.slice(s, eb);
+		const n = A.length, m = B.length, w = m + 1;
+		if (n * m > max_cells) return null;
+
+		// LCS
+		const L = new Uint32Array((n+1) * w);
+		for(let i=n-1; i>=0; i--)
+			for(let j=m-1; j>=0; j--)
+				L[i*w+j] = (A[i] === B[j]) ? L[(i+1)*w+j+1] + 1 : Math.max(L[(i+1)*w+j], L[i*w+j+1]);
+
+		const out = [];
+		for(let k=0; k<s; k++) out.push([' ', a[k]]);
+		let i=0, j=0;
+		while(i<n && j<m) {
+			if (A[i] === B[j])                  { out.push([' ', A[i]]); i++; j++; }
+			else if (L[(i+1)*w+j] >= L[i*w+j+1]) { out.push(['-', A[i]]); i++; }
+			else                                 { out.push(['+', B[j]]); j++; }
+		}
+		for(; i<n; i++) out.push(['-', A[i]]);
+		for(; j<m; j++) out.push(['+', B[j]]);
+		for(let k=ea; k<a.length; k++) out.push([' ', a[k]]);
+		return out;
+	}
+
+	// 変更行の前後だけを表示する
+	function render_diff(diff) {
+		const ctx = 2;
+		const show = new Array(diff.length).fill(false);
+		diff.forEach(function(d, i){
+			if (d[0] == ' ') return;
+			for(let k=Math.max(0, i-ctx); k<=Math.min(diff.length-1, i+ctx); k++) show[k] = true;
+		});
+		$body.empty();
+		let skipped = false;
+		diff.forEach(function(d, i){
+			if (!show[i]) { skipped = true; return; }
+			if (skipped) { $body.append( $('<span>').addClass('rev-skip').text("…") ); skipped = false; }
+			const cls = d[0] == '-' ? 'rev-del' : d[0] == '+' ? 'rev-add' : 'rev-ctx';
+			$body.append( $('<span>').addClass(cls).text(d[0] + ' ' + d[1]) );
+		});
+		if (skipped) $body.append( $('<span>').addClass('rev-skip').text("…") );
+	}
+
+	function show_revision() {
+		$title.empty();
+		$body.empty().removeClass('rev-full');
+		if (!cur_rev) {
+			$body.text( $('#rev-select').text() );
+			return;
+		}
+		$title.html( cur_rev.title );
+
+		const mode = $dialog.find('input[name="rev_mode"]:checked').val();
+		const text = cur_rev.text;
+		if (mode == 'diff') {
+			const now  = $edit.val().replace(/\r\n?/g, "\n");
+			if (now === text) { $body.text( $('#rev-same').text() ); return; }
+			const diff = line_diff(text.split("\n"), now.split("\n"));
+			if (diff) return render_diff(diff);
+			$title.append( $('<div>').addClass('rev-note').text( $('#rev-too-large').text() ) );
+		}
+		$body.addClass('rev-full').text(text);
+	}
+	$dialog.find('input[name="rev_mode"]').on('change', show_revision);
+
+	//--------------------------------------------------------------------------
+	// ●一覧
+	//--------------------------------------------------------------------------
+	$list.on('click', 'li[data-pkey]', function(evt){
+		const $li = $(evt.currentTarget);
+		$list.children().removeClass('selected');
+		$li.addClass('selected');
+		ajax_revision({ rev: $li.attr('data-pkey') }, function(data){
+			if (!data) return;
+			data.text = data.text.replace(/\r\n?/g, "\n");
+			cur_rev = data;
+			show_revision();
+		});
+	});
+
+	function load_list() {
+		$list.empty();
+		cur_rev = undefined;
+		show_revision();
+		ajax_revision({ pkey: $('#edit-pkey').val() }, function(data){
+			if (!data || !data.length) {
+				$list.append( $('<li>').addClass('rev-empty').text( $('#rev-empty').text() ) );
+				return;
+			}
+			const chars = $('#rev-chars').text();
+			data.forEach(function(r){
+				const $li = $('<li>').attr('data-pkey', r.pkey);
+				$li.append( $('<span>').addClass('rev-tm').text( format_tm(r.update_tm || r.tm) ) );
+				$li.append( $('<span>').addClass('rev-len').text( chars.replace('%n', r.length.toLocaleString()) ) );
+				$li.append( $('<div>').addClass('rev-title').html( r.title ) );
+				$list.append($li);
+			});
+		});
+	}
+
+	//--------------------------------------------------------------------------
+	// ●ダイアログ
+	//--------------------------------------------------------------------------
+	$btn.click(function(){
+		const $div = $('<div>').append($dialog);
+		const buttons = {};
+		buttons[ $('#rev-load').text() ] = function(){
+			if (!cur_rev) return;
+			const msg = $('#rev-confirm').text().replace('%t', format_tm(cur_rev.update_tm || cur_rev.tm));
+			adiary.confirm(msg, function(ok){
+				if (!ok) return;
+				$edit.val(cur_rev.text).trigger('input');
+				$div.adiaryDialog('close');
+			});
+		};
+		buttons[ $('#new-tag-close').text() ] = function(){
+			$div.adiaryDialog('close');
+		};
+		$div.adiaryDialog({
+			modal:	true,
+			width:	Math.min(960, $(window).width() - 20),
+			minHeight: 300,
+			title:	$btn.data('title'),
+			buttons: buttons,
+			beforeClose: function(){ $dialog.detach(); }
+		});
+		load_list();
+	});
+}
+
+//##############################################################################
 // ■公開状態の変更
 //##############################################################################
 {

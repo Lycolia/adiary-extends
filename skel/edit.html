@@ -202,6 +202,9 @@
 	</select></span>
 
 	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'adiary/%y/')>" data-title="ファイルを選択">Upload</button>
+	<@ifexec(edit_pkey, begin)>
+	<button type="button" id="edit-revision" data-title="更新履歴">履歴</button>
+	<$end>
 	<@ifexec(!edit_pkey || art.draft, begin)>
 	<button type="submit" name="draft" value="1" id="save-draft">下書き<@if(edit_pkey, '保存', '作成')></button>
 	<$end>
@@ -269,7 +272,7 @@
 			<li>AGENT <@art.agent></li>
 		</ul></li>
 	</ul>
-<form method="POST" action="<@v.myself2>" class="delete js-check-form" data-confirm="本当にこの記事を削除しますか？" data-focus="cancel">
+<form method="POST" action="<@v.myself2>" class="delete js-check-form" data-confirm="この記事をゴミ箱へ移動しますか？<br>ゴミ箱から戻せます。" data-focus="cancel">
 	<input type="hidden" name="action" value="delete">
 	<input type="hidden" name="delete_pkey_ary" value="<@edit_pkey>">
 	<input type="hidden" name="title" value="<@art.title>">
@@ -357,5 +360,27 @@
 <div id="size-other" data-title="サムネイルサイズ">
 <input type="number" value="120" class="w50" min="60" max="800">px （60～800）
 </div>
+
+<@> 更新履歴ダイアログ
+<div id="revision-dialog">
+<div class="rev-wrap">
+	<ul id="revision-list"></ul>
+	<div id="revision-view">
+		<div class="rev-mode">
+			<label><input type="radio" name="rev_mode" value="diff" checked>現在の本文との差分</label>
+			<label><input type="radio" name="rev_mode" value="full">この版の全文</label>
+		</div>
+		<div id="revision-title"></div>
+		<pre id="revision-body"></pre>
+	</div>
+</div>
+</div>
+<span id="rev-load">この版を本文に読み込む</span>
+<span id="rev-confirm">本文を %t の版に置き換えます。保存するまでは確定しません。よろしいですか？</span>
+<span id="rev-empty">この記事の履歴はまだありません。</span>
+<span id="rev-select">左の一覧から版を選んでください。</span>
+<span id="rev-same">現在の本文と同じです。</span>
+<span id="rev-too-large">差分を出すには大きすぎるため、全文を表示しています。</span>
+<span id="rev-chars">%n文字</span>
 
 </div><!-- display none end -->
