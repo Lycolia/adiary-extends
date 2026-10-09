@@ -127,7 +127,8 @@ sub image {
 	}
 
 	my $tag = "<a href=\"$link\"$attr><img alt=\"$name\"$size src=\"$url\"></a>";
-	## if (!$caption) { return $tag; }
+	# キャプションが無ければ <figure> で囲まない（Markdownパーサーが指定する）
+	if (!$caption && $pobj->{image_no_figure}) { return $tag; }
 
 	return "<figure>$tag$caption</figure>";
 }

@@ -681,6 +681,12 @@ sub parse_inline {
 	# Satsuki parser obj
 	my $satsuki = $self->{satsuki_obj};
 
+	# [S] 画像タグはキャプションが無ければ <figure> で囲まない。
+	# 画像は段落の中に出力されるため、<p> の中に <figure> が入るとHTMLとして不正になる。
+	# （このパーサーの処理中だけ有効。他の記法やテーマ向けの出力は変えない）
+	my $tag_opt = $satsuki || {};
+	local $tag_opt->{image_no_figure} = 1;
+
 	# 注釈
 	my @footnote;
 	my %note_hash;
