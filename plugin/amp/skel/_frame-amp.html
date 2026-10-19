@@ -62,7 +62,7 @@
 <@amp.amp_css(begin_array)>
 	<@v.theme_dir>base.css
 	<@v.theme_dir><@v.theme>/<@v.theme_name>.css
-	<@v.theme_dir><@v.theme>/sphone.css
+	<@if(!v.responsive, #'<@v.theme_dir><@v.theme>/sphone.css')>
 	<@s.theme_custom> 
 	<@v.blogpub_dir>dynamic.css
 <$end>

@@ -1897,6 +1897,7 @@ sub special_system_mode {
 	$self->{special_system_mode} = 1;
 	# デフォルトテーマの強制ロード
 	$self->load_theme( $self->{default_theme} );
+	$self->check_sphone_after_theme_change();
 }
 
 #-------------------------------------------------------------------------------

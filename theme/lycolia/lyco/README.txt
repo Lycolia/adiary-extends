@@ -4,6 +4,7 @@ Author: nabe@abk
 Access: https://twitter.com/nabe_abk
 License: GPL
 Smartphone: yes
+Responsive: yes
 System-mode: yes
 
 ・WordPressでよくあるタイプのシンプルなテーマです。

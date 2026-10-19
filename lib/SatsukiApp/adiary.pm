@@ -143,7 +143,11 @@ sub main {
 	# Query/Form処理  ※テーマ選択より後に処理
 	$self->read_query_form();
 
-	# スマホ向け処理
+	# スマホ向け処理（レスポンシブ対応テーマでは行わない）
+	if ($self->{responsive}) {
+		$self->{sphone_ua} = $self->{sphone};
+		$self->{sphone}    = 0;
+	}
 	if ($self->{sphone}) { $self->init_for_sphone(); }
 
 	# 表示スケルトン選択
@@ -377,6 +381,18 @@ sub init_for_sphone {
 
 	# スマホ用初期化ルーチンを呼ぶ
 	$ROBJ->call( '_init_sphone' );
+}
+
+#-------------------------------------------------------------------------------
+# ●テーマ変更後のスマホ向け処理
+#-------------------------------------------------------------------------------
+# レスポンシブ対応テーマから非対応テーマに切り替わったとき用
+sub check_sphone_after_theme_change {
+	my $self = shift;
+	if ($self->{responsive} || $self->{sphone} || !$self->{sphone_ua}) { return; }
+
+	$self->{sphone} = $self->{sphone_ua};
+	$self->init_for_sphone();
 }
 
 #-------------------------------------------------------------------------------
@@ -649,6 +665,7 @@ sub system_mode {
 	if ($self->{blog}->{sysmode_notheme}){
 		# デフォルトテーマの選択
 		$self->load_theme( $self->{default_theme} );
+		$self->check_sphone_after_theme_change();
 	}
 }
 
@@ -1740,6 +1757,16 @@ sub load_theme {
 	$self->{theme}      = $theme;
 	$self->{template}   = $1;
 	$self->{theme_name} = $name;
+
+	# レスポンシブ対応テーマか？（README.txt のヘッダで判定）
+	$self->{responsive} = 0;
+	my $readme = "$dir$name/README.txt";
+	if (-r $readme) {
+		foreach(@{ $ROBJ->fread_lines_cached($readme) }) {
+			if ($_ !~ /^([\w\-]+):\s*(.*?)\s*$/) { last; }
+			if ($1 eq 'Responsive') { $self->{responsive} = ($2 eq 'yes') ? 1 : 0; last; }
+		}
+	}
 
 	# スケルトンテンプレートの登録
 	if (-r "${dir}_skel") {

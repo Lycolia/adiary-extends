@@ -31,7 +31,8 @@ $(function(){
 	}
 
 	// Smartphone mode
-	if (this.$body.hasClass('sp')) {
+	if (this.$body.hasClass('sp')
+	 || this.$body.hasClass('responsive') && window.matchMedia('(max-width: 640px)').matches) {
 		this.SP = 1;
 		this.DialogWidth    = 320;
 		this.DialogMinWidth =   0;

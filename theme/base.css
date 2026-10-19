@@ -236,6 +236,15 @@ body:not(.sp) .for-sp {
 body:not(.amp) .for-amp {
 	display:	none;
 }
+/* レスポンシブ対応テーマ */
+@media screen and (max-width: 640px) {
+	.responsive .for-pc {
+		display:	none;
+	}
+	body.responsive .for-sp {
+		display:	revert;
+	}
+}
 
 /* pre */
 pre {
@@ -809,6 +818,30 @@ div.popup-help, #popup-com {
 	box-sizing: border-box;
 }
 .sp input[type="date"].w120 { width: 120px; }
+
+/* スマホ（レスポンシブ対応テーマ） */
+@media screen and (max-width: 640px) {
+	.responsive .w120 { width: 100px; }
+	.responsive .w160 { width: 120px; }
+	.responsive .w200 { width: 140px; }
+	.responsive .w240 { width: 160px; }
+	.responsive .w280 { width: 180px; }
+	.responsive .w300 { width: 200px; }
+	.responsive .w320,
+	.responsive .w360,
+	.responsive .w400,
+	.responsive .w480,
+	.responsive .w500,
+	.responsive .w512,
+	.responsive .w520,
+	.responsive .w560,
+	.responsive .w600,
+	.responsive .w640 {
+		width:	100%;
+		box-sizing: border-box;
+	}
+	.responsive input[type="date"].w120 { width: 120px; }
+}
 
 /*--------------------------------------------------------------------
 ●メッセージシステム
