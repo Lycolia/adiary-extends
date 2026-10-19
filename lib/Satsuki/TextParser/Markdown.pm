@@ -79,6 +79,7 @@ sub parse {
 	$self->{ids}      = {};
 	$self->{footnotes}     = {};	# 脚注定義 [^id]: content
 	$self->{footnote_order}= [];	# 脚注の出現順序
+	$self->{footnote_refs} = {};	# 脚注ごとの参照の数
 
 	# parse main
 	$lines = $self->parse_block ($lines);
@@ -586,10 +587,18 @@ TEXT
 			my $content = $2;
 
 			# 複数行の脚注内容を収集（インデントされた行）
-			while(@$lines && $lines->[0] =~ /^(    |\t)(.*)$/) {
-				my $cont_line = $2;
-				$content .= "\n" . $cont_line;
-				shift(@$lines);
+			# [GFM] 空行を挟んでも、次の行がインデントされていれば脚注の続き（次の段落）
+			while(@$lines) {
+				if ($lines->[0] =~ /^(    |\t)(.*)$/) {
+					$content .= "\n" . $2;
+					shift(@$lines);
+					next;
+				}
+				my $i = 0;
+				while($i <= $#$lines && $lines->[$i] =~ /^\s*$/) { $i++; }
+				if (!$i || $i > $#$lines || $lines->[$i] !~ /^(    |\t)/) { last; }
+				$content .= "\n" x $i;
+				splice(@$lines, 0, $i);
 			}
 
 			# 脚注を保存
@@ -803,9 +812,10 @@ sub parse_inline {
 					if ($self->{footnote_order}[$i] eq $fn_id) { $num = $i + 1; last; }
 				}
 				my $id = "fn-$fn_id";
-				my $title_text = $self->strip_markdown($self->{footnotes}{$fn_id});
-				$self->tag_escape($title_text);
-				"<sup id=\"fnref-$fn_id\"><a href=\"#$id\" title=\"$title_text\">[$num]</a></sup>";
+				# [GFM] 2回目以降の参照は fnref-id-2, fnref-id-3 …
+				my $n = ++$self->{footnote_refs}{$fn_id};
+				my $ref_id = "fnref-$fn_id" . ($n > 1 ? "-$n" : '');
+				"<sup id=\"$ref_id\"><a href=\"$self->{thisurl}#$id\">[$num]</a></sup>";
 			} else {
 				"[^$fn_id]";
 			}
@@ -914,12 +924,29 @@ sub output_markdown_footnotes {
 	push(@out, '<ol>');
 
 	foreach my $fn_id (@$order) {
+		# [GFM] 参照ごとに戻るリンクを付ける。2つ目からは番号を付ける
+		my $count = $self->{footnote_refs}{$fn_id} || 1;
+		my $backref = join(' ', map {
+			my $ref_id = "fnref-$fn_id" . ($_ > 1 ? "-$_" : '');
+			"<a href=\"$self->{thisurl}#$ref_id\">&#8617;" . ($_ > 1 ? "<sup>$_</sup>" : '') . '</a>';
+		} 1..$count);
+
 		my $content = $footnotes->{$fn_id};
-		my @lines = split(/\n/, $content);
-		my $parsed = $self->parse_inline(\@lines);
+		my $parsed;
+		if ($content =~ /\n\s*\n/) {
+			# [GFM] 複数の段落は、本文と同じくブロックとして処理し、戻るリンクは最後の段落に入れる
+			my $blk = $self->parse_nest_block([ split(/\n/, $content) ]);
+			$parsed = $self->parse_inline([ grep { $_ ne '' } @$blk ]);
+			if ($parsed->[$#$parsed] !~ s|</p>([\x01\x02]*)$| $backref</p>$1|) {
+				push(@$parsed, $backref);
+			}
+		} else {
+			$parsed = $self->parse_inline([ split(/\n/, $content) ]);
+			$parsed->[$#$parsed] .= " $backref";
+		}
 		$content = join("\n", @$parsed);
 		my $id = "fn-$fn_id";
-		push(@out, "<li id=\"$id\">$content <a href=\"#fnref-$fn_id\">&#8617;</a></li>");
+		push(@out, "<li id=\"$id\">$content</li>");
 	}
 
 	push(@out, '</ol>');
