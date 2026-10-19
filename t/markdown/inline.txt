@@ -101,6 +101,18 @@ snake_case_name
 --- expected
 <p>*a* [b]</p>
 
+=== バックスラッシュのエスケープ
+--- input
+a\\b \\*c*
+--- expected
+<p>a\b \<em>c</em></p>
+
+=== コードスパンの中のバックスラッシュは文字のまま
+--- input
+`%USERPROFILE%\.gnupg` `\\` `\*` `\`
+--- expected
+<p><code>%USERPROFILE%\.gnupg</code> <code>\\</code> <code>\*</code> <code>\</code></p>
+
 === インラインHTML
 --- input
 <span class="x">a</span>
