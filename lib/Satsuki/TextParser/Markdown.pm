@@ -9,6 +9,8 @@ use strict;
 #
 package Satsuki::TextParser::Markdown;
 our $VERSION = '1.30';
+# 見出しの識別子 [#id] に使える文字（generate_id_from_string が作るIDと同じ文字）
+my $HEADING_ID = qr/[\w\-\.\x80-\xff]+/;
 #-------------------------------------------------------------------------------
 ################################################################################
 # Constructor
@@ -76,6 +78,7 @@ sub parse {
 	$self->{sections} = [];
 	$self->{links}    = {};
 	$self->{ids}      = {};
+	$self->{heading_ids} = [];	# 見出しのID（出現順）
 	$self->{footnotes}     = {};	# 脚注定義 [^id]: content
 	$self->{footnote_order}= [];	# 脚注の出現順序
 	$self->{footnote_refs} = {};	# 脚注ごとの参照の数
@@ -267,6 +270,12 @@ sub parse_block {
 			$self->p_block_end(\@ary, \@p_block, $pmode);
 			my $level = length($1);
 			my $title = $2;
+			# 見出しの識別子 [#id]。IDに使い、画面には出さない（見出しの文字を変えてもIDが変わらない）
+			my $fixed_id;
+			if ($title =~ /^(?:(.*?)\s+)?\[#($HEADING_ID)\]\s*$/) {
+				$title    = $1;
+				$fixed_id = $2;
+			}
 			if ($level == 1 && $sectioning && @ary) {
 				push(@ary, "</section>\x02");
 				push(@ary, "<section>\x02");
@@ -292,7 +301,9 @@ sub parse_block {
 			}
 			my $count = $#$secs<0 ? 1 : $secs->[$#$secs]->{count} + 1;
 			my $num   = $base . ($level>1 ? '.' : '') . $count;
-			my $id    = $self->generate_id_from_string($title, 'p' . $num);
+			my $id    = defined $fixed_id ? $self->generate_link_id($fixed_id)
+				  : $self->generate_id_from_string($title, 'p' . $num);
+			push(@{ $self->{heading_ids} }, $id);
 
 			# save section information
 			my $sec = {
@@ -1115,6 +1126,51 @@ sub generate_link_id {
 	}
 	$ids->{$id} = 1;
 	return $id;
+}
+
+#-------------------------------------------------------------------------------
+# ●見出しに、今の見出しのIDを識別子 [#id] として書き足す
+#-------------------------------------------------------------------------------
+# 見出しの文字を変えてもIDが変わらないよう、記事の保存時に呼ぶ。
+# 見出しは行を見て探す（引用やリストの中も見る。コードフェンスの中は見ない）。
+# 書き足す前と後で変換結果がまったく同じになる時だけ書き足し、違えば元の原文を返す。
+sub add_heading_ids {
+	my $self = shift;
+	my $text = shift;
+	my @before = $self->parse($text);
+	my @ids    = @{ $self->{heading_ids} };
+	if (!@ids) { return $text; }
+
+	my $n = 0;
+	my $added = 0;
+	my $fence;
+	my @lines = split(/\n/, $text, -1);
+	foreach(@lines) {
+		# 引用の > とリストの記号を除く
+		my $rest = $_;
+		$rest =~ s/^(?: ? ? ?>\s?|\s*(?:[\*\+\-]|\d+\.) +)*\s*//;
+		if (defined $fence) {
+			if ($rest =~ /^\Q$fence\E[`~]*\s*$/) { undef $fence; }
+			next;
+		}
+		if ($rest =~ /^(```+|~~~+)/) {
+			$fence = $1;
+			next;
+		}
+		if ($rest !~ /^#+\s+(.*?)$/) { next; }
+		my $title = $1;
+		my $id = $ids[$n++];
+		if (!defined $id) { return $text; }
+		if ($title =~ /^(?:(.*?)\s+)?\[#$HEADING_ID\]\s*$/) { next; }	# 識別子がある
+		$_ =~ s/\s*$/ [#$id]/;
+		$added++;
+	}
+	if (!$added || $n != @ids) { return $text; }
+
+	my $new   = join("\n", @lines);
+	my @after = $self->parse($new);
+	if ($before[0] ne $after[0] || $before[1] ne $after[1]) { return $text; }
+	return $new;
 }
 
 #-------------------------------------------------------------------------------

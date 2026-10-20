@@ -479,6 +479,10 @@ sub regist_article {
 		# パース準備
 		$parser->{thisurl}  = $self->get_blog_path( $blogid ) . $elink_key;
 		$parser->{thispkey} = $pkey;
+		# 見出しに今のIDを識別子として書き足す（見出しの文字を変えてもIDが変わらないように）
+		if ($parser->can('add_heading_ids')) {
+			$_text = $parser->add_heading_ids( $_text );
+		}
 		($text, $short) = $parser->parse( $_text );
 	} else {
 		$text = "<section>\n$_text\n</section>";
