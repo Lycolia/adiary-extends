@@ -418,7 +418,8 @@ sub parse_block {
 			# nest
 			foreach my $li (@ul) {
 				my $li_tag = $task{$li} ? '<li class="task-list-item">' : '<li>';
-				if ($#$li == 0) {
+				# 先頭が > の項目は、1行でも引用としてブロック処理する
+				if ($#$li == 0 && $li->[0] !~ /^ ? ? ?>/) {
 					push(@ary, $p{$li} ? "$li_tag<p>$li->[0]</p></li>" : "$li_tag$li->[0]</li>");
 					next;
 				}
@@ -503,12 +504,13 @@ sub parse_block {
 			my @tbl = @buf;	# copy
 
 			# 行頭と行末の | と空白を除去
+			# [GFM] セルはエスケープしていない | で分ける。\| はセルの中の | として扱う（コードスパンの中でも）
 			foreach(@tbl) {
 				$_ =~ s/^\s*\|?//;
-				$_ =~ s/\|?\s*$//;
+				$_ =~ s/(?<!\\)\|?\s*$//;
 			}
-			my @th = split(/\s*\|\s*/, shift(@tbl));	# 1行目
-			my @hr = split(/\s*\|\s*/, shift(@tbl));	# 2行目
+			my @th = split(/\s*(?<!\\)\|\s*/, shift(@tbl));	# 1行目
+			my @hr = split(/\s*(?<!\\)\|\s*/, shift(@tbl));	# 2行目
 			my $err = ($#th > $#hr);			# [GFM] カラム数不一致
 			my @class;
 			foreach(@hr) {
@@ -534,15 +536,16 @@ sub parse_block {
 				# テーブル展開
 				$self->p_block_end(\@ary, \@p_block, $pmode);
 				push(@ary, "<div class=\"body_table\"><table><thead><tr>\x02");
-				push(@ary, "\t<th>" . join("</th>\n\t<th>", map { s/^\s+|\s+$//gr } @th) . "</th>");
+				push(@ary, "\t<th>" . join("</th>\n\t<th>", map { s/^\s+|\s+$//gr =~ s/\\\|/|/gr } @th) . "</th>");
 				push(@ary, "</tr></thead>\x02");
 				if (@tbl) { push(@ary, "<tbody>\x02"); }
 				foreach(@tbl) {
-					my @cols = split(/\s*\|\s*/, $_);
+					my @cols = split(/\s*(?<!\\)\|\s*/, $_);
 					push(@ary, "<tr>\x02");
 					foreach(@class) {
 						my $t = shift(@cols);
 						$t =~ s/^\s+|\s+$//g;
+						$t =~ s/\\\|/|/g;
 						my $c = $_ ? " class=\"$_\"" : '';
 						push(@ary, "\t<td$c>$t</td>");
 					}
@@ -736,7 +739,8 @@ sub parse_inline {
 		}
 
 		# 直接リンク記法 - [text](<https://example.com/hoge_(fuga)>)を処理できる方式
-		$_ =~ s{(!?)\[([^\]]*)\]\(<([^>]+)>(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
+		# リンクの文字には対応の取れた [] を含められる（[a [b] c](URL)）
+		$_ =~ s{(!?)\[((?:[^\[\]]++|\[(?2)\])*)\]\(<([^>]+)>(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
 		{
 			my $is_img= $1;
 			my $text  = $2;
@@ -751,7 +755,8 @@ sub parse_inline {
 		}eg;
 
 		# 直接リンク記法 - [text](https://example.com/hoge_\(fuga\))を処理できる方式
-		$_ =~ s{(!?)\[([^\]]*)\]\(([^\)\"\']*?)(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
+		# リンク先には対応の取れた () を含められる（https://example.com/a_(b_(c))）
+		$_ =~ s{(!?)\[((?:[^\[\]]++|\[(?2)\])*)\]\(((?:[^\(\)\"\']|\((?3)\))*?)(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
 		{
 			my $is_img= $1;
 			my $text  = $2;
@@ -851,10 +856,16 @@ sub parse_inline {
 		}
 
 		# escape special charactor "<" ">"
+		# HTMLに無いタグ名（<M>、<x86 Panther Lake> など）は文字として表示する
 		if ($self->{escape_spchar}) {
 			$_ =~ s!(.*?)(</[\w\-]+>|<[\w\-]+(?:\s+[\w\-]+(?:\s*=\s*(?:[^\s\"]+|"[^\"]*"))?)*\s*/?>|$)!
 				my $t   = $1;
 				my $tag = $2;
+				my ($name) = $tag =~ m|^</?([\w\-]+)|;
+				unless ($name eq '' || $self->is_html_tag_name($name)) {
+					$t  .= $tag;
+					$tag = '';
+				}
 				$t =~ s/</&lt;/g;
 				$t =~ s/>/&gt;/g;
 				$t . $tag;
@@ -894,6 +905,31 @@ sub escape_in_code {
 		$_ =~ s/>/&gt;/g;
 	}
 	return $_[0];
+}
+
+#-------------------------------------------------------------------------------
+# ●HTMLのタグ名か
+#-------------------------------------------------------------------------------
+# 許可するかどうかは、この後のタグの除去（info/allow_tags_*.txt）で決める。
+# ここではHTMLのタグとして書かれたものか、文字として書かれたものかだけを見分ける。
+my %HTML_TAG_NAMES = map { $_ => 1 } qw(
+	a abbr address area article aside audio b base bdi bdo blockquote body br button
+	canvas caption center cite code col colgroup command data datalist dd del details dfn
+	dialog div dl dt em embed fieldset figcaption figure font footer form
+	h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd keygen
+	label legend li link main map mark math menu meta meter nav noscript object ol
+	optgroup option output p param picture pre progress q rp rt ruby s samp script
+	search section select slot small source span strike strong style sub summary sup
+	table tbody td template textarea tfoot th thead time title tr track tt u ul var
+	video wbr
+	svg path g circle ellipse line polygon polyline rect text tspan defs use symbol
+	toc module
+);
+sub is_html_tag_name {
+	my $self = shift;
+	my $name = lc(shift);
+	# カスタム要素（amp-ad など）は名前に - を含む
+	return $HTML_TAG_NAMES{$name} || index($name, '-') > 0;
 }
 
 #-------------------------------------------------------------------------------

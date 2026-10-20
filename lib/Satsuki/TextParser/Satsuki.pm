@@ -1597,6 +1597,9 @@ sub generate_toc {
 	my $tab = "\t" x $level;
 	my $out = $level ? "$tab<ul>\n" : "<ul class=\"$opt->{class}\">\n";
 
+	# 目次に入る見出しが無ければ、空の<ul>は出さない
+	if (!grep { $_->{id} ne '' } @$secs) { return ''; }
+
 	foreach(@$secs) {
 		if ($_->{id} eq '') { next; }
 

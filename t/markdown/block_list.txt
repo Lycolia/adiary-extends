@@ -308,3 +308,15 @@ Host<br />
 ```</li>
 </ul>
 
+
+=== 1行の項目の先頭の > は引用
+--- input
+- > q1
+- b
+--- expected
+<ul>
+<li><blockquote>
+q1
+</blockquote></li>
+<li>b</li>
+</ul>

@@ -10,6 +10,18 @@
 --- expected
 <p><a href="https://example.com/a_(b)">文字</a></p>
 
+=== リンクの文字の中の角括弧
+--- input
+[a [b] c](http://x.jp/)
+--- expected
+<p><a href="http://x.jp/">a [b] c</a></p>
+
+=== リンク先の入れ子の括弧
+--- input
+[t](http://x.jp/a_(b_(c)))
+--- expected
+<p><a href="http://x.jp/a_(b_(c))">t</a></p>
+
 === 画像
 --- input
 ![代替](https://example.com/a.png)
@@ -118,6 +130,18 @@ a\\b \\*c*
 <span class="x">a</span>
 --- expected
 <p><span class="x">a</span></p>
+
+=== HTMLに無いタグ名は文字として表示する
+--- input
+a <M> b <x86 Panther Lake> c
+--- expected
+<p>a &lt;M&gt; b &lt;x86 Panther Lake&gt; c</p>
+
+=== HTMLのタグ名は大文字でもタグとして扱う
+--- input
+<B>a</B>
+--- expected
+<p><B>a</B></p>
 
 === 非対応: *強調* は文章
 --- todo: 作り直しで対応（非対応の記法を文章として表示）
