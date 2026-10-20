@@ -97,13 +97,37 @@
 --- expected
 <p>本文</p>
 
-=== 段を飛ばした見出しだけなら目次は出さない
+=== 段を飛ばした見出しは1つ上の段に繰り上げて目次に出す
+--- input
+# A
+
+### C
+
+## B
+
+[*toc]
+--- expected
+<h3 id="a"><a href="/0001#a">A</a></h3>
+<h5 id="c"><a href="/0001#c">C</a></h5>
+<h4 id="b"><a href="/0001#b">B</a></h4>
+<ul class="toc">
+	<li><a href="/0001#a">A</a>
+	<ul>
+		<li><a href="/0001#c">C</a></li>
+		<li><a href="/0001#b">B</a></li>
+	</ul></li>
+</ul>
+
+=== 段を飛ばした見出しだけでも目次に出す
 --- input
 ## 見出し
 
 [*toc]
 --- expected
 <h4 id="見出し"><a href="/0001#見出し">見出し</a></h4>
+<ul class="toc">
+	<li><a href="/0001#見出し">見出し</a></li>
+</ul>
 
 === バナーの後に文章が続く段落は p で囲む
 --- input
