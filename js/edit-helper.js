@@ -56,7 +56,7 @@ Helpers.push({
 	image:	{
 		original:	'[image:L:%d:%f:%c]',
 		thumbnail:	'[image:S:%d:%f:%c]',
-		file:		'[file:%e:%d:%f:%f]',
+		file:		'[file:%e:%d:%f]',
 		chain:		"\n",
 		exif:		true
 	},
@@ -95,7 +95,7 @@ Helpers.push({
 	image:	{
 		original:	'[image:L:%d:%f:%c]',
 		thumbnail:	'[image:S:%d:%f:%c]',
-		file:		'[file:%e:%d:%f:%f]',
+		file:		'[file:%e:%d:%f]',
 		chain:		"\n",
 		exif:		true
 	},
@@ -259,7 +259,7 @@ helper.prototype.load = function() {
 		const type = $x.data('type');
 		$x.prop('disabled', this.helper[type] ? false : true)
 	}
-	
+
 	const $link = $('#parser-help-link');
 	const url   = this.helper.url;
 	if (url) {
