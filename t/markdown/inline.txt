@@ -65,11 +65,55 @@ _強調_
 --- expected
 <p><em>強調</em></p>
 
+=== * の強調
+--- input
+*強調*
+--- expected
+<p><em>強調</em></p>
+
+=== * の強調は前後が文字でもよい
+--- input
+図にない*libraries*が登場
+--- expected
+<p>図にない<em>libraries</em>が登場</p>
+
+=== 空白に挟まれた * は強調にしない
+--- input
+2 * 3 * 4 と *.txt と *.md
+--- expected
+<p>2 * 3 * 4 と *.txt と *.md</p>
+
+=== 閉じていない ** は文字のまま
+--- input
+**太字
+またがり** test
+--- expected
+<p>**太字<br />
+またがり** test</p>
+
+=== 内側が空白で始まる ** は太字にしない
+--- input
+a ** b ** c
+--- expected
+<p>a ** b ** c</p>
+
 === 単語内の_は強調にしない
 --- input
 snake_case_name
 --- expected
 <p>snake_case_name</p>
+
+=== _ の強調は前後が日本語の文字のときは強調にしない
+--- input
+図にない_libraries_が登場
+--- expected
+<p>図にない_libraries_が登場</p>
+
+=== _ の強調は前後が日本語の記号なら強調にする
+--- input
+「_強調_」
+--- expected
+<p>「<em>強調</em>」</p>
 
 === 打ち消し線
 --- input
@@ -142,13 +186,6 @@ a <M> b <x86 Panther Lake> c
 <B>a</B>
 --- expected
 <p><B>a</B></p>
-
-=== 非対応: *強調* は文章
---- todo: 作り直しで対応（非対応の記法を文章として表示）
---- input
-*強調*
---- expected
-<p>*強調*</p>
 
 === 非対応: __太字__ は文章
 --- todo: 作り直しで対応（非対応の記法を文章として表示）
