@@ -426,3 +426,24 @@ y
 </ol></li>
 <li>d</li>
 </ul>
+
+=== 項目内のコードフェンスの中で空行が続いても、リストを切らない
+--- input
+1. a
+   ```
+   x
+
+
+   y
+   ```
+2. b
+--- expected
+<ol>
+<li>a
+<pre><code class="language-">x
+
+
+y
+</code></pre></li>
+<li>b</li>
+</ol>

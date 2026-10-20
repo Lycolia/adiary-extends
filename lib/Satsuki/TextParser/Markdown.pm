@@ -352,6 +352,11 @@ sub parse_block {
 			while(@$lines) {
 				$x = shift(@$lines);
 				if ($x ne '' && ord(substr($x, -1)) < 4) { last; }
+				# 空行が続く時は、次の空行でない行で判定する（項目内のコードフェンスの中の連続した空行など）
+				if ($blank && $x eq '') {
+					push(@list, $x);
+					next;
+				}
 				if ($blank && $x !~ /^ ? ?(\*|\+|\-|\d+\.) |^ /) { last; }
 				if ($blank && $1 && $mark) {	# リストの開始文字判定
 					my $m = $1;
@@ -363,6 +368,8 @@ sub parse_block {
 			}
 			unshift(@$lines, $x);
 			if ($list[$#list] eq '') { pop(@list); }
+			# 2つ目からの空行はリストの後に戻す
+			while (@list && $list[$#list] eq '') { unshift(@$lines, pop(@list)); }
 
 			# listの構成
 			push(@ary, "<$ulol$start>\x01");
