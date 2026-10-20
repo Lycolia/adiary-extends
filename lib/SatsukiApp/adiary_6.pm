@@ -44,7 +44,8 @@ my @update_versions = (
 	{ ver => 3.34, plugin=>1 },
 	{ ver => 3.40, plugin=>1 },
 	{ ver => 3.50, plugin=>1, func => 'sys_update_350' },
-	{ ver => 3.52, func => 'sys_update_352' }
+	{ ver => 3.52, func => 'sys_update_352' },
+	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' }
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -265,6 +266,88 @@ sub sys_update_352 {
 		$r += $self->create_trash_tables($_);
 		if ($r) { $ROBJ->message("Blog '$_' database error($r)"); }
 	}
+}
+
+#-------------------------------------------------------------------------------
+# ●システムアップデート for Ver3.53
+#-------------------------------------------------------------------------------
+# 記事の原文を書き換える（書き換えた後、全記事を再構築する）
+# ・画像の代替テキストや添付ファイルの名前がファイル名と同じものを落とす。代替テキストの無い画像は末尾に : を付ける
+# ・見出しに、今の見出しのIDを識別子 [#id] として書き足す（Markdownの記事）
+sub sys_update_353 {
+	my $self = shift;
+	$self->do_all_blogs('update_art_text_353');
+}
+sub update_art_text_353 {
+	my $self   = shift;
+	my $ROBJ   = $self->{ROBJ};
+	my $DB     = $self->{DB};
+	my $blogid = $self->{blogid};
+
+	my $arts = $DB->select_match("${blogid}_art", '*cols', ['pkey', '_text', 'parser', 'link_key']);
+	my %update;
+	foreach(@$arts) {
+		my $text = $self->normalize_file_alt( $_->{_text} );
+
+		my $parser = $_->{parser} ne '' && $self->load_parser( $_->{parser} );
+		if (ref($parser) && $parser->can('add_heading_ids')) {
+			$self->post_process_link_key( $_ );
+			$parser->{thisurl}  = $self->get_blog_path( $blogid ) . $_->{elink_key};
+			$parser->{thispkey} = $_->{pkey};
+			$text = $parser->add_heading_ids( $text );
+		}
+		if ($text ne $_->{_text}) {
+			$update{ $_->{pkey} } = { _text => $text };
+		}
+	}
+
+	$DB->begin();
+	foreach(keys(%update)) {
+		$DB->update_match("${blogid}_art", $update{$_}, 'pkey', $_);
+	}
+	my $r = $DB->commit();
+	if ($r) { $ROBJ->message("Blog '$blogid' database error($r)"); }
+}
+
+#-------------------------------------------------------------------------------
+# ●画像の代替テキストや添付ファイルの名前を整える
+#-------------------------------------------------------------------------------
+# ファイル名と同じ代替テキストや名前を落とす。画像は代替テキストを書きやすいよう、末尾に : を付ける。
+# [image:S:folder/:x.png:x.png] → [image:S:folder/:x.png:]（image:L も同じ）
+# [image:S:folder/:x.png]       → [image:S:folder/:x.png:]
+# [file:mp4:folder/:x.mp4:x.mp4] → [file:mp4:folder/:x.mp4]
+# コードフェンスとコードスパンの中は書き換えない。
+sub normalize_file_alt {
+	my $self = shift;
+	my $replace = sub {
+		$_[0] =~ s/\[image:([SL]):([^\]:]*):([^\]:]+)(?::\3)?\]/[image:$1:$2:$3:]/g;
+		$_[0] =~ s/\[file:([^\]:]*):([^\]:]*):([^\]:]+):\3\]/[file:$1:$2:$3]/g;
+	};
+	my $fence;
+	my @lines = split(/\n/, shift, -1);
+	foreach(@lines) {
+		# コードフェンスの中は書き換えない
+		if (defined $fence) {
+			if (/^\s*\Q$fence\E[`~]*\s*$/) { undef $fence; }
+			next;
+		}
+		if (/^\s*(```+|~~~+)/) { $fence = $1; next; }
+
+		# コードスパンの中は書き換えない
+		my @parts = split(/((?<!`)(`+)(?!`).*?(?<!`)\2(?!`))/, $_);
+		my $out = '';
+		while(@parts) {
+			my $t = shift(@parts);
+			&$replace($t);
+			$out .= $t;
+			if (@parts) {
+				$out .= shift(@parts);	# コードスパン
+				shift(@parts);		# split の中の \2 の分
+			}
+		}
+		$_ = $out;
+	}
+	return join("\n", @lines);
 }
 
 ################################################################################

@@ -59,7 +59,7 @@
     ```
 11. c
 --- expected
-<ol>
+<ol start="9">
 <li>a</li>
 <li>b
 <pre><code class="language-bash">echo
@@ -127,7 +127,6 @@
 <p>段落</p>
 
 === 番号付きリストの開始番号
---- todo: 作り直しで対応（開始番号を反映する）
 --- input
 3. a
 4. b
@@ -308,3 +307,143 @@ Host<br />
 ```</li>
 </ul>
 
+
+=== 1行の項目の先頭の > は引用
+--- input
+- > q1
+- b
+--- expected
+<ul>
+<li><blockquote>
+q1
+</blockquote></li>
+<li>b</li>
+</ul>
+
+=== 入れ子のリストの中の空行では、外側の項目を<p>で囲まない
+--- input
+- a
+  - b
+
+  - c
+- d
+--- expected
+<ul>
+<li>a
+<ul>
+<li><p>b</p></li>
+<li><p>c</p></li>
+</ul></li>
+<li>d</li>
+</ul>
+
+=== 項目内のコードフェンスの中の空行では、項目を<p>で囲まない
+--- input
+- a
+  ```
+  x
+
+  y
+  ```
+- b
+--- expected
+<ul>
+<li>a
+<pre><code class="language-">x
+
+y
+</code></pre></li>
+<li>b</li>
+</ul>
+
+=== 段落と入れ子のリストの間の空行では、項目を<p>で囲む
+--- input
+- a
+
+  - b
+- c
+--- expected
+<ul>
+<li><p>a</p>
+
+<ul>
+<li>b</li>
+</ul></li>
+<li>c</li>
+</ul>
+
+=== 入れ子のリストの後の空行と段落では、項目を<p>で囲む
+--- input
+- a
+  - b
+
+  続き
+- c
+--- expected
+<ul>
+<li><p>a</p>
+<ul>
+<li>b</li>
+</ul>
+<p>続き</p></li>
+<li>c</li>
+</ul>
+
+=== 項目内の段落の間の空行では、その項目だけ<p>で囲む
+--- input
+  - あああ
+    いいい
+
+    続き
+  - b
+  - c
+--- expected
+<ul>
+<li><p>あああ<br />
+いいい</p>
+
+<p>続き</p></li>
+<li>b</li>
+<li>c</li>
+</ul>
+
+=== 入れ子のリストの後に空行を挟んで記号の違うリストを書くと、項目を<p>で囲む
+# strict_list で別のリストになり、空行は項目の直下のブロックの間にあるため
+--- input
+- a
+  - b
+
+    1. c
+- d
+--- expected
+<ul>
+<li><p>a</p>
+<ul>
+<li>b</li>
+</ul>
+<ol>
+<li>c</li>
+</ol></li>
+<li>d</li>
+</ul>
+
+=== 項目内のコードフェンスの中で空行が続いても、リストを切らない
+--- input
+1. a
+   ```
+   x
+
+
+   y
+   ```
+2. b
+--- expected
+<ol>
+<li>a
+<pre><code class="language-">x
+
+
+y
+</code></pre></li>
+<li>b</li>
+</ol>

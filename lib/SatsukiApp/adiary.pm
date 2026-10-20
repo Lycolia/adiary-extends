@@ -7,10 +7,9 @@ package SatsukiApp::adiary;
 use Satsuki::AutoLoader;
 use Fcntl;
 #-------------------------------------------------------------------------------
-our $VERSION    = 3.51;
-our $OUTVERSION = "3.52dev";
-our $DATA_VERSION = 3.52;
-our $EXTENDS_VERSION = "0.42.0";
+our $VERSION    = 4.2;
+our $OUTVERSION = "$VERSION";
+our $DATA_VERSION = 3.53;
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -51,7 +50,6 @@ sub new {
 	$self->{DB}      = $DB;
 	$self->{VERSION} = $VERSION;
 	$self->{OUTVERSION} = $OUTVERSION;
-	$self->{EXTENDS_VERSION} = $EXTENDS_VERSION;
 	$self->{HttpReferer} = $ENV{'HTTP_REFERER'} || '';
 
 	# ディフォルト値の設定

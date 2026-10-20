@@ -29,7 +29,7 @@
 </tr></thead>
 <tbody>
 <tr>
-	<td>1</td>
+	<td class="l">1</td>
 	<td class="c">2</td>
 	<td class="r">3</td>
 </tr>
@@ -128,3 +128,93 @@ A | B
 :-- | --:<br />
 1 | 2</p>
 
+
+=== セルの中の \| は | として表示する（GFM と同じ）
+--- input
+| A | B |
+| - | - |
+| a\|b | c |
+--- expected
+<div class="body_table"><table><thead><tr>
+	<th>A</th>
+	<th>B</th>
+</tr></thead>
+<tbody>
+<tr>
+	<td>a|b</td>
+	<td>c</td>
+</tr>
+</tbody>
+</table></div>
+
+=== コードスパンの中の \| も | として表示する（GFM と同じ）
+--- input
+| A | B |
+| - | - |
+| `find . \| grep x` | c |
+--- expected
+<div class="body_table"><table><thead><tr>
+	<th>A</th>
+	<th>B</th>
+</tr></thead>
+<tbody>
+<tr>
+	<td><code>find . | grep x</code></td>
+	<td>c</td>
+</tr>
+</tbody>
+</table></div>
+
+=== \\ の直後の | はセルの区切り（GFM と同じ）
+--- input
+| A | B |
+| - | - |
+| a\\| b |
+--- expected
+<div class="body_table"><table><thead><tr>
+	<th>A</th>
+	<th>B</th>
+</tr></thead>
+<tbody>
+<tr>
+	<td>a\</td>
+	<td>b</td>
+</tr>
+</tbody>
+</table></div>
+
+=== \\\| は \ と | として表示する（GFM と同じ）
+--- input
+| A | B |
+| - | - |
+| a\\\|b | c |
+--- expected
+<div class="body_table"><table><thead><tr>
+	<th>A</th>
+	<th>B</th>
+</tr></thead>
+<tbody>
+<tr>
+	<td>a\|b</td>
+	<td>c</td>
+</tr>
+</tbody>
+</table></div>
+
+=== 行末の \\| は区切りとして除く（GFM と同じ）
+--- input
+| A | B |
+| - | - |
+| a | b\\|
+--- expected
+<div class="body_table"><table><thead><tr>
+	<th>A</th>
+	<th>B</th>
+</tr></thead>
+<tbody>
+<tr>
+	<td>a</td>
+	<td>b\</td>
+</tr>
+</tbody>
+</table></div>
