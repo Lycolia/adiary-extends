@@ -503,14 +503,8 @@ sub parse_block {
 			}
 			my @tbl = @buf;	# copy
 
-			# 行頭と行末の | と空白を除去
-			# [GFM] セルはエスケープしていない | で分ける。\| はセルの中の | として扱う（コードスパンの中でも）
-			foreach(@tbl) {
-				$_ =~ s/^\s*\|?//;
-				$_ =~ s/(?<!\\)\|?\s*$//;
-			}
-			my @th = split(/\s*(?<!\\)\|\s*/, shift(@tbl));	# 1行目
-			my @hr = split(/\s*(?<!\\)\|\s*/, shift(@tbl));	# 2行目
+			my @th = $self->split_table_row(shift(@tbl));	# 1行目
+			my @hr = $self->split_table_row(shift(@tbl));	# 2行目
 			my $err = ($#th > $#hr);			# [GFM] カラム数不一致
 			my @class;
 			foreach(@hr) {
@@ -536,16 +530,14 @@ sub parse_block {
 				# テーブル展開
 				$self->p_block_end(\@ary, \@p_block, $pmode);
 				push(@ary, "<div class=\"body_table\"><table><thead><tr>\x02");
-				push(@ary, "\t<th>" . join("</th>\n\t<th>", map { s/^\s+|\s+$//gr =~ s/\\\|/|/gr } @th) . "</th>");
+				push(@ary, "\t<th>" . join("</th>\n\t<th>", @th) . "</th>");
 				push(@ary, "</tr></thead>\x02");
 				if (@tbl) { push(@ary, "<tbody>\x02"); }
 				foreach(@tbl) {
-					my @cols = split(/\s*(?<!\\)\|\s*/, $_);
+					my @cols = $self->split_table_row($_);
 					push(@ary, "<tr>\x02");
 					foreach(@class) {
 						my $t = shift(@cols);
-						$t =~ s/^\s+|\s+$//g;
-						$t =~ s/\\\|/|/g;
 						my $c = $_ ? " class=\"$_\"" : '';
 						push(@ary, "\t<td$c>$t</td>");
 					}
@@ -646,6 +638,30 @@ TEXT
 		push(@ary, "</section>\x02");
 	}
 	return \@ary;
+}
+
+#-------------------------------------------------------------------------------
+# [GFM] テーブルの行をセルに分ける
+#-------------------------------------------------------------------------------
+# \ とその次の1文字はまとめて読む（\\| の | は区切り、\| はセルの中の |）。
+# \| はコードスパンの中でも | にする。行頭と行末の | と、セルの前後の空白は除く。
+sub split_table_row {
+	my ($self, $line) = @_;
+	$line =~ s/^\s*\|?//;
+	my @cells = ('');
+	my $sep = 0;	# 最後が区切りの | だったか
+	while ($line =~ /\G(\\\||\\.|\||[^\\|]+|\\)/g) {
+		if ($1 eq '|') {
+			push(@cells, '');
+			$sep = 1;
+			next;
+		}
+		$cells[$#cells] .= $1 eq '\\|' ? '|' : $1;
+		if ($1 =~ /\S/) { $sep = 0; }
+	}
+	if ($sep) { pop(@cells); }
+	foreach(@cells) { $_ =~ s/^\s+|\s+$//g; }
+	return @cells;
 }
 
 sub p_block_end {
