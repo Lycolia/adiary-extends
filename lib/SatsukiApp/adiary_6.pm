@@ -272,7 +272,7 @@ sub sys_update_352 {
 # ●システムアップデート for Ver3.53
 #-------------------------------------------------------------------------------
 # 記事の原文を書き換える（書き換えた後、全記事を再構築する）
-# ・画像の代替テキストや添付ファイルの名前がファイル名と同じものを落とす
+# ・画像の代替テキストや添付ファイルの名前がファイル名と同じものを落とす。代替テキストの無い画像は末尾に : を付ける
 # ・見出しに、今の見出しのIDを識別子 [#id] として書き足す（Markdownの記事）
 sub sys_update_353 {
 	my $self = shift;
@@ -287,7 +287,7 @@ sub update_art_text_353 {
 	my $arts = $DB->select_match("${blogid}_art", '*cols', ['pkey', '_text', 'parser', 'link_key']);
 	my %update;
 	foreach(@$arts) {
-		my $text = $self->drop_filename_alt( $_->{_text} );
+		my $text = $self->normalize_file_alt( $_->{_text} );
 
 		my $parser = $_->{parser} ne '' && $self->load_parser( $_->{parser} );
 		if (ref($parser) && $parser->can('add_heading_ids')) {
@@ -310,15 +310,17 @@ sub update_art_text_353 {
 }
 
 #-------------------------------------------------------------------------------
-# ●画像の代替テキストや添付ファイルの名前がファイル名と同じものを落とす
+# ●画像の代替テキストや添付ファイルの名前を整える
 #-------------------------------------------------------------------------------
-# [image:S:folder/:x.png:x.png] → [image:S:folder/:x.png:]（image:L も同じ。代替テキストを書きやすいよう末尾の : は残す）
+# ファイル名と同じ代替テキストや名前を落とす。画像は代替テキストを書きやすいよう、末尾に : を付ける。
+# [image:S:folder/:x.png:x.png] → [image:S:folder/:x.png:]（image:L も同じ）
+# [image:S:folder/:x.png]       → [image:S:folder/:x.png:]
 # [file:mp4:folder/:x.mp4:x.mp4] → [file:mp4:folder/:x.mp4]
 # コードフェンスとコードスパンの中は書き換えない。
-sub drop_filename_alt {
+sub normalize_file_alt {
 	my $self = shift;
 	my $replace = sub {
-		$_[0] =~ s/\[image:([SL]):([^\]:]*):([^\]:]+):\3\]/[image:$1:$2:$3:]/g;
+		$_[0] =~ s/\[image:([SL]):([^\]:]*):([^\]:]+)(?::\3)?\]/[image:$1:$2:$3:]/g;
 		$_[0] =~ s/\[file:([^\]:]*):([^\]:]*):([^\]:]+):\3\]/[file:$1:$2:$3]/g;
 	};
 	my $fence;
