@@ -54,9 +54,9 @@ Helpers.push({
 	math_i:	{ func: 'inline',	tag: '[[math:$0]]' },
 	album:	{ func: 'album' },
 	image:	{
-		original:	'[image:L:%d:%f:%f%c]',
-		thumbnail:	'[image:S:%d:%f:%f%c]',
-		file:		'[file:%e:%d:%f:%f]',
+		original:	'[image:L:%d:%f:%c]',
+		thumbnail:	'[image:S:%d:%f:%c]',
+		file:		'[file:%e:%d:%f]',
 		chain:		"\n",
 		exif:		true
 	},
@@ -93,9 +93,9 @@ Helpers.push({
 	math_i:	{ func: 'inline',	tag: '[[math:$0]]' },
 	album:	{ func: 'album' },
 	image:	{
-		original:	'[image:L:%d:%f:%f%c]',
-		thumbnail:	'[image:S:%d:%f:%f%c]',
-		file:		'[file:%e:%d:%f:%f]',
+		original:	'[image:L:%d:%f:%c]',
+		thumbnail:	'[image:S:%d:%f:%c]',
+		file:		'[file:%e:%d:%f]',
 		chain:		"\n",
 		exif:		true
 	},
@@ -259,7 +259,7 @@ helper.prototype.load = function() {
 		const type = $x.data('type');
 		$x.prop('disabled', this.helper[type] ? false : true)
 	}
-	
+
 	const $link = $('#parser-help-link');
 	const url   = this.helper.url;
 	if (url) {

@@ -9,6 +9,8 @@ use strict;
 #
 package Satsuki::TextParser::Markdown;
 our $VERSION = '1.30';
+# 見出しの識別子 [#id] に使える文字（generate_id_from_string が作るIDと同じ文字）
+my $HEADING_ID = qr/[\w\-\.\x80-\xff]+/;
 #-------------------------------------------------------------------------------
 ################################################################################
 # Constructor
@@ -21,7 +23,6 @@ sub new {
 	$self->{tab_width} = 4;		# タブの幅
 	$self->{escape_spchar} = 1;	# タグではない <, > をエスケープする
 
-	$self->{lf_patch} = 1;		# 日本語のpタグ中の改行を消す
 	$self->{md_in_htmlblk} = 1;	# Markdown Inside HTML Blocksを許可する / PHP Markdown Extra
 	$self->{sectioning}   = 1;	# sectionタグを適時挿入する
 	$self->{gfm_ext}      = 1;	# GitHub Flavored Markdown拡張を使用する
@@ -77,8 +78,10 @@ sub parse {
 	$self->{sections} = [];
 	$self->{links}    = {};
 	$self->{ids}      = {};
+	$self->{heading_ids} = [];	# 見出しのID（出現順）
 	$self->{footnotes}     = {};	# 脚注定義 [^id]: content
 	$self->{footnote_order}= [];	# 脚注の出現順序
+	$self->{footnote_refs} = {};	# 脚注ごとの参照の数
 
 	# parse main
 	$lines = $self->parse_block ($lines);
@@ -144,10 +147,10 @@ sub restore_comments {
 # Markdown Block Parser
 ################################################################################
 sub parse_nest_block {
-	return &parse_block($_[0], $_[1], 1);
+	return &parse_block($_[0], $_[1], 1, $_[2]);
 }
 sub parse_block {
-	my ($self, $lines, $nest) = @_;
+	my ($self, $lines, $nest, $pmode) = @_;
 
 	my $block_tags = qr!
 		# original
@@ -160,7 +163,8 @@ sub parse_block {
 		address|aside|base|hr|option|source
 	!x;
 
-	my $pmode      = ($nest && !grep { $_ eq '' } @$lines) ? 0 : 1;
+	# $pmode: 段落を <p> で囲むか（省略時は、入れ子のブロックで空行が無ければ囲まない）
+	if (!defined $pmode) { $pmode = ($nest && !grep { $_ eq '' } @$lines) ? 0 : 1; }
 	my $sectioning = $nest ? 0 : $self->{sectioning};
 	my $in_section = 0;
 	my $seemore    = 1;
@@ -266,6 +270,12 @@ sub parse_block {
 			$self->p_block_end(\@ary, \@p_block, $pmode);
 			my $level = length($1);
 			my $title = $2;
+			# 見出しの識別子 [#id]。IDに使い、画面には出さない（見出しの文字を変えてもIDが変わらない）
+			my $fixed_id;
+			if ($title =~ /^(?:(.*?)\s+)?\[#($HEADING_ID)\]\s*$/) {
+				$title    = $1;
+				$fixed_id = $2;
+			}
 			if ($level == 1 && $sectioning && @ary) {
 				push(@ary, "</section>\x02");
 				push(@ary, "<section>\x02");
@@ -291,7 +301,9 @@ sub parse_block {
 			}
 			my $count = $#$secs<0 ? 1 : $secs->[$#$secs]->{count} + 1;
 			my $num   = $base . ($level>1 ? '.' : '') . $count;
-			my $id    = $self->generate_id_from_string($title, 'p' . $num);
+			my $id    = defined $fixed_id ? $self->generate_link_id($fixed_id)
+				  : $self->generate_id_from_string($title, 'p' . $num);
+			push(@{ $self->{heading_ids} }, $id);
 
 			# save section information
 			my $sec = {
@@ -343,12 +355,19 @@ sub parse_block {
 			$self->p_block_end(\@ary, \@p_block, $pmode);
 			my $ulol = length($1)<2 ? 'ul' : 'ol';
 			my $mark = $self->{strict_list} ? $1 : undef;
+			# 番号付きリストは、書いた番号から始める
+			my $start = ($ulol eq 'ol' && $1 != 1) ? ' start="' . ($1+0) . '"' : '';
 			$mark = ($mark =~ /^\d+\./) ? '0' : $mark;
 			my @list=($x);
 			my $blank=0;
 			while(@$lines) {
 				$x = shift(@$lines);
 				if ($x ne '' && ord(substr($x, -1)) < 4) { last; }
+				# 空行が続く時は、次の空行でない行で判定する（項目内のコードフェンスの中の連続した空行など）
+				if ($blank && $x eq '') {
+					push(@list, $x);
+					next;
+				}
 				if ($blank && $x !~ /^ ? ?(\*|\+|\-|\d+\.) |^ /) { last; }
 				if ($blank && $1 && $mark) {	# リストの開始文字判定
 					my $m = $1;
@@ -360,9 +379,11 @@ sub parse_block {
 			}
 			unshift(@$lines, $x);
 			if ($list[$#list] eq '') { pop(@list); }
+			# 2つ目からの空行はリストの後に戻す
+			while (@list && $list[$#list] eq '') { unshift(@$lines, pop(@list)); }
 
 			# listの構成
-			push(@ary, "<$ulol>\x01");
+			push(@ary, "<$ulol$start>\x01");
 			my @ul;
 			my $li = [];
 			my $blank=0;
@@ -417,7 +438,8 @@ sub parse_block {
 			# nest
 			foreach my $li (@ul) {
 				my $li_tag = $task{$li} ? '<li class="task-list-item">' : '<li>';
-				if ($#$li == 0) {
+				# 先頭が > の項目は、1行でも引用としてブロック処理する
+				if ($#$li == 0 && $li->[0] !~ /^ ? ? ?>/) {
 					push(@ary, $p{$li} ? "$li_tag<p>$li->[0]</p></li>" : "$li_tag$li->[0]</li>");
 					next;
 				}
@@ -428,7 +450,8 @@ sub parse_block {
 					$_ =~ s/^ {1,$n}//;
 				}
 
-				my $blk = $self->parse_nest_block( $li );
+				# 入れ子のリストやコードフェンスの中の空行では、項目を <p> で囲まない
+				my $blk = $self->parse_nest_block( $li, $self->is_loose_item($li) );
 				if ($blk->[$#$blk] eq '') { pop(@$blk); }
 				$blk->[0] = $li_tag . $blk->[0];
 				$blk->[$#$blk] .= '</li>';
@@ -501,13 +524,8 @@ sub parse_block {
 			}
 			my @tbl = @buf;	# copy
 
-			# 行頭と行末の | と空白を除去
-			foreach(@tbl) {
-				$_ =~ s/^\s*\|?//;
-				$_ =~ s/\|?\s*$//;
-			}
-			my @th = split(/\s*\|\s*/, shift(@tbl));	# 1行目
-			my @hr = split(/\s*\|\s*/, shift(@tbl));	# 2行目
+			my @th = $self->split_table_row(shift(@tbl));	# 1行目
+			my @hr = $self->split_table_row(shift(@tbl));	# 2行目
 			my $err = ($#th > $#hr);			# [GFM] カラム数不一致
 			my @class;
 			foreach(@hr) {
@@ -533,15 +551,14 @@ sub parse_block {
 				# テーブル展開
 				$self->p_block_end(\@ary, \@p_block, $pmode);
 				push(@ary, "<div class=\"body_table\"><table><thead><tr>\x02");
-				push(@ary, "\t<th>" . join("</th>\n\t<th>", map { s/^\s+|\s+$//gr } @th) . "</th>");
+				push(@ary, "\t<th>" . join("</th>\n\t<th>", @th) . "</th>");
 				push(@ary, "</tr></thead>\x02");
 				if (@tbl) { push(@ary, "<tbody>\x02"); }
 				foreach(@tbl) {
-					my @cols = split(/\s*\|\s*/, $_);
+					my @cols = $self->split_table_row($_);
 					push(@ary, "<tr>\x02");
 					foreach(@class) {
 						my $t = shift(@cols);
-						$t =~ s/^\s+|\s+$//g;
 						my $c = $_ ? " class=\"$_\"" : '';
 						push(@ary, "\t<td$c>$t</td>");
 					}
@@ -586,10 +603,18 @@ TEXT
 			my $content = $2;
 
 			# 複数行の脚注内容を収集（インデントされた行）
-			while(@$lines && $lines->[0] =~ /^(    |\t)(.*)$/) {
-				my $cont_line = $2;
-				$content .= "\n" . $cont_line;
-				shift(@$lines);
+			# [GFM] 空行を挟んでも、次の行がインデントされていれば脚注の続き（次の段落）
+			while(@$lines) {
+				if ($lines->[0] =~ /^(    |\t)(.*)$/) {
+					$content .= "\n" . $2;
+					shift(@$lines);
+					next;
+				}
+				my $i = 0;
+				while($i <= $#$lines && $lines->[$i] =~ /^\s*$/) { $i++; }
+				if (!$i || $i > $#$lines || $lines->[$i] !~ /^(    |\t)/) { last; }
+				$content .= "\n" x $i;
+				splice(@$lines, 0, $i);
 			}
 
 			# 脚注を保存
@@ -636,24 +661,91 @@ TEXT
 	return \@ary;
 }
 
+#-------------------------------------------------------------------------------
+# [GFM] テーブルの行をセルに分ける
+#-------------------------------------------------------------------------------
+# \ とその次の1文字はまとめて読む（\\| の | は区切り、\| はセルの中の |）。
+# \| はコードスパンの中でも | にする。行頭と行末の | と、セルの前後の空白は除く。
+#-------------------------------------------------------------------------------
+# リストの項目の段落を <p> で囲むか
+#-------------------------------------------------------------------------------
+# 項目の直下のブロックの間の空行と、項目の最後の空行（次の項目との間）だけを数える。
+# 入れ子のリストやコードフェンスの中の空行は数えない。
+# $lines は、項目の内容の開始位置までインデントを除いた行。
+sub is_loose_item {
+	my ($self, $lines) = @_;
+	my $fence;
+	my $in_list;
+	my $mark;
+	for(my $i=0; $i<=$#$lines; $i++) {
+		my $x = $lines->[$i];
+		# [GFM] コードフェンス（判定は parse_block と同じ）
+		if (defined $fence) {
+			if (substr($x,0,length($fence)) eq $fence && $x =~ /^[`~]+\s*$/) { undef $fence; }
+			next;
+		}
+		if ($self->{gfm_ext} && $x =~ /^(```+|~~~+)([^`]*?)\s*$/) {
+			$fence   = $1;
+			$in_list = 0;
+			next;
+		}
+		if ($x ne '') {
+			if (!$in_list && $x =~ /^ ? ? ?(\*|\+|\-|\d+\.) /) {
+				$in_list = 1;
+				$mark = ($1 =~ /^\d+\./) ? '0' : $1;
+			}
+			next;
+		}
+
+		# 空行
+		my $j = $i+1;
+		while($j<=$#$lines && $lines->[$j] eq '') { $j++; }
+		if ($j > $#$lines) { return 1; }
+		# 入れ子のリストの続き（判定はリストの行の収集と同じ）
+		if ($in_list && $lines->[$j] =~ /^ ? ?(\*|\+|\-|\d+\.) |^ /) {
+			# リストの開始文字が異なる時は、別のリスト
+			if ($1 && $self->{strict_list}) {
+				my $m = ($1 =~ /^\d+\./) ? '0' : $1;
+				if ($m ne $mark) { return 1; }
+			}
+			$i = $j-1;
+			next;
+		}
+		return 1;
+	}
+	return 0;
+}
+
+sub split_table_row {
+	my ($self, $line) = @_;
+	$line =~ s/^\s*\|?//;
+	my @cells = ('');
+	my $sep = 0;	# 最後が区切りの | だったか
+	while ($line =~ /\G(\\\||\\.|\||[^\\|]+|\\)/g) {
+		if ($1 eq '|') {
+			push(@cells, '');
+			$sep = 1;
+			next;
+		}
+		$cells[$#cells] .= $1 eq '\\|' ? '|' : $1;
+		if ($1 =~ /\S/) { $sep = 0; }
+	}
+	if ($sep) { pop(@cells); }
+	foreach(@cells) { $_ =~ s/^\s+|\s+$//g; }
+	return @cells;
+}
+
 sub p_block_end {
 	my $self = shift;
 	my $ary  = shift;
 	my $blk  = shift;
 	my $pmode= shift;
-	my $lf_patch = $self->{lf_patch};
 	if (!@$blk) { return; }
 
 	my $line = ($pmode ? '<p>' : '') . shift(@$blk);
 	foreach my $x (@$blk) {
-    # 改行はbr変換する
-    $line = $line . "<br />";
-		if ($lf_patch && 0x7f < ord(substr($line,-1)) &&  0x7f < ord($x)) {
-			# 日本語文章中に改行が含まれるとスペースになり汚いため行連結する。
-			$line .= $x;
-			next;
-		}
-		push(@$ary, $line);
+		# 改行はbr変換する
+		push(@$ary, $line . '<br />');
 		$line = $x;
 	}
 	# \> によるエスケープ
@@ -700,7 +792,10 @@ sub parse_inline {
 		if (substr($_,-1) eq "\x02") { next; }
 
 		# エスケープ処理
-		$_ =~ s/\\([`'\*_\[\]\(\)>#\+\-\.\~!])/"\x03" . ord($1) . "\x03"/eg;
+		# [M] コードスパンの中のバックスラッシュは文字のまま（コードスパンは次で処理する）
+		$_ =~ s{((?<!`)(`+)(?!`).+?(?<!`)\2(?!`))|\\([\\`'\*_\[\]\(\)>#\+\-\.\~!])}{
+			defined $1 ? $1 : "\x03" . ord($3) . "\x03"
+		}eg;
 
 		# inline code
 		# 開始と同じ長さのバッククォート列で閉じる。中身には長さの異なるバッククォートを含められる
@@ -709,7 +804,7 @@ sub parse_inline {
 			# 前後が共に空白なら1つずつ除去する（空白のみの場合は除く）
 			if ($s =~ /[^ ]/ && $s =~ /^ (.*) $/) { $s = $1; }
 			$self->escape_in_code($s);
-			$s =~ s/([`'\*_\{\}\[\]\(\)>#\+\-\.\~!])/"\x03" . ord($1) . "\x03"/eg;
+			$s =~ s/([\\`'\*_\{\}\[\]\(\)>#\+\-\.\~!])/"\x03" . ord($1) . "\x03"/eg;
 			"<code>$s</code>";
 		|eg;
 
@@ -724,7 +819,8 @@ sub parse_inline {
 		}
 
 		# 直接リンク記法 - [text](<https://example.com/hoge_(fuga)>)を処理できる方式
-		$_ =~ s{(!?)\[([^\]]*)\]\(<([^>]+)>(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
+		# リンクの文字には対応の取れた [] を含められる（[a [b] c](URL)）
+		$_ =~ s{(!?)\[((?:[^\[\]]++|\[(?2)\])*)\]\(<([^>]+)>(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
 		{
 			my $is_img= $1;
 			my $text  = $2;
@@ -739,7 +835,8 @@ sub parse_inline {
 		}eg;
 
 		# 直接リンク記法 - [text](https://example.com/hoge_\(fuga\))を処理できる方式
-		$_ =~ s{(!?)\[([^\]]*)\]\(([^\)\"\']*?)(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
+		# リンク先には対応の取れた () を含められる（https://example.com/a_(b_(c))）
+		$_ =~ s{(!?)\[((?:[^\[\]]++|\[(?2)\])*)\]\(((?:[^\(\)\"\']|\((?3)\))*?)(?:\s*("[^\"]*"|'[^\']*')\s*)?\)}
 		{
 			my $is_img= $1;
 			my $text  = $2;
@@ -803,9 +900,10 @@ sub parse_inline {
 					if ($self->{footnote_order}[$i] eq $fn_id) { $num = $i + 1; last; }
 				}
 				my $id = "fn-$fn_id";
-				my $title_text = $self->strip_markdown($self->{footnotes}{$fn_id});
-				$self->tag_escape($title_text);
-				"<sup id=\"fnref-$fn_id\"><a href=\"#$id\" title=\"$title_text\">[$num]</a></sup>";
+				# [GFM] 2回目以降の参照は fnref-id-2, fnref-id-3 …
+				my $n = ++$self->{footnote_refs}{$fn_id};
+				my $ref_id = "fnref-$fn_id" . ($n > 1 ? "-$n" : '');
+				"<sup id=\"$ref_id\"><a href=\"$self->{thisurl}#$id\">[$num]</a></sup>";
 			} else {
 				"[^$fn_id]";
 			}
@@ -822,12 +920,20 @@ sub parse_inline {
 		$_ =~ s!(<\w(?:"[^\"]*"|'[^\"]*'|[^>])*>)!&escape_special_char($1)!eg;
 
 		# 強調
-		$_ =~ s|\*\*(.*?)\*\*|<strong>$1</strong>|xg;
+		# 記号の内側が空白で始まる・終わるものは強調にしない（2 * 3 * 4、*.txt と *.md）。
+		# 閉じていない ** は文字のまま
+		$_ =~ s|\*\*(?=\S)(.+?)(?<=\S)\*\*|<strong>$1</strong>|g;
 		$_ =~ s|  __(.*?)__  |<strong>$1</strong>|xg;
-		$_ =~ s| \*([^\*]*)\*|<em>$1</em>|xg;
+		$_ =~ s|(?<!\*)\*(?=[^\s\*])([^\*]*?[^\s\*])\*(?!\*)|<em>$1</em>|g;
+		$_ =~ s|(?<!\*)\*([^\s\*])\*(?!\*)|<em>$1</em>|g;
 
 		if ($self->{gfm_ext}) {
-			$_ =~ s#(^|\W)_([^_]*)_(\W|$)#$1<em>$2</em>$3#g;		# [GFM]
+			# [GFM] 前後が文字（日本語を含む）のときは強調にしない（snake_case_name、図にない_libraries_が）。
+			# 文字かどうかを見るため、この処理だけ文字列に戻す
+			my $decoded = utf8::decode($_);
+			$_ =~ s#(?<![\p{L}\p{N}_])_(?=[^\s_])([^_]*?[^\s_])_(?![\p{L}\p{N}_])#<em>$1</em>#g;
+			$_ =~ s#(?<![\p{L}\p{N}_])_([^\s_])_(?![\p{L}\p{N}_])#<em>$1</em>#g;
+			if ($decoded) { utf8::encode($_); }
 		} else {
 			$_ =~ s|_( [^_]*)_ |<em>$1</em>|xg;				# [M]
 		}
@@ -838,15 +944,24 @@ sub parse_inline {
 		}
 
 		# escape special charactor "<" ">"
+		# HTMLに無いタグ名（<M>、<x86 Panther Lake> など）は文字として表示する
 		if ($self->{escape_spchar}) {
 			$_ =~ s!(.*?)(</[\w\-]+>|<[\w\-]+(?:\s+[\w\-]+(?:\s*=\s*(?:[^\s\"]+|"[^\"]*"))?)*\s*/?>|$)!
 				my $t   = $1;
 				my $tag = $2;
+				my ($name) = $tag =~ m|^</?([\w\-]+)|;
+				unless ($name eq '' || $self->is_html_tag_name($name)) {
+					$t  .= $tag;
+					$tag = '';
+				}
 				$t =~ s/</&lt;/g;
 				$t =~ s/>/&gt;/g;
 				$t . $tag;
 			!eg;
 		}
+
+		# [S] ブロック要素（バナー、キャプション付きの画像）だけの段落は <p> で囲まない
+		$_ =~ s!^<p>(<(div|figure)\b.*</\2>)</p>$!$1!;
 	}
 
 	#---------------------------------------------------
@@ -884,6 +999,31 @@ sub escape_in_code {
 }
 
 #-------------------------------------------------------------------------------
+# ●HTMLのタグ名か
+#-------------------------------------------------------------------------------
+# 許可するかどうかは、この後のタグの除去（info/allow_tags_*.txt）で決める。
+# ここではHTMLのタグとして書かれたものか、文字として書かれたものかだけを見分ける。
+my %HTML_TAG_NAMES = map { $_ => 1 } qw(
+	a abbr address area article aside audio b base bdi bdo blockquote body br button
+	canvas caption center cite code col colgroup command data datalist dd del details dfn
+	dialog div dl dt em embed fieldset figcaption figure font footer form
+	h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd keygen
+	label legend li link main map mark math menu meta meter nav noscript object ol
+	optgroup option output p param picture pre progress q rp rt ruby s samp script
+	search section select slot small source span strike strong style sub summary sup
+	table tbody td template textarea tfoot th thead time title tr track tt u ul var
+	video wbr
+	svg path g circle ellipse line polygon polyline rect text tspan defs use symbol
+	toc module
+);
+sub is_html_tag_name {
+	my $self = shift;
+	my $name = lc(shift);
+	# カスタム要素（amp-ad など）は名前に - を含む
+	return $HTML_TAG_NAMES{$name} || index($name, '-') > 0;
+}
+
+#-------------------------------------------------------------------------------
 # ●タグのエスケープ
 #-------------------------------------------------------------------------------
 sub tag_escape {
@@ -914,12 +1054,31 @@ sub output_markdown_footnotes {
 	push(@out, '<ol>');
 
 	foreach my $fn_id (@$order) {
+		# [GFM] 参照ごとに戻るリンクを付ける。2つ目からは番号を付ける
+		my $count = $self->{footnote_refs}{$fn_id} || 1;
+		my $backref = join(' ', map {
+			my $ref_id = "fnref-$fn_id" . ($_ > 1 ? "-$_" : '');
+			"<a href=\"$self->{thisurl}#$ref_id\">&#8617;" . ($_ > 1 ? "<sup>$_</sup>" : '') . '</a>';
+		} 1..$count);
+
 		my $content = $footnotes->{$fn_id};
-		my @lines = split(/\n/, $content);
-		my $parsed = $self->parse_inline(\@lines);
+		my $parsed;
+		if ($content =~ /\n\s*\n/) {
+			# [GFM] 複数の段落は、本文と同じくブロックとして処理し、戻るリンクは最後の段落に入れる
+			my $blk = $self->parse_nest_block([ split(/\n/, $content) ]);
+			$parsed = $self->parse_inline([ grep { $_ ne '' } @$blk ]);
+			if ($parsed->[$#$parsed] !~ s|</p>([\x01\x02]*)$| $backref</p>$1|) {
+				push(@$parsed, $backref);
+			}
+		} else {
+			$parsed = $self->parse_inline([ split(/\n/, $content) ]);
+			# 本文の段落と同じく、改行はbr変換する
+			$_ .= '<br />' foreach @$parsed[0 .. $#$parsed-1];
+			$parsed->[$#$parsed] .= " $backref";
+		}
 		$content = join("\n", @$parsed);
 		my $id = "fn-$fn_id";
-		push(@out, "<li id=\"$id\">$content <a href=\"#fnref-$fn_id\">&#8617;</a></li>");
+		push(@out, "<li id=\"$id\">$content</li>");
 	}
 
 	push(@out, '</ol>');
@@ -967,6 +1126,51 @@ sub generate_link_id {
 	}
 	$ids->{$id} = 1;
 	return $id;
+}
+
+#-------------------------------------------------------------------------------
+# ●見出しに、今の見出しのIDを識別子 [#id] として書き足す
+#-------------------------------------------------------------------------------
+# 見出しの文字を変えてもIDが変わらないよう、記事の保存時に呼ぶ。
+# 見出しは行を見て探す（引用やリストの中も見る。コードフェンスの中は見ない）。
+# 書き足す前と後で変換結果がまったく同じになる時だけ書き足し、違えば元の原文を返す。
+sub add_heading_ids {
+	my $self = shift;
+	my $text = shift;
+	my @before = $self->parse($text);
+	my @ids    = @{ $self->{heading_ids} };
+	if (!@ids) { return $text; }
+
+	my $n = 0;
+	my $added = 0;
+	my $fence;
+	my @lines = split(/\n/, $text, -1);
+	foreach(@lines) {
+		# 引用の > とリストの記号を除く
+		my $rest = $_;
+		$rest =~ s/^(?: ? ? ?>\s?|\s*(?:[\*\+\-]|\d+\.) +)*\s*//;
+		if (defined $fence) {
+			if ($rest =~ /^\Q$fence\E[`~]*\s*$/) { undef $fence; }
+			next;
+		}
+		if ($rest =~ /^(```+|~~~+)/) {
+			$fence = $1;
+			next;
+		}
+		if ($rest !~ /^#+\s+(.*?)$/) { next; }
+		my $title = $1;
+		my $id = $ids[$n++];
+		if (!defined $id) { return $text; }
+		if ($title =~ /^(?:(.*?)\s+)?\[#$HEADING_ID\]\s*$/) { next; }	# 識別子がある
+		$_ =~ s/\s*$/ [#$id]/;
+		$added++;
+	}
+	if (!$added || $n != @ids) { return $text; }
+
+	my $new   = join("\n", @lines);
+	my @after = $self->parse($new);
+	if ($before[0] ne $after[0] || $before[1] ne $after[1]) { return $text; }
+	return $new;
 }
 
 #-------------------------------------------------------------------------------

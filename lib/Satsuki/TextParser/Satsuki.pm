@@ -1337,8 +1337,8 @@ sub search {
 		@$ary = ();
 	}
 
-	# リンク置換
-	my $name = join(':', @argv);
+	# リンク置換。添付ファイルは、名前を省いたらファイル名を出す
+	my $name = $tag->{name} eq 'file' ? $argv[$#argv] : join(':', @argv);
 	$url = $self->replace_link($url, \@argv, $argc, $code);
 
 	# タグそのまま
@@ -1597,9 +1597,13 @@ sub generate_toc {
 	my $tab = "\t" x $level;
 	my $out = $level ? "$tab<ul>\n" : "<ul class=\"$opt->{class}\">\n";
 
-	foreach(@$secs) {
-		if ($_->{id} eq '') { next; }
+	# 段を飛ばした見出しは、飛ばした段（IDの無い仮の項目）を除いて1つ上の段に繰り上げる
+	my @items = $self->toc_items($secs);
 
+	# 目次に入る見出しが無ければ、空の<ul>は出さない
+	if (!@items) { return ''; }
+
+	foreach(@items) {
 		my $subs = $_->{children};
 		my $num  = $_->{number};
 		if ($num ne '') { $num .= ' '; }
@@ -1618,6 +1622,12 @@ sub generate_toc {
 	}
 	$out .= "$tab</ul>";
 	return $out;
+}
+
+sub toc_items {
+	my $self = shift;
+	my $secs = shift || [];
+	return map { $_->{id} eq '' ? $self->toc_items($_->{children}) : $_ } @$secs;
 }
 
 ################################################################################

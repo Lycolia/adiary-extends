@@ -38,11 +38,29 @@
 
 === 画像のキャプションがあるときだけ figure で囲む
 # キャプションは、画像の後の2つ目以降の引数に # を付けて書く
-# （<p> の中に <figure> が入るのは既知の問題。使用数0のため未対応）
+# <figure> だけの段落は <p> で囲まない
 --- input
 [image:S:adiary/2026/01/:a.png:代替:#説明]
 --- expected
-<p><figure><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="代替" data-fancybox="k1"><img alt="代替" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a><figcaption>説明</figcaption></figure></p>
+<figure><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="代替" data-fancybox="k1"><img alt="代替" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a><figcaption>説明</figcaption></figure>
+
+=== 代替テキストを省いた画像の title はタグ名にしない
+--- input
+[image:S:adiary/2026/01/:a.png]
+--- expected
+<p><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="" data-fancybox="k1"><img alt="" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a></p>
+
+=== 代替テキストの : は title にもそのまま出す
+--- input
+[image:S:adiary/2026/01/:a.png:4:30と23:00]
+--- expected
+<p><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="4:30と23:00" data-fancybox="k1"><img alt="4:30と23:00" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a></p>
+
+=== 名前を省いた添付ファイルはファイル名をリンクの文字にする
+--- input
+[file:pdf:posts/2026/10/:a.pdf] [file:zip:posts/2026/10/:demo.zip:デモ一式]
+--- expected
+<p><a href="pub/blog/image/posts/2026/10/a.pdf" class="tag-file" title="ファイル">a.pdf</a> <a href="pub/blog/image/posts/2026/10/demo.zip" class="tag-file" title="ファイル">デモ一式</a></p>
 
 === YouTube
 --- input
@@ -57,10 +75,11 @@
 <p><module name="youtube" vid="n_D__CT5-H0" width="480" height="270" opt="start=4279"></p>
 
 === バナー
+# バナーだけの段落は <p> で囲まない
 --- input
 [info:お知らせ]
 --- expected
-<p><div class="notice_banner info">    <div><svg width="25" viewBox="0 0 24 24" aria-label="fontSize small"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path></svg></div>    <div class="message">お知らせ</div></div></p>
+<div class="notice_banner info">    <div><svg width="25" viewBox="0 0 24 24" aria-label="fontSize small"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path></svg></div>    <div class="message">お知らせ</div></div>
 
 === 非対応: 注釈 ((注釈)) は文章
 --- todo: 作り直しで対応（非対応の記法を文章として表示）
@@ -69,3 +88,49 @@
 --- expected
 <p>本文((注釈))</p>
 
+
+=== 目次に入る見出しが無ければ何も出さない
+--- input
+本文
+
+[*toc]
+--- expected
+<p>本文</p>
+
+=== 段を飛ばした見出しは1つ上の段に繰り上げて目次に出す
+--- input
+# A
+
+### C
+
+## B
+
+[*toc]
+--- expected
+<h3 id="a"><a href="/0001#a">A</a></h3>
+<h5 id="c"><a href="/0001#c">C</a></h5>
+<h4 id="b"><a href="/0001#b">B</a></h4>
+<ul class="toc">
+	<li><a href="/0001#a">A</a>
+	<ul>
+		<li><a href="/0001#c">C</a></li>
+		<li><a href="/0001#b">B</a></li>
+	</ul></li>
+</ul>
+
+=== 段を飛ばした見出しだけでも目次に出す
+--- input
+## 見出し
+
+[*toc]
+--- expected
+<h4 id="見出し"><a href="/0001#見出し">見出し</a></h4>
+<ul class="toc">
+	<li><a href="/0001#見出し">見出し</a></li>
+</ul>
+
+=== バナーの後に文章が続く段落は p で囲む
+--- input
+[info:お知らせ] 本文
+--- expected
+<p><div class="notice_banner info">    <div><svg width="25" viewBox="0 0 24 24" aria-label="fontSize small"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path></svg></div>    <div class="message">お知らせ</div></div> 本文</p>

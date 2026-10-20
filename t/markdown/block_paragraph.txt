@@ -90,11 +90,92 @@ ___
 
 [^1]: 脚注の内容
 --- expected
-<p>本文<sup id="fnref-1"><a href="#fn-1" title="脚注の内容">[1]</a></sup></p>
+<p>本文<sup id="fnref-1"><a href="/0001#fn-1">[1]</a></sup></p>
 <div class="footnotes">
 <hr />
 <ol>
-<li id="fn-1">脚注の内容 <a href="#fnref-1">&#8617;</a></li>
+<li id="fn-1">脚注の内容 <a href="/0001#fnref-1">&#8617;</a></li>
 </ol>
 </div>
 
+
+=== 脚注のIDはラベルを使う
+--- input
+本文[^note]
+
+[^note]: 脚注の内容
+--- expected
+<p>本文<sup id="fnref-note"><a href="/0001#fn-note">[1]</a></sup></p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn-note">脚注の内容 <a href="/0001#fnref-note">&#8617;</a></li>
+</ol>
+</div>
+
+=== 脚注の複数行（インデントした次の行）
+--- input
+本文[^1]
+
+[^1]: 1行目
+    2行目
+--- expected
+<p>本文<sup id="fnref-1"><a href="/0001#fn-1">[1]</a></sup></p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn-1">1行目<br />
+2行目 <a href="/0001#fnref-1">&#8617;</a></li>
+</ol>
+</div>
+
+=== 同じ脚注を2回参照（cmark-gfm と同じく、2回目からは fnref-id-n）
+--- input
+a[^1] b[^1]
+
+[^1]: 脚注
+--- expected
+<p>a<sup id="fnref-1"><a href="/0001#fn-1">[1]</a></sup> b<sup id="fnref-1-2"><a href="/0001#fn-1">[1]</a></sup></p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn-1">脚注 <a href="/0001#fnref-1">&#8617;</a> <a href="/0001#fnref-1-2">&#8617;<sup>2</sup></a></li>
+</ol>
+</div>
+
+=== 脚注の2段落目（空行を挟んでインデントした行。cmark-gfm と同じく脚注の続き）
+--- input
+本文[^1]
+
+[^1]: 1段落目
+
+    2段落目
+
+後
+--- expected
+<p>本文<sup id="fnref-1"><a href="/0001#fn-1">[1]</a></sup></p>
+<p>後</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn-1"><p>1段落目</p>
+<p>2段落目 <a href="/0001#fnref-1">&#8617;</a></p></li>
+</ol>
+</div>
+
+=== 脚注の後の空行に続くインデントの無い行は本文
+--- input
+本文[^1]
+
+[^1]: 脚注
+
+後
+--- expected
+<p>本文<sup id="fnref-1"><a href="/0001#fn-1">[1]</a></sup></p>
+<p>後</p>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn-1">脚注 <a href="/0001#fnref-1">&#8617;</a></li>
+</ol>
+</div>
