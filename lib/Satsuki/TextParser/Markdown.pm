@@ -344,6 +344,8 @@ sub parse_block {
 			$self->p_block_end(\@ary, \@p_block, $pmode);
 			my $ulol = length($1)<2 ? 'ul' : 'ol';
 			my $mark = $self->{strict_list} ? $1 : undef;
+			# 番号付きリストは、書いた番号から始める
+			my $start = ($ulol eq 'ol' && $1 != 1) ? ' start="' . ($1+0) . '"' : '';
 			$mark = ($mark =~ /^\d+\./) ? '0' : $mark;
 			my @list=($x);
 			my $blank=0;
@@ -363,7 +365,7 @@ sub parse_block {
 			if ($list[$#list] eq '') { pop(@list); }
 
 			# listの構成
-			push(@ary, "<$ulol>\x01");
+			push(@ary, "<$ulol$start>\x01");
 			my @ul;
 			my $li = [];
 			my $blank=0;

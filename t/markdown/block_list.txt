@@ -59,7 +59,7 @@
     ```
 11. c
 --- expected
-<ol>
+<ol start="9">
 <li>a</li>
 <li>b
 <pre><code class="language-bash">echo
@@ -127,7 +127,6 @@
 <p>段落</p>
 
 === 番号付きリストの開始番号
---- todo: 作り直しで対応（開始番号を反映する）
 --- input
 3. a
 4. b
