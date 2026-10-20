@@ -54,8 +54,8 @@ Helpers.push({
 	math_i:	{ func: 'inline',	tag: '[[math:$0]]' },
 	album:	{ func: 'album' },
 	image:	{
-		original:	'[image:L:%d:%f:%f%c]',
-		thumbnail:	'[image:S:%d:%f:%f%c]',
+		original:	'[image:L:%d:%f:%c]',
+		thumbnail:	'[image:S:%d:%f:%c]',
 		file:		'[file:%e:%d:%f:%f]',
 		chain:		"\n",
 		exif:		true
@@ -93,8 +93,8 @@ Helpers.push({
 	math_i:	{ func: 'inline',	tag: '[[math:$0]]' },
 	album:	{ func: 'album' },
 	image:	{
-		original:	'[image:L:%d:%f:%f%c]',
-		thumbnail:	'[image:S:%d:%f:%f%c]',
+		original:	'[image:L:%d:%f:%c]',
+		thumbnail:	'[image:S:%d:%f:%c]',
 		file:		'[file:%e:%d:%f:%f]',
 		chain:		"\n",
 		exif:		true

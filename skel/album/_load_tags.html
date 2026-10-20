@@ -7,8 +7,8 @@
 # ※タグの仕様を変える時は、記事編集画面のjsも変更することを忘れずに。
 #
 <$h = new>
-<$h.thumb = "[image:S:%d:%f:%f%c]">
-<$h.image = "[image:L:%d:%f:%f%c]">
+<$h.thumb = "[image:S:%d:%f:%c]">
+<$h.image = "[image:L:%d:%f:%c]">
 <$h.file  = "[file:%e:%d:%f:%f]">
 <$h.exif  = ":#[exif:%d:%f:" . if(v.blog.exif_tag, v.blog.exif_tag, '%271 %272 / %37386mm F%33437 %33434sec ISO%34855') . ']'>
 
