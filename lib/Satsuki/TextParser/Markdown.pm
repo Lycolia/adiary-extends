@@ -21,7 +21,6 @@ sub new {
 	$self->{tab_width} = 4;		# タブの幅
 	$self->{escape_spchar} = 1;	# タグではない <, > をエスケープする
 
-	$self->{lf_patch} = 1;		# 日本語のpタグ中の改行を消す
 	$self->{md_in_htmlblk} = 1;	# Markdown Inside HTML Blocksを許可する / PHP Markdown Extra
 	$self->{sectioning}   = 1;	# sectionタグを適時挿入する
 	$self->{gfm_ext}      = 1;	# GitHub Flavored Markdown拡張を使用する
@@ -669,19 +668,12 @@ sub p_block_end {
 	my $ary  = shift;
 	my $blk  = shift;
 	my $pmode= shift;
-	my $lf_patch = $self->{lf_patch};
 	if (!@$blk) { return; }
 
 	my $line = ($pmode ? '<p>' : '') . shift(@$blk);
 	foreach my $x (@$blk) {
-    # 改行はbr変換する
-    $line = $line . "<br />";
-		if ($lf_patch && 0x7f < ord(substr($line,-1)) &&  0x7f < ord($x)) {
-			# 日本語文章中に改行が含まれるとスペースになり汚いため行連結する。
-			$line .= $x;
-			next;
-		}
-		push(@$ary, $line);
+		# 改行はbr変換する
+		push(@$ary, $line . '<br />');
 		$line = $x;
 	}
 	# \> によるエスケープ
@@ -1008,6 +1000,8 @@ sub output_markdown_footnotes {
 			}
 		} else {
 			$parsed = $self->parse_inline([ split(/\n/, $content) ]);
+			# 本文の段落と同じく、改行はbr変換する
+			$_ .= '<br />' foreach @$parsed[0 .. $#$parsed-1];
 			$parsed->[$#$parsed] .= " $backref";
 		}
 		$content = join("\n", @$parsed);

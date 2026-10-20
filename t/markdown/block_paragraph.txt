@@ -124,7 +124,7 @@ ___
 <div class="footnotes">
 <hr />
 <ol>
-<li id="fn-1">1行目
+<li id="fn-1">1行目<br />
 2行目 <a href="/0001#fnref-1">&#8617;</a></li>
 </ol>
 </div>

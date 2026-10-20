@@ -52,7 +52,6 @@ sub new_parser {
 	my %conf = (
 		section_hnum     => 3,
 		tab_width        => 4,
-		lf_patch         => 1,
 		md_in_htmlblk    => 1,
 		sectioning       => 1,
 		gfm_ext          => 1,
