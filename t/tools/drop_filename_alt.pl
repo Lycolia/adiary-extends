@@ -1,9 +1,10 @@
 #!/usr/bin/perl
 use strict;
 #-------------------------------------------------------------------------------
-# 画像の代替テキストがファイル名と同じものを、記事の原文から落とす
+# 画像の代替テキストや添付ファイルの名前がファイル名と同じものを、記事の原文から落とす
 #-------------------------------------------------------------------------------
 # [image:S:folder/:x.png:x.png] → [image:S:folder/:x.png]（image:L も同じ）
+# [file:mp4:folder/:x.mp4:x.mp4] → [file:mp4:folder/:x.mp4]
 #
 # 書き換えるのは記事データ（data/db/*_art/0*.dat）の原文（_text）だけ。
 # コードフェンスとコードスパンの中は書き換えない。
@@ -17,6 +18,7 @@ use strict;
 # 注意:
 #   - 代替テキストを省いた画像の title がタグ名（image:S）にならないパーサーが必要。
 #     そうでないパーサーでは --apply を断る。
+#     （添付ファイルは、名前を省いたらファイル名を出すパーサーであることも確かめる）
 #   - 書き換え中に記事を保存しないこと（読んだ後にファイルが変わっていたら、その記事は飛ばす）。
 #   - 保存済みの HTML（text 欄）は書き換えない。変換結果が変わる記事は、記事の再構築で作り直す。
 #
@@ -45,15 +47,22 @@ require Satsuki::Base::HTTP;
 }
 
 # 代替テキストを省いた画像の title がタグ名になるパーサーでは、書き換えると表示が悪くなる
-my $sample = MarkdownTest::parse_md('[image:S:a/:x.png]');
-my $parser_ok = $sample !~ /title="image:S"/;
+my $sample = MarkdownTest::parse_md('[image:S:a/:x.png] [file:pdf:a/:x.pdf]');
+my $parser_ok = $sample !~ /title="image:S"/ && $sample =~ m|>x\.pdf</a>|;
 if ($opt{apply} && !$parser_ok) {
-	die "このパーサーでは、代替テキストを省いた画像の title がタグ名（image:S）になります。先にパーサーを直してください。\n";
+	die "このパーサーでは、代替テキストを省いた画像の title がタグ名（image:S）になるか、名前を省いた添付ファイルにファイル名が出ません。先にパーサーを直してください。\n";
 }
 
 #-------------------------------------------------------------------------------
 # 原文の書き換え
 #-------------------------------------------------------------------------------
+sub replace_tags {
+	my $count = 0;
+	$count += ($_[0] =~ s/\[image:([SL]):([^\]:]*):([^\]:]+):\3\]/[image:$1:$2:$3]/g);
+	$count += ($_[0] =~ s/\[file:([^\]:]*):([^\]:]*):([^\]:]+):\3\]/[file:$1:$2:$3]/g);
+	return $count;
+}
+
 sub drop_alt {
 	my $text = shift;
 	my $count = 0;
@@ -75,11 +84,11 @@ sub drop_alt {
 			if (@parts) {
 				my $code = shift(@parts);
 				shift(@parts);	# split の中の \2 の分
-				$count += ($t =~ s/\[image:([SL]):([^\]:]*):([^\]:]+):\3\]/[image:$1:$2:$3]/g);
+				$count += replace_tags($t);
 				$out .= $t . $code;
 				next;
 			}
-			$count += ($t =~ s/\[image:([SL]):([^\]:]*):([^\]:]+):\3\]/[image:$1:$2:$3]/g);
+			$count += replace_tags($t);
 			$out .= $t;
 		}
 		$_ = $out;
@@ -146,7 +155,7 @@ print "\n";
 printf "対象: %d 記事 / %d 箇所 / 変換結果が変わる記事: %d\n", $n_files, $n_tags, $n_changed;
 if (@changed) { print "  再構築が必要: ", join(' ', @changed), "\n"; }
 if (!$parser_ok) {
-	print "\n注意: このパーサーでは、代替テキストを省いた画像の title がタグ名（image:S）になります。\n";
+	print "\n注意: このパーサーでは、代替テキストを省いた画像の title がタグ名（image:S）になるか、名前を省いた添付ファイルにファイル名が出ません。\n";
 	print "      先にパーサーを直してください。\n";
 }
 if ($opt{apply}) {
