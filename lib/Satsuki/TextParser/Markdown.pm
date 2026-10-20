@@ -144,10 +144,10 @@ sub restore_comments {
 # Markdown Block Parser
 ################################################################################
 sub parse_nest_block {
-	return &parse_block($_[0], $_[1], 1);
+	return &parse_block($_[0], $_[1], 1, $_[2]);
 }
 sub parse_block {
-	my ($self, $lines, $nest) = @_;
+	my ($self, $lines, $nest, $pmode) = @_;
 
 	my $block_tags = qr!
 		# original
@@ -160,7 +160,8 @@ sub parse_block {
 		address|aside|base|hr|option|source
 	!x;
 
-	my $pmode      = ($nest && !grep { $_ eq '' } @$lines) ? 0 : 1;
+	# $pmode: 段落を <p> で囲むか（省略時は、入れ子のブロックで空行が無ければ囲まない）
+	if (!defined $pmode) { $pmode = ($nest && !grep { $_ eq '' } @$lines) ? 0 : 1; }
 	my $sectioning = $nest ? 0 : $self->{sectioning};
 	my $in_section = 0;
 	my $seemore    = 1;
@@ -429,7 +430,8 @@ sub parse_block {
 					$_ =~ s/^ {1,$n}//;
 				}
 
-				my $blk = $self->parse_nest_block( $li );
+				# 入れ子のリストやコードフェンスの中の空行では、項目を <p> で囲まない
+				my $blk = $self->parse_nest_block( $li, $self->is_loose_item($li) );
 				if ($blk->[$#$blk] eq '') { pop(@$blk); }
 				$blk->[0] = $li_tag . $blk->[0];
 				$blk->[$#$blk] .= '</li>';
@@ -644,6 +646,56 @@ TEXT
 #-------------------------------------------------------------------------------
 # \ とその次の1文字はまとめて読む（\\| の | は区切り、\| はセルの中の |）。
 # \| はコードスパンの中でも | にする。行頭と行末の | と、セルの前後の空白は除く。
+#-------------------------------------------------------------------------------
+# リストの項目の段落を <p> で囲むか
+#-------------------------------------------------------------------------------
+# 項目の直下のブロックの間の空行と、項目の最後の空行（次の項目との間）だけを数える。
+# 入れ子のリストやコードフェンスの中の空行は数えない。
+# $lines は、項目の内容の開始位置までインデントを除いた行。
+sub is_loose_item {
+	my ($self, $lines) = @_;
+	my $fence;
+	my $in_list;
+	my $mark;
+	for(my $i=0; $i<=$#$lines; $i++) {
+		my $x = $lines->[$i];
+		# [GFM] コードフェンス（判定は parse_block と同じ）
+		if (defined $fence) {
+			if (substr($x,0,length($fence)) eq $fence && $x =~ /^[`~]+\s*$/) { undef $fence; }
+			next;
+		}
+		if ($self->{gfm_ext} && $x =~ /^(```+|~~~+)([^`]*?)\s*$/) {
+			$fence   = $1;
+			$in_list = 0;
+			next;
+		}
+		if ($x ne '') {
+			if (!$in_list && $x =~ /^ ? ? ?(\*|\+|\-|\d+\.) /) {
+				$in_list = 1;
+				$mark = ($1 =~ /^\d+\./) ? '0' : $1;
+			}
+			next;
+		}
+
+		# 空行
+		my $j = $i+1;
+		while($j<=$#$lines && $lines->[$j] eq '') { $j++; }
+		if ($j > $#$lines) { return 1; }
+		# 入れ子のリストの続き（判定はリストの行の収集と同じ）
+		if ($in_list && $lines->[$j] =~ /^ ? ?(\*|\+|\-|\d+\.) |^ /) {
+			# リストの開始文字が異なる時は、別のリスト
+			if ($1 && $self->{strict_list}) {
+				my $m = ($1 =~ /^\d+\./) ? '0' : $1;
+				if ($m ne $mark) { return 1; }
+			}
+			$i = $j-1;
+			next;
+		}
+		return 1;
+	}
+	return 0;
+}
+
 sub split_table_row {
 	my ($self, $line) = @_;
 	$line =~ s/^\s*\|?//;
