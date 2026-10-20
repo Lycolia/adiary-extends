@@ -1337,8 +1337,8 @@ sub search {
 		@$ary = ();
 	}
 
-	# リンク置換
-	my $name = join(':', @argv);
+	# リンク置換。添付ファイルは、名前を省いたらファイル名を出す
+	my $name = $tag->{name} eq 'file' ? $argv[$#argv] : join(':', @argv);
 	$url = $self->replace_link($url, \@argv, $argc, $code);
 
 	# タグそのまま
