@@ -37,19 +37,6 @@
 	</select>
 	</div>
 
-<$ary = v.load_print_themes('satsuki2')>
-<@ifexec(##ary >0, begin)>
-<$ptheme = ps.print_theme || '_print'>
-	<div>
-	<strong>印刷用テーマ</strong>
-	<select name="print_theme" id="print-theme">
-		<@forexec(t, ary, begin)>
-		<option value="<@t>"<@if(t eq ptheme,' selected')>><@t></option>
-		<$end>
-	</select>
-	</div>
-<$end>
-
 <!-- information内のモジュールデータ -->
 <div id="information-modules" style="display: none">
 
@@ -57,7 +44,6 @@
 <@if(ps.elements || ps.title, ps.elements, begin_string)>
 description
 artlist-link
-print-link
 <$end></div>
 
 <div data-module-name="description" title="ブログの説明">
@@ -75,14 +61,6 @@ print-link
 <div data-module-name="artcomlist-link" title="記事・コメント一覧へのリンク">
 <a href="<@v.myself>?artlist" target="_blank">記事一覧</a> / 
 <a href="<@v.myself>?comlist" target="_blank">コメント一覧</a>
-</div>
-
-<div data-module-name="print-link" title="印刷用表示へのリンク">
-<span class="to-print"><a href="<@v.myself2>?_theme=satsuki2/_print" target="_blank">印刷用の表示</a></span>
-</div>
-
-<div data-module-name="print-link_blank" title="印刷用表示へのリンク（新ページ）">
-<span class="to-print"><a href="<@v.myself2>?_theme=satsuki2/_print" target="_blank">印刷用の表示</a></span>
 </div>
 
 <div data-module-name="bcounter" title="はてなブックマークカウンタ" data-alt="はてな<br>ブックマーク<br>カウンタ" data-default="de">
@@ -146,18 +124,6 @@ sel.change( function(){
 	append_element( obj.val() );
 	obj.val('');
 });
-$('#print-theme').change( function(){
-	var val = $(this).val().replace(/[^\w]/g, '');
-	if (!val) return;
-
-	$('.to-print a').each(function(idx, ele){
-		var obj=$(ele);
-		var href = obj.attr('href');
-		href = href.replace(/_theme=satsuki2\/_\w+/, "_theme=satsuki2/" + val);
-		obj.attr('href', href);
-	});
-
-});
 function append_element(name, val) {
 	if (name == '') return;
 	var mod= modules[ name ];
@@ -206,7 +172,6 @@ function init() {
 		if (!name) continue;
 		append_element(name, x[1]);
 	}
-	$('#print-theme').change();
 }
 init();
 ///
