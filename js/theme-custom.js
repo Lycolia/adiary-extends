@@ -15,9 +15,6 @@ $(function(){
 	var readme = $('#readme-button');
 	var submit_btn = $('#submit-btn');
 
-	var sysmode_no = $('#sysmode-no');
-	var sysmode_no_flag;
-
 	var sel = $('#theme-select');
 	var theme_query='';
 
@@ -67,9 +64,6 @@ sel.change(function(evt){
 		readme.data('url', '');
 		readme.attr('disabled', true);
 	}
-	// システムモード対応確認
-	check_system_mode(readme.data('url'));
-
 	// カスタマイズ機能の初期化
 	init_custmize(theme);
 });
@@ -90,49 +84,6 @@ sel.keydown( function(evt){
 });
 
 }
-////////////////////////////////////////////////////////////////////////////////
-// ●システムモードの対応確認
-////////////////////////////////////////////////////////////////////////////////
-function check_system_mode(url) {
-	if (!url) {
-		sysmode_no_flag = true;
-		sysmode_no.prop('checked', true);
-		return ;
-	}
-	function parse_readme(text) {
-		var lines = text.split(/\r?\n/);
-
-		sysmode_no_flag = true;
-		for(var i=0; i<lines.length; i++) {
-			if (! lines[i].match(/system-mode:\s*yes/i)) continue;
-			sysmode_no_flag = false;
-		}
-		if (sysmode_no_flag)
-			sysmode_no.prop('checked', true);
-		else if (! sysmode_no.data('orig'))
-			sysmode_no.prop('checked', false);
-	};
-	$.ajax({
-		url: url,
-		dataType: 'text',
-		success: parse_readme
-	});
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// ●システムモードの非対応警告
-////////////////////////////////////////////////////////////////////////////////
-sysmode_no.change(function(){
-	if (sysmode_no.prop('checked')) return;
-	if (!sysmode_no_flag) return;
-
-	adiary.confirm('#sysmode-no-warning', function(flag){
-		if (!flag)
-			sysmode_no.prop('checked', true);
-	});
-});
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // ●iframe内ロード（CSS欄追加。リンク書き換え）
 ////////////////////////////////////////////////////////////////////////////////
