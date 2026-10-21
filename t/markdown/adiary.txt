@@ -134,3 +134,35 @@
 [info:お知らせ] 本文
 --- expected
 <p><div class="notice_banner info">    <div><svg width="25" viewBox="0 0 24 24" aria-label="fontSize small"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path></svg></div>    <div class="message">お知らせ</div></div> 本文</p>
+
+=== 目次のリンクも見出しの識別子を使う
+--- input
+[*toc]
+
+# 見出し [#a1b2c3d4]
+## 引用符 [#x"y]
+--- expected
+<ul class="toc">
+	<li><a href="/0001#a1b2c3d4">見出し</a>
+	<ul>
+		<li><a href="/0001#x&quot;y">引用符</a></li>
+	</ul></li>
+</ul>
+<h3 id="a1b2c3d4"><a href="/0001#a1b2c3d4">見出し</a></h3>
+<h4 id="x&quot;y"><a href="/0001#x&quot;y">引用符</a></h4>
+
+=== 引用の中の見出しは目次に入れない
+--- input
+[*toc]
+
+# 見出し
+
+> ## 引用の中の見出し
+--- expected
+<ul class="toc">
+	<li><a href="/0001#見出し">見出し</a></li>
+</ul>
+<h3 id="見出し"><a href="/0001#見出し">見出し</a></h3>
+<blockquote>
+<h4 id="引用の中の見出し"><a href="/0001#引用の中の見出し">引用の中の見出し</a></h4>
+</blockquote>
