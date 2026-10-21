@@ -1,20 +1,19 @@
-Title: lyco
-Template: lycolia
+Title: lyndbaum
+Template: lyndbaum
 Author: Lycolia
 Access: https://github.com/Lycolia/adiary-extends
 License: AGPLv3
 Smartphone: yes
 Responsive: yes
 
-・lyndbaum の公開画面に合わせた、レスポンシブ対応のテーマです。
+・lyndbaumの公開画面に合わせた、レスポンシブ対応のテーマです。
 ・広い画面では「サイドバーA｜本文｜サイドバーB」の3カラム、
 　中くらいでは本文の右にサイドバーB、狭い画面では本文だけを表示します。
 　隠れたサイドバーは、ヘッダーのボタンで引き出しとして開きます。
-・マークアップは theme/lycolia/_skel/ のスケルトンで組んでいます。
+・マークアップは theme/lyndbaum/_skel/ のスケルトンで組んでいます。
 　スケルトンを変えたときは、デザイン編集で保存し直してください。
 ・管理画面には使いません（管理画面は常に標準テーマで表示します）。
 ・色の調整とオプションには対応していません。
 
 ChangeLog
-2026/10/21 lyndbaum に合わせて作り直し
-2015/07/19 初版（wp テーマを元に作成）
+2026/10/21 初版（lyndbaumのレイアウトをベースに作成）
