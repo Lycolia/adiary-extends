@@ -9,8 +9,8 @@ use strict;
 #
 package Satsuki::TextParser::Markdown;
 our $VERSION = '1.30';
-# 見出しの識別子 [#id] に使える文字（generate_id_from_string が作るIDと同じ文字）
-my $HEADING_ID = qr/[\w\-\.\x80-\xff]+/;
+# 見出しの識別子 [#id] に使える文字（ASCIIの空白と制御文字、] 以外）
+my $HEADING_ID = qr/[^\x00-\x20\x7F\]]+/;
 #-------------------------------------------------------------------------------
 ################################################################################
 # Constructor
@@ -78,7 +78,10 @@ sub parse {
 	$self->{sections} = [];
 	$self->{links}    = {};
 	$self->{ids}      = {};
-	$self->{heading_ids} = [];	# 見出しのID（出現順）
+	$self->{heading_ids} = [];	# 見出しのID（出現順。引用の中の見出しは除く）
+	$self->{in_quote}    = 0;	# 引用の中を処理している
+	$self->{in_list}     = 0;	# リストの項目の中を処理している
+	$self->{in_footnote} = 0;	# 脚注の中を処理している
 	$self->{footnotes}     = {};	# 脚注定義 [^id]: content
 	$self->{footnote_order}= [];	# 脚注の出現順序
 	$self->{footnote_refs} = {};	# 脚注ごとの参照の数
@@ -257,22 +260,25 @@ sub parse_block {
 		#---------------------------------------------------------------
 		# Header syntax
 		#---------------------------------------------------------------
+		# リストと脚注の中は見出しにしない（文字のまま）
+		my $no_heading = $self->{in_list} || $self->{in_footnote};
+
 		# ==/--
 		# [M] 2個以上の連なりで文末にスペース以外の文字がない
-		if ($x =~ /^===*\s*$/ && $#p_block == 0) {
+		if (!$no_heading && $x =~ /^===*\s*$/ && $#p_block == 0) {
 			$x = '# '  . pop(@p_block);
 		}
-		if ($x =~ /^---*\s*$/ && $#p_block == 0) {
+		if (!$no_heading && $x =~ /^---*\s*$/ && $#p_block == 0) {
 			$x = '## ' . pop(@p_block);
 		}
 
-		if ($x =~ /^(#+)\s+(.*?)$/) {
+		if (!$no_heading && $x =~ /^(#+)\s+(.*?)$/) {
 			$self->p_block_end(\@ary, \@p_block, $pmode);
 			my $level = length($1);
 			my $title = $2;
 			# 見出しの識別子 [#id]。IDに使い、画面には出さない（見出しの文字を変えてもIDが変わらない）
 			my $fixed_id;
-			if ($title =~ /^(?:(.*?)\s+)?\[#($HEADING_ID)\]\s*$/) {
+			if ($title =~ /^(?:(.*?)[ \t]+)?\[#($HEADING_ID)\][ \t]*$/) {
 				$title    = $1;
 				$fixed_id = $2;
 			}
@@ -280,6 +286,18 @@ sub parse_block {
 				push(@ary, "</section>\x02");
 				push(@ary, "<section>\x02");
 				$in_section=1;
+			}
+
+			# 引用の中の見出しは、目次に入れず、識別子の書き足しにも数えない（引用元の見出しで、記事の章立てではない）
+			if ($self->{in_quote}) {
+				my $id = defined $fixed_id ? $self->generate_link_id($fixed_id)
+					: $self->generate_id_from_string($title);
+				$id =~ s/"/&quot;/g;
+				my $h  = $self->{section_hnum} + $level -1;
+				if (6 < $h) { $h=6; }
+				push(@ary, "$self->{indent}<h$h id=\"$id\"><a href=\"$self->{thisurl}#$id\">$title</a></h$h>\x01");
+				push(@ary,'');
+				next;
 			}
 
 			# generate section
@@ -304,10 +322,12 @@ sub parse_block {
 			my $id    = defined $fixed_id ? $self->generate_link_id($fixed_id)
 				  : $self->generate_id_from_string($title, 'p' . $num);
 			push(@{ $self->{heading_ids} }, $id);
+			my $id_attr = $id;
+			$id_attr =~ s/"/&quot;/g;
 
 			# save section information
 			my $sec = {
-				id	=> $id,
+				id	=> $id_attr,
 				num	=> $num,
 				number  => undef,
 				title	=> $self->parse_oneline($title),
@@ -318,7 +338,7 @@ sub parse_block {
 			# output html
 			my $h  = $self->{section_hnum} + $level -1;
 			if (6 < $h) { $h=6; }
-			push(@ary, "$self->{indent}<h$h id=\"$id\"><a href=\"$self->{thisurl}#$id\">$title</a></h$h>\x01");
+			push(@ary, "$self->{indent}<h$h id=\"$id_attr\"><a href=\"$self->{thisurl}#$id_attr\">$title</a></h$h>\x01");
 			push(@ary,'');
 			next;
 		}
@@ -451,7 +471,9 @@ sub parse_block {
 				}
 
 				# 入れ子のリストやコードフェンスの中の空行では、項目を <p> で囲まない
+				$self->{in_list}++;
 				my $blk = $self->parse_nest_block( $li, $self->is_loose_item($li) );
+				$self->{in_list}--;
 				if ($blk->[$#$blk] eq '') { pop(@$blk); }
 				$blk->[0] = $li_tag . $blk->[0];
 				$blk->[$#$blk] .= '</li>';
@@ -477,7 +499,9 @@ sub parse_block {
 				$x = shift(@$lines);
 			}
 			# [M] 入れ子処理する
+			$self->{in_quote}++;
 			my $blk = $self->parse_nest_block( \@block );
+			$self->{in_quote}--;
 			push(@ary, @$blk);
 			push(@ary, '</blockquote>');
 			next;
@@ -1065,7 +1089,9 @@ sub output_markdown_footnotes {
 		my $parsed;
 		if ($content =~ /\n\s*\n/) {
 			# [GFM] 複数の段落は、本文と同じくブロックとして処理し、戻るリンクは最後の段落に入れる
+			$self->{in_footnote}++;
 			my $blk = $self->parse_nest_block([ split(/\n/, $content) ]);
+			$self->{in_footnote}--;
 			$parsed = $self->parse_inline([ grep { $_ ne '' } @$blk ]);
 			if ($parsed->[$#$parsed] !~ s|</p>([\x01\x02]*)$| $backref</p>$1|) {
 				push(@$parsed, $backref);
@@ -1129,23 +1155,38 @@ sub generate_link_id {
 }
 
 #-------------------------------------------------------------------------------
-# ●見出しに、今の見出しのIDを識別子 [#id] として書き足す
+# ●識別子の無い見出しに、新しい識別子 [#id] を書き足す
 #-------------------------------------------------------------------------------
-# 見出しの文字を変えてもIDが変わらないよう、記事の保存時に呼ぶ。
-# 見出しは行を見て探す（引用やリストの中も見る。コードフェンスの中は見ない）。
-# 書き足す前と後で変換結果がまったく同じになる時だけ書き足し、違えば元の原文を返す。
+# 見出しの文字を変えてもIDが変わらないよう、記事の保存時に呼ぶ。識別子は new_heading_id で作る。
+# 見出しは行を見て探す（引用とリストとコードフェンスの中は見ない）。
+# 書き足す前と後で、見出しのID以外の変換結果が同じになる時だけ書き足し、違えば元の原文を返す。
 sub add_heading_ids {
-	my $self = shift;
-	my $text = shift;
+	my $self  = shift;
+	my $text  = shift;
 	my @before = $self->parse($text);
-	my @ids    = @{ $self->{heading_ids} };
-	if (!@ids) { return $text; }
+	my @from   = @{ $self->{heading_ids} };
+	if (!@from) { return $text; }
+	my %used   = %{ $self->{ids} };
 
 	my $n = 0;
 	my $added = 0;
 	my $fence;
+	my $quote;
+	my $list;
+	my $blank;
 	my @lines = split(/\n/, $text, -1);
 	foreach(@lines) {
+		# 引用は空行まで続く（> の無い行も引用の中）。
+		# リストは、空行の後に字下げの無い行が来るまで続く（字下げの無い行も、空行の前なら項目の続き）。
+		if ($_ =~ /^\s*$/) {
+			undef $quote;
+			$blank = 1;
+		} else {
+			if (/^ ? ? ?>/) { $quote = 1; }
+			if (/^\s*(?:[\*\+\-]|\d+\.) +/) { $list = 1; }
+			elsif ($blank && /^\S/) { undef $list; }
+			undef $blank;
+		}
 		# 引用の > とリストの記号を除く
 		my $rest = $_;
 		$rest =~ s/^(?: ? ? ?>\s?|\s*(?:[\*\+\-]|\d+\.) +)*\s*//;
@@ -1157,20 +1198,50 @@ sub add_heading_ids {
 			$fence = $1;
 			next;
 		}
-		if ($rest !~ /^#+\s+(.*?)$/) { next; }
+		if ($quote || $list) { next; }	# 引用とリストの中の # は見出しにならない
+		if ($_ !~ /^#+\s+(.*?)$/) { next; }
 		my $title = $1;
-		my $id = $ids[$n++];
-		if (!defined $id) { return $text; }
-		if ($title =~ /^(?:(.*?)\s+)?\[#$HEADING_ID\]\s*$/) { next; }	# 識別子がある
-		$_ =~ s/\s*$/ [#$id]/;
+		$n++;
+		if ($title =~ /^(?:(.*?)[ \t]+)?\[#$HEADING_ID\][ \t]*$/) { next; }	# 識別子がある
+		my $id = $self->new_heading_id(\%used);
+		$used{$id} = 1;
+		$_ =~ s/[ \t]*$/ [#$id]/;
 		$added++;
 	}
-	if (!$added || $n != @ids) { return $text; }
+	if (!$added || $n != @from) { return $text; }
 
 	my $new   = join("\n", @lines);
 	my @after = $self->parse($new);
-	if ($before[0] ne $after[0] || $before[1] ne $after[1]) { return $text; }
+	my @to    = @{ $self->{heading_ids} };
+	if (@from != @to) { return $text; }
+
+	# 書き足す前の出力の見出しのIDを、書き足した後のIDに置き換えて比べる
+	# （記事の中から見出しへのリンクがあれば、置き換えた方と変わらない方で違いが出て、書き足さない）
+	my %map;
+	foreach(0..$#from) {
+		my ($x, $y) = ($from[$_], $to[$_]);
+		$x =~ s/"/&quot;/g;
+		$y =~ s/"/&quot;/g;
+		$map{$x} = $y;
+	}
+	foreach(0..1) {
+		$before[$_] =~ s/(\bid="|\bhref="(?:\Q$self->{thisurl}\E)?#)([^"]*)"/$1 . (exists $map{$2} ? $map{$2} : $2) . '"'/eg;
+		if ($before[$_] ne $after[$_]) { return $text; }
+	}
 	return $new;
+}
+
+#-------------------------------------------------------------------------------
+# ●新しい見出しの識別子
+#-------------------------------------------------------------------------------
+# 英字1文字と16進数7桁（l7a712f2 など）。$used にあるものは避ける
+sub new_heading_id {
+	my $self = shift;
+	my $used = shift || {};
+	while (1) {
+		my $id = chr(ord('a') + int(rand(26))) . sprintf('%07x', int(rand(0x10000000)));
+		if (!$used->{$id}) { return $id; }
+	}
 }
 
 #-------------------------------------------------------------------------------
