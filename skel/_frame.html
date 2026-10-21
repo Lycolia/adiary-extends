@@ -64,9 +64,8 @@
 	<title><@v.subtitle><@if(v.subtitle ne '',' - ')><@v.title></title>
 <@v.extra_header>
 <@if(!v.system_mode, s.html_header_txt)>
-<link rel="stylesheet" href="<@Basepath><@v.script_dir>jquery.fancybox.min.css">
-<script src="<@Basepath><@v.script_dir>jquery-3.2.1.min.js"></script>
-<script src="<@Basepath><@v.script_dir>jquery.fancybox.min.js"></script>
+<link rel="stylesheet" href="<@Basepath><@v.script_dir>lythumb.min.css">
+<script defer src="<@Basepath><@v.script_dir>lythumb.min.js"></script>
 <script src="<@Basepath><@v.script_dir>prism-core.min.js"></script>
 <script src="<@Basepath><@v.script_dir>prism-autoloader.min.js"></script>
 <script src="<@Basepath><@v.script_dir>prism-line-numbers.min.js"></script>
@@ -74,11 +73,6 @@
 <script src="<@Basepath><@v.script_dir>prism-copy-to-clipboard.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const fancybox = $('[data-fancybox]');
-    if (fancybox.length > 0 && 'fancybox' in fancybox) {
-      fancybox.fancybox();
-    }
-
     document.querySelectorAll('pre > code').forEach((codeEl) => {
       codeEl.className = codeEl.className === '' ? 'language-none' : codeEl.className;
       codeEl.className = codeEl.className.replace(/^language-sh$/, 'language-bash');
@@ -167,13 +161,5 @@
 	"GA_ID":	"<@if(!v.system_mode && s.gaid, s.gaid)>"
 }
 --></div>
-<@> imgのaltを吸い上げてFancyboxのキャプションに設定する装置
-<script>
-$("[data-fancybox]").fancybox({
-  caption: function (instance, item) {
-    return $(this).find("img").attr("alt") || "";
-  },
-});
-</script>
 </body>
 </html>
