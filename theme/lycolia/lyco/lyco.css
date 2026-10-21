@@ -1,1155 +1,380 @@
 @charset "UTF-8";
 /*******************************************************************************
-  Satsuki style - Ver2
-						(C)2015 nabe@abk
+  lyco - lyndbaum に合わせた、公開画面用のレスポンシブテーマ
 *******************************************************************************/
-/* [TAB=8] */
+/* マークアップは theme/lycolia/_skel/ のスケルトンで組む（デザインの保存時に生成される）
+   管理画面は標準テーマで表示するので、ここでは公開画面だけを扱う */
+:root {
+	--text: #222;
+	--muted: #666;
+	--link: #0a58ca;
+	--border: #ddd;
+	--bg: #fff;
+	--code-bg: #f6f8fa;
+	/* 一覧の偶数行の背景。文字の色を少し混ぜる */
+	--row-alt: color-mix(in srgb, var(--text) 5%, var(--bg));
+	/* ページの地の色。記事やサイドバーの枠（--bg）と見分けられるよう、少し沈める */
+	--page-bg: #f0f0f1;
+	/* 本文の見出しや表の見出しに使う色 */
+	--accent: #4450c8;
+	--accent-soft: #e9ebfd;
+	--strong: #c30;
+}
+
 /*--------------------------------------------------------------------
-■全体配置
+■全体
 --------------------------------------------------------------------*/
-body
-{
-	background-color:	#fff;		/* $c=fixbg */
-	color:			#000;		/* $c=fixfont */
-	font-size:		12pt;
-
-	margin:			0;
-	padding:		0;
-	line-height:		130%;
-}
-/* 見出し */
-h1
-{
-	font-size:		20pt;
-	font-weight:		normal;
-	line-height:		100%;
-	border-bottom:		2px solid #6b75b8;	/* $c=border */
-	padding:		0 0.5em;
-	margin:			0.6em 0 0 0;
-}
-h1 a, h1 a:link, h1 a:visited {
-	color:			inherit;
-	font-weight:		inherit;
-	text-decoration:	inherit;
-}
-h1 img, h1 a img {
-	border:			none;
-}
-
-dl {
-	display: flex;
+body {
 	margin: 0;
+	padding: 1rem;
+	background: var(--page-bg);
+	color: var(--text);
+	font-family: "メイリオ", sans-serif;
+	font-size: 90%;
+	line-height: 1.4;
 }
+a { color: var(--link); }
+#adiary-body, #adiary-body * { box-sizing: border-box; }
+em { font-style: normal; font-weight: bold; }
+dt { font-weight: bold; }
+strong.warning, strong.error, p.warning, p.error,
+div.messages div.warn, div.messages div.message { color: var(--strong); }
 
-dd {
-  margin-inline-start: 0;
+/* 枠：ヘッダー、記事、コメント、サイドバーの各モジュールなどを、地の色の上に置く */
+.site-header,
+.article-main, .comments, .article-summary, .main > article.system, .hatena-module {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	padding: 1rem 1.25rem;
 }
+@media (max-width: 40rem) {
+	body { padding: .5rem; }
+	.site-header,
+	.article-main, .comments, .article-summary, .main > article.system, .hatena-module { padding: .75rem 1rem; }
+}
+.article-main, .comments, .article-summary, .main > article.system, .hatena-module { margin-bottom: 1rem; }
 
-/* 全体配置用 */
-#hatena-body {
-	margin:			1em 0;
-	padding:		0 8px;
+/*--------------------------------------------------------------------
+■ヘッダー
+--------------------------------------------------------------------*/
+.site-header { position: relative; }
+.site-heading { min-width: 0; }
+#page-title {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 1.5rem;
+	font-weight: bold;
+	line-height: 1.3;
 }
-#hatena-body:after {
-	content:		"";
-	clear:			both;
-	display:		block;
-}
+#page-title a { color: inherit; text-decoration: none; }
+#nav-header { float: right; margin-left: 1rem; font-size: .85rem; }
+#nav-header a { margin-left: .5em; }
+.has-drawer #nav-header { float: none; margin: 0 0 .25rem; text-align: right; }
 
-/* 記事部 */
-.main {
-	float:			right;
-	width:			calc(100% - 176px);
-	padding-right:		4px;
-}
-/* 左側にメニューを配置 */
-#sidebar
-{
-	float:			left;
-	width:			160px;
-	margin:			0;
-	padding:		0;
-
-	font-size:		10pt;
-	line-height:		130%;
-}
-
-@media screen and (min-width: 940px) {
-	.main {
-		width:		calc(82% - 16px);
+/*--------------------------------------------------------------------
+■カラム
+--------------------------------------------------------------------*/
+/* 狭い画面：本文、A、B の順に縦に並べる。中くらい：本文の右に A と B を縦に重ねる。広い画面：A｜本文｜B */
+#hatena-body { margin: 0; padding: 0; }
+#hatena-body > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; padding-top: 1rem; }
+#hatena-body > div > * { min-width: 0; }
+/* デバッグ表示などは全幅にする */
+#hatena-body > div > :not(.main):not(.site-sidebar) { grid-column: 1 / -1; }
+.main { float: none; width: auto; margin: 0; padding: 0; }
+.site-sidebar { font-size: .95rem; }
+@media (min-width: 48rem) {
+	#hatena-body > div {
+		grid-template-columns: minmax(0, 1fr) 16rem;
+		grid-template-rows: auto 1fr;
+		grid-template-areas: "main left" "main right";
+		column-gap: 1rem;
 	}
-	#sidebar {
-		width:		18%;
-	}
+	.main { grid-area: main; }
+	.sidebar-left { grid-area: left; }
+	.sidebar-right { grid-area: right; }
 }
-
-/* フッタの配置 */
-#footer
-{
-	border-top:		2px solid #6b75b8;	/* $c=border */
-	text-align:		right;
-	margin:			30px 0 0.6em 0;
-	padding:		0 1em;
-	font-size:		10pt;
-	line-height:		120%;
-}
-
-/* overflow防止 */
-/* #side-a, #side-b, article {
-	overflow:		hidden;
-	text-overflow:		ellipsis;
-} */
-
-/*--------------------------------------------------------------------
-■表示オプション（右サイドバー）
---------------------------------------------------------------------*/
-/* $option=right-sidebar
-.main {
-	float:			left;
-}
-#sidebar {
-	float:			right;
-}
--------------------- */
-
-/*--------------------------------------------------------------------
-■表示オプション（レスポンシブ、両サイドバー）
---------------------------------------------------------------------*/
-/*
-$option:title=sidebar-position
-$option=multi-sidebar
-#sidebar-move-to-before-main {
-	min-width:		1px;
-}
-
-@media screen and (min-width: 920px) {
-.main {
-	width:			62%;
-	float:			left;
-	padding-left:		1%;
-	padding-right:		0;
-}
-#sidebar {
-	float:			none;
-	width:			auto;
-}
-#side-a {
-	float:			left;
-	width:			18%;
-}
-#side-b {
-	float:			right;
-	width:			18%;
-}
-
-}
--------------------- */
-
-/*--------------------------------------------------------------------
-■ヘッダメニュー
---------------------------------------------------------------------*/
-#nav-header {
-	text-align:		right;
-	font-size:		10pt;
-	line-height:		100%;
-	display:		block;
-	margin:			1px 0 0 0;
-}
-
-#nav-header a, #nav-header a:link, #nav-header a:visited {
-	color:			#33f;	/* $c=link */
-}
-/* ○○さん */
-a.welcome-name { margin: 0px 4px 0px 4px; }
-
-/*--------------------------------------------------------------------
-■ドロップダウンメニュー
---------------------------------------------------------------------*/
-.ddmenu {
-	margin-bottom:		1em;
-}
-
-/* 背景色（非選択色） */
-.ddmenu,
-.ddmenu>ul li {
-	background-color:	#ccccff;	/* $c=ddbg = main */
-}
-/* 選択色 */
-.ddmenu>ul li:hover,
-.ddmenu>ul li.hover {
-	background-color:	#f0f0ff;	/* $c=ddhover = auto:main  */
-}
-/* 枠線 */
-.ddmenu>ul li a,
-.ddmenu>ul ul {
-	border-color:		#aac;		/* $c=ddborder = auto:main */
-}
-/* 文字 */
-.ddmenu a:link,
-.ddmenu a:visited
-{
-	color:			#33f;	/* $c=ddfont=link */
-}
-/* 矢印の色 */
-.ddmenu li ul li ul:before,
-.ddmenu.sp li ul:before {
-	border-left-color:	#338;	/* $c=ddarrow = auto:link */
-}
-.ddmenu:not(.sp) li:last-child:not(:first-child) ul li ul:before {
-	border-left-color:	transparent;
-	border-right-color:	#338;	/* $c=ddarrow */
-}
-/* 設定画面に矢印の色を自動取得させるための指定 */
-.ddmenu {
-	color:			#338;	/* $c=ddarrow */
-}
-
-/*--------------------------------------------------------------------
-■ページ送り
---------------------------------------------------------------------*/
-nav.page-nav {
-	font-size:	10pt;
-	line-height:	100%;
-	margin:		1em 0;
-}
-nav.page-nav a {
-	display:	inline-block;
-}
-nav.page-nav a:first-child {
-	margin-right:	1em;
-}
-nav.page-nav a:last-child {
-	margin-left:	1em;
-}
-
-/*--------------------------------------------------------------------
-■記事のデザイン配置（本文）
---------------------------------------------------------------------*/
-/* 1つの記事 */
-article {
-	clear:			both;
-	margin-bottom:		1.5em;
-	border-radius:		8px;
-	box-shadow:		4px 4px 3px 3px rgba(0,0,0, 0.3);
-}
-
-/* 記事タイトル */
-article h2 {
-	background-color:	#adb8ff;		/* $c=main2 = auto:main */
-	padding:		2px 8px 2px 8px;
-	font-size:		100%;
-	margin:			0px;
-
-	border:			2px solid #6b75b8;	/* $c=border */
-	border-bottom:		none;
-	border-radius:		8px 8px 0 0;
-}
-article h2 a.date {
-	font-size:		80%;
-	text-decoration:	none;
-	margin-right:		1em;
-}
-
-/* 記事本文 */
-article div.body {
-	background-color:	#fff;			/* $c=fixartbg */
-	font-size:		90%;
-	line-height:		140%;
-	margin:			0px;
-	padding:		0.5em 1em 0.5em 1.5em;
-
-	border:			2px solid #6b75b8;	/* $c=border */
-	border-top:		none;
-	border-radius:		0 0 8px 8px;
-}
-/* コンテンツ記事 */
-article.wiki div.body {
-	background-color:	#f4f4ff;		/* $c=wikibg */
-}
-/* 記事ヘッダ */
-div.art-info {
-	text-align: right;
-	line-height:		110%;
-	font-size:		90%;
-	padding:		0;
-	margin:			0 0.2em 0 0;
-}
-
-/* 記事中のセクション */
-article section {
-	margin-top: 		0.5%;
-	margin-bottom:		3%;
-}
-
-/* セクションフッタ */
-section footer {
-	font-size:		90%;
-	margin:			1.5em 1em 0 1em;
-	background-color:	#e3efff;		/* $c=footnotebg=prebg */
-}
-/* 脚注 */
-section footer p.footnote {
-	margin-top:		0;
-	margin-bottom:		0;
-}
-
-/* 記事フッタ */
-div.body-footer {
-}
-
-
-/*--------------------------------------------------------------------
-■sidebar内の配置設定
---------------------------------------------------------------------*/
-/* sidebar の 1項目 */
-div.hatena-module {
-	margin:			0 0 1.3em 0;
-	padding:		0;
-}
-div.hatena-moduletitle {
-	margin:			0 0 0 0;
-	padding:		2px 0 2px 0;
-	text-align:		center;
-	background-color:	#adb8ff;		/* $c=main2 */
-	border-bottom:		1px solid #6b75b8;	/* $c=border */
-	border-radius:		4px 4px 0px 0px;
-}
-div.hatena-modulebody {
-	margin:			0.3em 0.5em 0.3em 0.5em;
-}
-#sidebar p {
-	margin-top:		0.5em;
-	margin-bottom:		0.5em;
-}
-/* Informationのタイトルを出さない */
-div#side-information div.hatena-moduletitle {
-	display:		none;
-}
-
-/* コンテンツ */
-div.side-contents-list div.hatena-moduletitle a {
-	text-decoration:	none;
-}
-
-div.side-contents-list div.hatena-moduletitle {
-	background-color:	inherit;
-	text-align:		left;
-	vertical-align:		bottom;
-
-	border-bottom:		2px solid black;
-	font-weight:		bold;
-	padding:		0 0 0 0.1em;
-}
-
-/*--------------------------------------------------------------------
-■リンク配色
---------------------------------------------------------------------*/
-a:link		{ color: #3333ff; }	/* $c=link */
-a:visited	{ color: #551a8b; }	/* $c=linkvisited */
-
-/******************************************************************************/
-/******************************************************************************/
-/*--------------------------------------------------------------------
-■記事ヘッダ
---------------------------------------------------------------------*/
-div.art-info > span:not(:last-child) {
-	margin-right:		0.5em;
-}
-/* タグ一覧 */
-div.art-info span.tags:before {
-	content:		'[';
-}
-div.art-info span.tags:after {
-	content:		']';
-}
-div.art-info span.tag:not(:last-child):after {
-	content:		',';
-}
-span.tag:not(:last-child):not(code span) {
-	margin-right:		0.5em;
-}
-
-
-/*--------------------------------------------------------------------
-■記事見出し
---------------------------------------------------------------------*/
-/* 見出し */
-div.body h3 {
-	font-size:		120%;
-	font-weight:		bold;
-	padding:		4px 0px 4px 8px;
-	border-left:		6px solid #6b75b8;	/* $c=border */
-	background-color:	#e8e8ff;		/* $c=h3bg= auto:main */
-
-	border-radius:		0 6px 6px 0;
-	box-shadow:		4px 4px 2px 2px rgba(0,0,0, 0.4);
-}
-div.body h3 span.timestamp {
-	font-size:		100%;
-	font-weight:		normal;
-}
-div.body h3 a {
-	text-decoration:	none;
-}
-/* 小見出し */
-div.body h4 {
-	font-size:		100%;
-	font-weight:		bold;
-  	padding: 4px;
-  	border-left: 5px solid #6b75b8;
-	border-bottom:		1px solid #6b75b8;	/* $c=border */
-}
-div.body h5 {
-	font-size:		100%;
-	font-weight:		bold;
-	padding: 4px;
-  	border-bottom: 1px solid #6b75b8;
-}
-div.body h6 {
-	font-size:		100%;
-	font-weight:		bold;
-  	padding: 4px;
-  	border-bottom: 1px dashed #6b75b8;
-}
-/* 小見出しへのリンク */
-div.body {
-	h4 a, h5 a, h6 a {
-		font-size:		inherit;
-		color:			inherit;
-		text-decoration:	inherit;
+@media (min-width: 72rem) {
+	#hatena-body > div {
+		grid-template-columns: 20rem minmax(0, 1fr) 20rem;
+		grid-template-rows: auto;
+		grid-template-areas: "left main right";
 	}
 }
 
-/*--------------------------------------------------------------------
-■記事内部
---------------------------------------------------------------------*/
-div.body p {
-	margin:			0.7em 0.5em 0.7em 0;
+/* サイドバーを引き出しにする。1カラム（48rem 未満）では左右、2カラム（72rem 未満）では左だけ
+   sidebar.js が has-drawer を付けたときだけ。付かなければ上の並び */
+.sidebar-toggle { display: none; }
+@media (max-width: 71.99rem) {
+	.has-drawer .site-header { display: flex; align-items: flex-start; gap: .75rem; }
+	.has-drawer .site-heading { flex: 1; }
+	.sidebar-toggle-left:not([hidden]) { display: inline-flex; }
+	.sidebar-toggle { flex: none; padding: .35rem; background: none; color: var(--text); border: 1px solid var(--border); border-radius: 0; cursor: pointer; }
+	.sidebar-toggle:hover { background: none; }
+	.sidebar-toggle svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+	.sidebar-toggle[aria-expanded="true"] { color: var(--link); border-color: var(--link); }
+	.has-drawer .sidebar-left {
+		position: fixed; top: 0; bottom: 0; left: 0; z-index: 210; width: min(20rem, 85vw);
+		overflow-y: auto; overscroll-behavior: contain; padding: 1rem;
+		background: var(--page-bg); border-right: 1px solid var(--border);
+		transform: translateX(-100%); visibility: hidden;
+	}
+	/* 動きはボタンで開け閉めするときだけ。sidebar.js が、読み込んだ直後と幅を変えているあいだは drawer-animate を外す */
+	.drawer-animate .site-sidebar { transition: transform .2s ease, visibility .2s; }
+	.has-drawer .site-sidebar.is-open { transform: none; visibility: visible; }
+	.site-sidebar:focus { outline: none; }
+	.drawer-backdrop { position: fixed; inset: 0; z-index: 200; background: rgb(0 0 0 / .4); }
+	.drawer-open, .drawer-open body { overflow: hidden; }
+	/* スクロールを止めてもスクロールバーの幅を残し、本文が横にずれないようにする */
+	.drawer-open.drawer-keep-gutter { scrollbar-gutter: stable; }
 }
-
-blockquote, pre, div.box {
-	margin:			0.5em 2em 0.5em 2em;
-	padding:		0.3em 1em 0.3em 1em;
-	border:			1px solid #6b75b8;	/* $c=border */
-	border-radius:		4px;
+@media (min-width: 48rem) and (max-width: 71.99rem) {
+	/* 2カラム：A は引き出しなので、本文の右には B だけを置く */
+	.has-drawer #hatena-body > div { grid-template-rows: auto; grid-template-areas: "main right"; }
 }
-div.body blockquote p {
-	margin:			0.2em 0.5em 0.2em 0;
+@media (max-width: 47.99rem) {
+	.sidebar-toggle-right:not([hidden]) { display: inline-flex; }
+	.has-drawer .sidebar-right {
+		position: fixed; top: 0; bottom: 0; right: 0; z-index: 210; width: min(20rem, 85vw);
+		overflow-y: auto; overscroll-behavior: contain; padding: 1rem;
+		background: var(--page-bg); border-left: 1px solid var(--border);
+		transform: translateX(100%); visibility: hidden;
+	}
 }
-pre {
-	background-color:	#e3efff;		/* $c=prebg */
-}
-
-/* pre 中コメント */
-pre span.comment	{ color: #c30; }			/* $c=fixstrongfont */
-pre strong.comment	{ color: #c30; font-weight: bold; }	/* $c=fixstrongfont */
-em {
-	font-style:		normal;
-	text-decoration:	none;
-	color:			#c30;				/* $c=fixstrongfont */
-}
-
-/* 強調 */
-article:not(.system) strong { color: #c30; }			/* $c=fixstrongfont */
-
-dt { font-weight:	bold; }
-
-/*--------------------------------------------------------------------
-●記事：テーブル
---------------------------------------------------------------------*/
-.body table,
-.ui-dialog table {
-	font-size:		inherit;
-	margin:			0.5em 1em 0.5em 1em;
-	border-collapse:	separate;
-	border-spacing:		2px;
-	empty-cells:		show;
-}
-.body blockquote table,
-.body div.box table {
-	margin-left:		0;
-	margin-right:		0;
-}
-.body table tr,
-.ui-dialog table tr {
-	margin:			0px;
-	padding:		0px;
-}
-.body table td,
-.ui-dialog table td {
-	margin:			0px;
-	padding:		2px;
-	border-bottom:		1px dashed #000;
-	vertical-align: top;
-}
-.body table th,
-.ui-dialog table th {
-	font-weight:		bold;
-	margin:			0px;
-	padding:		2px;
-	border-bottom:		1px solid #000;
-	background-color:	#ccf;		/* $c=main */
-}
-
-/******************************************************************************/
-/*--------------------------------------------------------------------
-■コメント欄
---------------------------------------------------------------------*/
-#com {
-	margin-top:		0.5em;
-	padding:		1em;
-	font-size:		10.5pt;
-	line-height:		150%;
-
-	border-radius:		8px;
-	border:			2px solid #6b75b8;	/* $c=border */
-	background-color:	#f4f4ff;		/* $c=combg= wikibg */
-	box-shadow:		4px 4px 3px 3px rgba(0,0,0, 0.3);
-}
-#com div.caption a {
-	font-weight:		bold;
-	text-decoration:	none;
-}
-
-#com div.swiches {
-	font-size:		10pt;
-	margin:			0 0 0 2em;
-	padding:		0;
-}
-
-div.comment-one {
-	margin:			1em 0;
-
-}
-div.commentator {
-	border-bottom:		1px solid #6b75b8;	/* $c=border */
-}
-div.comment-text {
-	margin-left:		2em;
-}
-/* 非公開コメント */
-.comment-hidden {
-	color:			#808;
-}
-/* 非表示コメント */
-.comment-disable {
-	color:			#800;
-}
-#com div.ip-host-agent {
-	color:			#080;
-	text-align:		right;
-	margin-right:		1em;
-	display:		none;
-}
-div.ip-host-agent {
-	font-size:		9pt;
-	line-height:		120%;
-}
-
-/* リプライやコメント一覧画面でのポップアップ表示 */
-#popup-com {
-	border:			1px solid #000;
-	background-color:	#ffd;
-	border-radius:		4px;
-	box-shadow:		4px 4px 2px 2px rgba(60,60,20,0.75);
-
-	font-size:		10pt;
-	padding:		0.5em;
+@media (prefers-reduced-motion: reduce) {
+	.drawer-animate .site-sidebar { transition: none; }
 }
 
 /*--------------------------------------------------------------------
-■検索ウィンドウ
+■フッター
 --------------------------------------------------------------------*/
-article.system.search div.body {
-	padding-bottom:	4px;
-}
-
-/******************************************************************************/
-/*--------------------------------------------------------------------
-●sidebar：カレンダー
---------------------------------------------------------------------*/
-table.calendar {
-	margin:			4px auto;
-	line-height:		100%;
-}
-table.calendar td.calendar-prev-month    { text-align: left;  margin-left:  0.5em; }
-table.calendar td.calendar-current-month { text-align: center; }
-table.calendar td.calendar-next-month    { text-align: right; margin-right: 0.5em; }
-table.calendar td {
-	text-align:		right;
-}
-table.calendar td.calendar-day a {
-	text-decoration:	underline;
-}
-/* 土曜日 */
-table.calendar td.w6, table.calendar th.w6 {
-	background-color: 	#ccf;
-}
-/* 日曜日、祝日 */
-table.calendar td.w0, table.calendar th.w0,
-table.calendar td.holiday {
-	background-color: 	#fcc;
-}
-/* 今日 */
-table.calendar td.day-today      { font-weight: bold; }
-/* 選択した日付 */
-table.calendar td.day-selected {
-	text-decoration:	none;
-	border:			1px solid #33f;		/* $c=link */
+#footer {
+	margin: 1rem 0 0;
+	padding: 0;
+	border: 0;
+	color: var(--muted);
+	font-size: .85rem;
+	text-align: center;
 }
 
 /*--------------------------------------------------------------------
-●sidebar：タグ
+■サイドバーのモジュール
 --------------------------------------------------------------------*/
-/* タイトル一覧など */
-ul.hatena-section {
-	list-style-type:	none;
-	margin:			0.3em 0em 0.3em 0.3em;
-	padding:		0px;
+.hatena-moduletitle {
+	margin: 0 0 .5rem;
+	padding-bottom: .25rem;
+	border-bottom: 1px solid var(--border);
+	font-size: 1rem;
+	font-weight: bold;
 }
+.hatena-moduletitle a { color: inherit; }
+.hatena-modulebody { overflow-wrap: anywhere; }
+.hatena-modulebody > :last-child { margin-bottom: 0; }
+.hatena-modulebody img { max-width: 100%; height: auto; }
+ul.hatena-section, ul.hatena-section ul { list-style: none; margin: 0; padding: 0; }
+ul.hatena-section ul { padding-left: 1rem; }
+span.qt { color: var(--muted); font-size: .85rem; }
+#side-search form { display: flex; flex-wrap: wrap; gap: .25rem; }
+#side-search input.search-box { flex: 1 1 8rem; width: auto; min-width: 0; }
+#side-search br { display: none; }
+#side-search .search-radio { flex-basis: 100%; font-size: .9rem; }
 
-/* 2段目のリスト */
-ul.hatena-section ul {
-	list-style-type:	none;
-	margin:			0 0 0.2em 1em;
-	padding:		0px;
-}
-
-/******************************************************************************/
-/*--------------------------------------------------------------------
-●メッセージ関連
---------------------------------------------------------------------*/
-strong.warning, strong.error,
-p.warning, p.error,
-div.messages div.warn,
-div.messages div.message {
-	color:		#c30;			/* $c=fixstrongfont */
-}
-
-/*--------------------------------------------------------------------
-●ボタンデザイン
---------------------------------------------------------------------*/
-button
-{
-	color:			#000;			/* $c=fixfont */
-	font-weight:		bold;
-	border:			1px solid #66c;		/* $c=btnborder */
-	border-radius:		6px;
-	background-image:	linear-gradient(to bottom,
-				#ddf,			/* $c=btnbg0 = auto:main */
-				#aaf);			/* $c=btnbg1 = auto:main */
-}
-button:hover
-{
-	border-radius:		6px;
-	cursor:			pointer;
-	background-image:	linear-gradient(to bottom,
-				#eef,			/* $c=btnbghover0 = auto:main */
-				#ccf);			/* $c=btnbghover1 = auto:main */
-
-}
-
-button:disabled
-{
-	color:			#666;
-	background-image:	none;
-	background-color:	#aac;			/* $c=btndisable = auto:main */
-}
+/* カレンダー */
+table.calendar { width: 100%; }
+table.calendar td { text-align: center; }
+table.calendar td.calendar-prev-month { text-align: left; }
+table.calendar td.calendar-next-month { text-align: right; }
+table.calendar td.w6, table.calendar th.w6 { color: #00f; }
+table.calendar td.w0, table.calendar th.w0, table.calendar td.holiday { color: #d00; }
+table.calendar td.day-today { font-weight: bold; }
+table.calendar td.day-selected { background: var(--accent-soft); }
 
 /*--------------------------------------------------------------------
-●jQuery UI アイコン設定
+■前後のページへのリンク
 --------------------------------------------------------------------*/
-#ui-icon-autoload {
-	background-color:	#0000ff;		/* $c=uiicon=link */
+/* 前は左、親は真ん中、次は右。横に収まらなければ、リンクを丸ごと次の行に送る */
+nav.page-nav { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem 1rem; margin: 0 0 1rem; font-size: .95rem; }
+nav.page-nav a { overflow-wrap: anywhere; }
+nav.page-nav .prev-page { margin-right: auto; }
+nav.page-nav .upnode-page { margin: 0 auto; text-align: center; }
+nav.page-nav .next-page { margin-left: auto; text-align: right; }
+/* 矢印は base.css のアイコンではなく文字にする */
+nav.page-nav a.prev-page::before, nav.page-nav a.upnode-page::before, nav.page-nav a.next-page::after {
+	width: auto; height: auto; vertical-align: baseline; background: none;
 }
-
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-/* ここより下は管理メニュー内でのみ使用するクラス                           */
-/*		システムモードに対応しないテーマでは定義不要                */
-/******************************************************************************/
-/*--------------------------------------------------------------------
-●システム画面
---------------------------------------------------------------------*/
-article.system div.body {
-	background-color:	#eeeeff;		/* $c=sysartbg = auto:wikibg */
-}
-article.system div.body {
-	padding-bottom:		1em;
-}
-article.system div.body h3 {
-	background-color:	#ccf;			/* $c=main */
-}
-/*--------------------------------------------------------------------
-●フォームの一般設定
---------------------------------------------------------------------*/
-ul.checkbox {
-	list-style-type:	none;
-}
-
-/* エラー */
-th.error, td.error {
-	background-color:	#ffccb0;
-}
-input.error, textarea.error,
-th.error input, td.error input {
-	background-color:	#ffffaa;
-}
-
-/* フォーカス */
-th:has(> input:focus),
-td:has(> input:focus) {
-	background-color:	#ffffcc;	/* $c=fixfocusbg1 */
-}
-input[type="text"]:focus,
-input[type="date"]:focus,
-input[type="number"]:focus,
-input[type="search"]:focus,
-input[type="tel"]:focus,
-input[type="url"]:focus,
-input[type="email"]:focus,
-input[type="password"]:focus,
-.setting textarea:focus {
-	background-color:	#ffeeee;	/* $c=fixfocusbg2 */
-}
-textarea#editarea:focus {
-	background-color:	#fff;
-}
-textarea#editarea {
-	font-size:		11.5pt;
-}
-
-/* ツリーとCSS等の編集画面 */
-article .treebox,
-article:not(.edit) #editarea {
-	margin-top:		1em;
-	margin-bottom:		1em;
-}
+nav.page-nav a.prev-page::before { content: "← "; }
+nav.page-nav a.upnode-page::before { content: "↑ "; }
+nav.page-nav a.next-page::after { content: " →"; }
 
 /*--------------------------------------------------------------------
-●記事の編集画面
+■記事
 --------------------------------------------------------------------*/
-article.system.notice {
-	margin-bottom:	0.4em;
+article { margin: 0; }
+.article-title, .summary-title, .main > article.system > h2 {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	line-height: 1.35;
 }
-textarea.edit-article {
-	width:		98%;
-	margin:		0;
-}
-article.edit form.delete {
-	margin-top:	1.5em;
-}
-article.edit span.element {
-	margin-right:	1em;
-}
+.article-title { font-size: 1.6rem; }
+.summary-title { font-size: 1.6rem; }
+.article-title a, .summary-title a { color: inherit; text-decoration: none; }
+.article-title a:hover, .summary-title a:hover { text-decoration: underline; }
+.main > article.system > h2 { font-size: 1.2rem; margin-bottom: .5rem; }
+.article-main div.body, .article-summary div.body { margin: 0; padding: 0; border: 0; }
 
-span.edit-caption {
-	font-weight:	bold;
-	margin-right:	0.3em;
-}
+/* 投稿日、更新日、タグ（dea_art-info） */
+.article-meta { color: var(--muted); font-size: .9rem; margin: .25rem 0 0; }
+div.art-info { display: flex; flex-wrap: wrap; gap: 0 1em; margin: 0; padding: 0; border: 0; text-align: left; }
+div.art-info > div { display: flex; flex-wrap: wrap; gap: 0 1em; }
+div.art-info br { display: none; }
+span.tags .tag { margin-right: .5em; }
 
-/* タグ */
-article.edit span.tag {
-	font-size:		9pt;
-	color:			#600;
-	background-color:	#ccf;		/* $c=main */
-	border-radius:		6px;
-	padding:		0px 4px;
-	margin-right:		0.5em;
-}
+div.body-footer { margin: 0; }
+div.body-footer:empty { display: none; }
+div.body-footer h3 { font-size: 1rem; margin: 1.5rem 0 .5rem; }
+div.com-count { margin-top: .75rem; font-size: .9rem; }
+
+/* 下書き、非公開の表示 */
+div.body-main > div > strong.warning { display: block; border: 1px solid #e0a800; border-left-width: 4px; padding: .5rem 1rem; color: inherit; font-weight: normal; }
 
 /*--------------------------------------------------------------------
-●ポップアップヘルプ, info
+■本文
 --------------------------------------------------------------------*/
-.help, .btn-help:after {
-	color:			#c3c;
+/* 記事の題名が h2 なので、本文の見出しは h3 から始まる */
+.article-body { word-wrap: break-word; margin-top: 1rem; }
+.article-body > :last-child,
+.article-body > section:last-child > :last-child { margin-bottom: 0; }
+.article-body h3, .article-body h4, .article-body h5, .article-body h6 { line-height: 1.35; }
+.article-body h3 {
+	margin: 2rem 0 1rem; padding: .4rem .75rem;
+	font-size: 1.25rem; color: var(--accent);
+	background: var(--accent-soft); border: 0; border-left: 6px solid var(--accent);
 }
+.article-body h4 { margin: 1.5rem 0 .75rem; padding: .15rem .6rem; font-size: 1.1rem; border: 0; border-left: 4px solid var(--accent); border-bottom: 1px solid var(--border); }
+.article-body h5 { margin: 1.25rem 0 .5rem; padding: 0 0 .1rem; font-size: 1rem; border: 0; border-bottom: 1px dashed var(--border); }
+.article-body h6 { margin: 1rem 0 .5rem; padding: 0; font-size: .95rem; color: var(--muted); border: 0; }
+/* 見出しは自分へのリンクになっている。見出しの色のまま、下線は指したときだけ出す */
+.article-body :is(h3, h4, h5, h6) > a { color: inherit; text-decoration: none; }
+.article-body :is(h3, h4, h5, h6) > a:hover { text-decoration: underline; }
 
+/* 画像。[image:...] はMarkdownでは段落の中に出るので、リンクに <figure> と同じ余白を付ける */
+.article-body img { max-width: 100%; height: auto; margin: 5px 5px 0 0; vertical-align: bottom; }
+.article-body p ~ figure { margin-top: 1em; }
+.article-body a[class^="tag-image"] { display: inline-block; margin-top: 1em; }
+.article-body video, .article-body audio, .article-body iframe { max-width: 100%; }
+
+/* コードスパン。コードブロック（pre の中）は Prism の色を使うので除く */
+.article-body :not(pre) > code {
+	padding: .1em .35em; font-size: .9em;
+	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+	background: var(--code-bg); border: 1px solid var(--border);
+	overflow-wrap: anywhere;
+	/* 行をまたいだときも、行ごとに枠を閉じる */
+	-webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+/* コードブロック。長い行は、ページではなくコードの中で横にスクロールする */
+.article-body pre { overflow-x: auto; max-width: 100%; }
+
+/* 表。見出しの行に色を付け、行の間に点線を引く。セルを離して置き、列の境目に隙間を空ける */
+.article-body table { border-collapse: separate; border-spacing: 3px 0; margin: 1rem -3px; }
+.article-body th, .article-body td { padding: .3rem .6rem; text-align: left; vertical-align: top; border: 0; }
+/* 列の多い表で、日本語が1文字ずつ折り返して縦に並ばないよう、句読点と空白のところでだけ折り返す */
+.article-body th, .article-body td { word-break: keep-all; overflow-wrap: break-word; }
+.article-body th { background: var(--accent-soft); border-bottom: 2px solid var(--accent); }
+.article-body td { border-bottom: 1px dashed var(--border); }
+.article-body tbody tr:nth-child(even) { background: var(--row-alt); }
+/* 入り切らない表は、表の枠の中で横にスクロールする */
+.article-body .body_table, .article-body .table-wrap { overflow-x: auto; }
+.article-body .body_table th, .article-body .body_table td { white-space: pre; }
+.article-body .table-wrap td { white-space: nowrap; }
+
+/* タスクリスト。印の代わりにチェックボックスを、印のあった位置に置く */
+.article-body li.task-list-item { list-style: none; }
+.article-body li.task-list-item input[type="checkbox"] { margin: 0 .3em 0 -1.4em; vertical-align: middle; }
+
+/* 引用、横線、目次、注釈 */
+.article-body blockquote { margin: 1rem 0; padding: .5rem 1rem; color: var(--muted); background: var(--row-alt); border: 0; border-left: 4px solid var(--border); border-radius: 0; font-style: normal; }
+.article-body blockquote > :first-child { margin-top: 0; }
+.article-body blockquote > :last-child { margin-bottom: 0; }
+.article-body div.box { margin: 1rem 0; padding: .5rem 1rem; border: 1px solid var(--border); }
+.article-body hr { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+.article-body ul.toc { display: table; margin: 1rem 0; padding: .5rem 1rem .5rem 2rem; border: 1px solid var(--border); background: var(--row-alt); }
+.article-body ul.toc ul { padding-left: 1.25rem; }
+.article-body .footnotes, .article-body section footer { margin-top: 2rem; font-size: .85rem; color: var(--muted); }
+.article-body .footnotes hr { margin: 0 0 .5rem; }
+.article-body sup { line-height: 0; }
+.article-body strong { color: var(--strong); }
+
+/* バナー（[info:…] など）。アイコンと文章を横に並べ、種類で色を変える */
+.article-body .notice_banner {
+	display: flex; align-items: center; gap: .75rem; margin: 1rem 0; padding: .6rem 1rem;
+	border: 1px solid var(--banner, var(--accent)); border-left-width: 6px;
+	background: color-mix(in srgb, var(--banner, var(--accent)) 10%, var(--bg));
+}
+.article-body .notice_banner svg { display: block; fill: var(--banner, var(--accent)); }
+.article-body .notice_banner.info { --banner: #0288d1; }
+.article-body .notice_banner.warn { --banner: #d09000; }
+.article-body .notice_banner.error { --banner: #d33; }
+
+/*--------------------------------------------------------------------
+■コメント
+--------------------------------------------------------------------*/
+#com { margin: 0 0 1rem; }
+#com div.caption { margin: 0 0 .5rem; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+#com div.caption .com-num { font-weight: normal; color: var(--muted); font-size: .95rem; }
+#com div.caption .abbr-msg { font-size: .85rem; font-weight: normal; margin-left: .5em; }
+#com div.swiches { margin-bottom: .5rem; font-size: .9rem; }
+div.comment-one { border-bottom: 1px solid var(--border); padding: .5rem 0; }
+div.commentator { color: var(--muted); font-size: .9rem; }
+span.canchor { margin-right: .25em; }
+span.commentator.author { color: var(--text); font-weight: bold; margin-right: .5em; }
+span.commentator.author.login-user { color: var(--strong); }
+div.comment-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: .25rem 0 0; }
+.comment-hidden, .comment-disable { color: var(--muted); }
+div.ip-host-agent { display: none; color: var(--muted); font-size: .85rem; }
+#com-form-separator { border: 0; border-top: 1px solid var(--border); margin: 1rem 0; }
+#comment-form { margin-top: 1rem; }
+#comment-form textarea { width: 100%; font: inherit; }
+#comment-form input[type="text"], #comment-form input[type="email"], #comment-form input[type="url"] { max-width: 100%; font: inherit; }
+#popup-com { background: var(--bg); border: 1px solid var(--border); padding: .5rem 1rem; box-shadow: 0 2px 8px rgb(0 0 0 / .2); }
+
+/*--------------------------------------------------------------------
+■検索
+--------------------------------------------------------------------*/
+.main > article.system div.body { margin: 0; padding: 0; border: 0; }
+.main > article.system input[type="search"] { max-width: 100%; }
+
+/*--------------------------------------------------------------------
+■部品（ボタン、ポップアップ、ダイアログ）
+--------------------------------------------------------------------*/
+button {
+	padding: .2rem .75rem;
+	color: var(--text);
+	font: inherit;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 0;
+	cursor: pointer;
+}
+button:hover { border-color: var(--link); color: var(--link); }
+button:disabled { color: var(--muted); border-color: var(--border); cursor: default; }
+
+#ui-icon-autoload { background-color: #0a58ca; }
+
+.help, .btn-help:after { color: #c3c; }
 div.popup-help {
-	min-width:		100px;
-	max-width:		360px;
-	padding:		0.5em 1em;
-
-	background-color:	#fff;
-	color:			#6b75b8;		/* $c=fixhelpfont */
-
-	font-size:		11pt;
-	/* font-weight:		bold; */
-
-	border:			2px solid #6b75b8;	/* $c=border */
-	border-radius:		10px;
-	box-shadow:		2px 2px 2px 2px rgba(60,60,60,0.75);
+	min-width: 100px; max-width: 360px; padding: .5em 1em;
+	background: var(--bg); color: var(--text); font-size: .9rem;
+	border: 1px solid var(--border);
+	box-shadow: 0 2px 8px rgb(0 0 0 / .2);
 }
-div.popup-help:before {
-	content:		"HELP";
-	color:			#fff;
-	background-color:	#c33;
-	border-radius:		6px;
-
-	font-weight:		bold;
-	font-size:		8pt;
-	padding:		4px;
-	margin:			-2px 4px 0 0px;
-
-	display:		inline-block;
-	line-height:		100%;
-	vertical-align:		middle;
-}
-/*
-div.popup-help div.additional {
-	color:			#000;
-	font-weight:		normal;
-}
-*/
-
-/*--------------------------------------------------------------------
-●jQuery UI, popup-info/dialog（テーマREADME/記事のタグヘルパー等）
---------------------------------------------------------------------*/
 .ui-dialog {
-	background-color:	#eeeeff;		/* $c=sysartbg */
-	border:			2px solid #6b75b8;	/* $c=border */
-	border-radius:		10px;
-	box-shadow:		8px 8px 4px 4px rgba(60,60,100,0.75);
-
-	font-size:		10.5pt;
-	line-height:		130%;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	box-shadow: 0 2px 8px rgb(0 0 0 / .2);
+	font-size: .9rem;
+	line-height: 1.4;
 }
-.ui-dialog .ui-widget-header {
-	background-color:	#adb8ff;		/* $c=main2 */
-	font-weight:		bold;
-	font-size:		12pt;
-
-	border:			none;
-	border-radius:		8px 8px 0 0;
-}
-.ui-dialog span.ui-dialog-title {
-	height:			1em;
-	padding-bottom:		2px;
-}
-.ui-dialog button.ui-button {
-	border-radius:		4px;
-}
-
-/*--------------------------------------------------------------------
-●設定ページナビゲーション
---------------------------------------------------------------------*/
-nav.tree, nav.tree select {
-	font-size:		9pt;
-}
-
-nav.tree {
-	line-height:		100%;
-	display:		block;
-
-	border:			1px solid #6b75b8;	/* $c=border */
-	margin-bottom:		1.5em;
-	padding:		0.5em 1em 0.5em 1.5em;
-
-	background-color:	#eeeeff;		/* $c=sysartbg */
-}
-
-/*--------------------------------------------------------------------
-●プログレスバー（import等）
---------------------------------------------------------------------*/
-.ui-progressbar {
-	margin:			0.5em 0;
-	max-width:		400px;
-	border-color:		#6b75b8;	/* $c=border */
-	background-color:	#fff;
-}
-.ui-progressbar .label {
-	color:			#000;
-	font-weight:		bold;
-	text-shadow:	 1px -1px 2px #fff,
-			 1px -1px 2px #fff,
-			-1px  1px 2px #fff,
-			 1px  1px 2px #fff;
-}
-.ui-progressbar,
-.ui-progressbar .label:before {
-	height:			20px;
-	vertical-align:		middle;
-}
-.ui-progressbar-value {
-	background-color:	#aac;			/* $c=btndisable */
-}
-
-/*** 追加のスタイル ****************************************/
-
-div.body-main img {
-  margin: 5px 5px 0 0;
-  vertical-align: bottom;
-}
-
-div.body-main p~figure {
-  margin-top: 1em;
-}
-
-/* 記事中の画像（[image:...]）。Markdownの記事では <figure> で囲まず段落の中に出るため、
-   画像のリンクに <figure> と同じ余白を付ける */
-div.body-main a[class^="tag-image"] {
-  display: inline-block;
-  margin-top: 1em;
-}
-
-div.body-main code:not(pre code) {
-  padding: .2em .3em;
-  margin: 0 .2em;
-  border-radius: 5px;
-  background: #f1f2f3;
-  color: #404040;
-  font-size: .9em;
-}
-
-div.body-main blockquote {
-  margin: 0;
-  padding-left: 0 0 20px 0;
-  color: #333;
-  border-left: 4px solid #ddd;
-  border-bottom: 0;
-  border-right: 0;
-  border-top: 0;
-  border-radius: 0px;
-  font-style: italic;
-}
-
-.body_table {
-  overflow-x: auto;
-  th, td {
-    white-space: pre;
-  }
-}
-
-.table-wrap {
-  overflow-x: scroll;
-}
-
-.table-wrap td {
-  white-space: nowrap;
-}
-
-span.commentator.author.login-user {
-  font-weight: bold;
-  color: #cc3300;
-}
-
-.notice_banner {
-    display: flex;
-    border-radius: 4px;
-    padding: 0.5em;
-    margin: 1em 0.5em;
-    align-items: center;
-    font-weight: bold;
-
-    &.info {
-        /* #66d1ff */
-        background-color: #e5f6fd;
-        color: #014361;
-		border: 1px solid #49abd4;
-
-		svg {
-			fill: #0288d1;
-		}
-    }
-
-    &.warn {
-        background-color: #fff4e5;
-        color: #663c00;
-		border: 1px solid #ffb70f;
-
-		svg {
-			fill: #ed6c02;
-		}
-    }
-
-    &.error {
-        background-color: #fdeded;
-        color: #5f2120;
-		border: 1px solid #ff6685;
-
-		svg {
-			fill: #d32f2f;
-		}
-    }
-
-    .message {
-        margin-left: 0.5em;
-    }
-
-    div:first-child {
-        margin-top: 5px;
-    }
-
-}
-
-/*--------------------------------------------------------------------
-■スマホ表示（旧 sphone.css を統合）
---------------------------------------------------------------------*/
-@media screen and (max-width: 640px) {
-	/* 全体配置 */
-	.main {
-		float:			none;
-		margin-left:		0;
-		margin-right:		0;
-		padding:		0;
-		width:			100%;
-	}
-	#hatena-body {
-		padding:		0 8px;
-		margin-left:		0;
-		margin-right:		0;
-		width:			auto;
-	}
-	#sidebar, #side-a, #side-b {
-		float:			none;
-		margin:			0;
-		width:			auto;
-	}
-	#sidebar {
-		margin-top:		2em;
-		font-size:		12pt;
-	}
-
-	/* ヘッダ、フッタ */
-	#header {
-		margin-bottom:		1em;
-	}
-	#page-title {
-		margin:			10px 0 0 0;
-		padding:		0 6px;
-		font-weight:		bold;
-	}
-	#footer {
-		margin-bottom:		1em;
-	}
-
-	/* ドロップダウンメニュー（項目が多い場合は折り返す） */
-	.ddmenu>ul:after {
-		content:		"";
-		clear:			both;
-		display:		block;
-	}
-
-	/* サイドバー */
-	span.switch-icon {
-		margin-right:		1em;
-	}
-	#sidebar ul.hatena-section {
-		line-height:		200%;
-	}
-	#side-search input.search-box {
-		width:			180px;
-	}
-
-	/* コメント欄 */
-	#com {
-		font-size:		10pt;
-	}
-	#com form input.comment-author {
-		width:			100px;
-	}
-	#com form textarea {
-		width:			100%;
-		box-sizing:		border-box;
-	}
-
-	/* 記事部 */
-	#adiary-body {
-		word-wrap:		break-word;
-	}
-	#adiary-body img,
-	#adiary-body figure {
-		max-width:		100%;
-		height:			auto;
-		float:			none;
-	}
-	#adiary-body textarea,
-	#adiary-body input,
-	#adiary-body video,
-	#adiary-body audio {
-		max-width:		100%;
-	}
-	article ul,
-	article ol {
-		padding-left:		2em;
-	}
-	article ul ul,
-	article ol ol {
-		padding-left:		1em;
-	}
-	article div.body {
-		padding-left:		12px;
-		padding-right:		12px;
-	}
-
-	/* table, blockquote, pre */
-	.body table {
-		margin-left:		1em;
-		margin-right:		1em;
-	}
-	.body blockquote table,
-	.body div.box table {
-		margin-left:		0;
-		margin-right:		0;
-	}
-	blockquote, pre, div.box {
-		margin:			0.5em 1.0em 0.5em 1.0em;
-		padding:		0.2em 0.5em 0.2em 0.5em;
-	}
-	pre {
-		margin-left:		0;
-		margin-right:		0;
-		overflow-x:		scroll;
-	}
-
-	/* ブログ一覧 */
-	#table-view table {
-		margin-left:		4px;
-		margin-right:		4px;
-	}
-	#table-view table th {
-		font-size:		9pt;
-	}
-	#table-view table .large {
-		font-size:		100%;
-	}
-	#table-view table .hhmm {
-		display:		none;
-	}
-
-	/* システムモード */
-	article.system div.body {
-		padding-left:		6px;
-		padding-right:		6px;
-	}
-	article.system div.body table {
-		margin-left:		0px;
-		margin-right:		0px;
-	}
-	nav.tree {
-		font-size:		8pt;
-		line-height:		200%;
-	}
-	nav.tree span.items {
-		display:		block;
-	}
-	article.edit span.element {
-		display:		block;
-	}
-	#edit-tags + br,
-	#edit-tags + br + br {
-		display:		none;
-	}
-	article.edit button,
-	article.edit select {
-		margin-top:		6px;
-		margin-bottom:		6px;
-	}
-	.system button {
-		padding:		2px 3px;
-	}
-	#edit .helper + .help {
-		margin-left:		0px;
-	}
-}
+.ui-dialog .ui-widget-header { background: var(--accent-soft); border: 0; border-radius: 0; font-weight: bold; }
