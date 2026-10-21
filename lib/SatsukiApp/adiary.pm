@@ -7,7 +7,8 @@ package SatsukiApp::adiary;
 use Satsuki::AutoLoader;
 use Fcntl;
 #-------------------------------------------------------------------------------
-our $VERSION    = 4.5.1;
+# データ管理上数値しか解釈できないので文字列にしてはならない
+our $VERSION    = 4.6;
 our $OUTVERSION = "$VERSION";
 our $DATA_VERSION = 3.53;
 ################################################################################
