@@ -96,7 +96,7 @@ div.messages div.warn, div.messages div.message { color: var(--strong); }
 }
 @media (min-width: 72rem) {
 	#hatena-body > div {
-		grid-template-columns: 20rem minmax(0, 1fr) 20rem;
+		grid-template-columns: 20rem minmax(0, 1fr) 22.5rem;
 		grid-template-rows: auto;
 		grid-template-areas: "left main right";
 	}
