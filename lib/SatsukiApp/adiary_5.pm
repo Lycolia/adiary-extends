@@ -709,7 +709,7 @@ sub create_tables {
 	$self->insert_bloglist($table);
 
 	return 0;
-} # End of create_tanble
+} # End of create_table
 
 #-------------------------------------------------------------------------------
 # ●記事テーブル、コメントテーブルの定義
