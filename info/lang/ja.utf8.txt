@@ -186,6 +186,7 @@ Require update=アップデートが必要です。
 # &regist_article
 Article post failed=記事の投稿に失敗しました
 Article edit failed=記事の編集に失敗しました
+This article has already been saved on another screen=この記事は、ほかの画面（別のタブや端末）で先に保存されていたため、保存しませんでした
 Can't find the article (key: %d)=編集する記事が見つかりません。key: %d
 Can not use character "%s" in content key=コンテンツkeyに文字「%s」は使えません
 Can not use string "%s" in content key=コンテンツkeyに文字列「%s」は使えません

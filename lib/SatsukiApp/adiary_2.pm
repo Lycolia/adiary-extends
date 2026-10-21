@@ -208,6 +208,14 @@ sub edit_article {
 	my %opt;
 	$opt{edit_pkey} = $form->{edit_pkey_int};
 
+	# ほかの画面（別のタブや端末）で先に保存されていたら、保存しない
+	# ※プラグインに影響しないよう、イベントより前で確認する
+	if ($opt{edit_pkey} && $form->{edit_digest} ne ''
+	 && $form->{edit_digest} ne $self->article_digest($opt{edit_pkey})) {
+		$ROBJ->message('This article has already been saved on another screen');
+		return 6;
+	}
+
 	# イベント呼び出し
 	my $er = $self->call_event('ARTICLE_BEFORE', $form);
 	if ($er) { return; }
@@ -728,19 +736,64 @@ sub load_revision_json {
 	my $rev = $DB->select_match_limit1("$self->{blogid}_rev", 'pkey', int($pkey));
 	if (!$rev || !$self->check_editor($rev->{a_pkey})) { return; }
 
-	# json_encode() は \ を &#92; にするので、本文はここでエスケープする
-	my $text = $rev->{_text};
+	my $ROBJ = $self->{ROBJ};
+	my @ary = map { "\"$_\": " . $ROBJ->json_encode($rev->{$_}) } qw(pkey a_pkey tm update_tm title);
+	push(@ary, '"text": ' . $self->json_long_text($rev->{_text}));
+	return '{' . join(', ', @ary) . '}';
+}
+
+#-------------------------------------------------------------------------------
+# ●今の記事の取得（json）
+#-------------------------------------------------------------------------------
+# 編集画面で保存する前に、ほかの画面で先に保存されていないかを見るため
+sub load_article_now_json {
+	my ($self, $pkey) = @_;
+	$pkey = int($pkey);
+	if (!$pkey || !$self->check_editor($pkey)) { return; }
+	my $art = $self->{DB}->select_match_limit1("$self->{blogid}_art", 'pkey', $pkey);
+	if (!$art) { return; }
+
+	my $ROBJ = $self->{ROBJ};
+	my @ary = map { "\"$_\": " . $ROBJ->json_encode($art->{$_}) } qw(pkey update_tm title);
+	push(@ary, '"digest": "' . $self->article_digest($art) . '"');
+	push(@ary, '"text": ' . $self->json_long_text($art->{_text}));
+	return '{' . join(', ', @ary) . '}';
+}
+
+#-------------------------------------------------------------------------------
+# ●本文をjsonの文字列にする
+#-------------------------------------------------------------------------------
+# json_encode() は \ を &#92; にするので、本文はここでエスケープする
+sub json_long_text {
+	my ($self, $text) = @_;
 	$text =~ s/\\/\\\\/g;
 	$text =~ s/"/\\"/g;
 	$text =~ s/\n/\\n/g;
 	$text =~ s/\r/\\r/g;
 	$text =~ s/\t/\\t/g;
 	$text =~ s/([\x00-\x1f])/sprintf('\\u%04x', ord($1))/eg;
+	return "\"$text\"";
+}
 
-	my $ROBJ = $self->{ROBJ};
-	my @ary = map { "\"$_\": " . $ROBJ->json_encode($rev->{$_}) } qw(pkey a_pkey tm update_tm title);
-	push(@ary, "\"text\": \"$text\"");
-	return '{' . join(', ', @ary) . '}';
+#-------------------------------------------------------------------------------
+# ●記事の中身の要約
+#-------------------------------------------------------------------------------
+# 編集画面に入れておき、保存するときに今の記事と比べて、
+# ほかの画面（別のタブや端末）で先に保存されていないかを見る。
+# 記事一覧やコンテンツの編集は update_tm を変えずに書き換えるので、中身で比べる。
+# コメント数や変換後の本文は、記事を書き換えなくても変わるので入れない。
+my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok
+		    ctype link_key upnode priority main_image description);
+sub article_digest {
+	my ($self, $art) = @_;
+	if (!ref $art) {
+		$art = $self->{DB}->select_match_limit1("$self->{blogid}_art", 'pkey', int($art));
+		if (!$art) { return ''; }
+	}
+	my $str = join("\0", map { $art->{$_} } @DigestCols);
+	utf8::encode($str) if utf8::is_utf8($str);
+	require Digest::MD5;
+	return Digest::MD5::md5_hex($str);
 }
 
 #-------------------------------------------------------------------------------

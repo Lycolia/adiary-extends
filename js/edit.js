@@ -318,6 +318,61 @@ adiary.load_contents_list($upsel);
 }
 
 //##############################################################################
+// ■差分（更新履歴、保存の競合で使う）
+//##############################################################################
+//------------------------------------------------------------------------------
+// ●行単位の差分（a → b）。大きすぎる場合は null
+//------------------------------------------------------------------------------
+function line_diff(a, b) {
+	// 前後の共通部分は比較しない
+	let s = 0;
+	while(s < a.length && s < b.length && a[s] === b[s]) s++;
+	let ea = a.length, eb = b.length;
+	while(ea > s && eb > s && a[ea-1] === b[eb-1]) { ea--; eb--; }
+	const A = a.slice(s, ea), B = b.slice(s, eb);
+	const n = A.length, m = B.length, w = m + 1;
+	if (n * m > 4000000) return null;	// 差分計算の上限（行数の積）
+
+	// LCS
+	const L = new Uint32Array((n+1) * w);
+	for(let i=n-1; i>=0; i--)
+		for(let j=m-1; j>=0; j--)
+			L[i*w+j] = (A[i] === B[j]) ? L[(i+1)*w+j+1] + 1 : Math.max(L[(i+1)*w+j], L[i*w+j+1]);
+
+	const out = [];
+	for(let k=0; k<s; k++) out.push([' ', a[k]]);
+	let i=0, j=0;
+	while(i<n && j<m) {
+		if (A[i] === B[j])                  { out.push([' ', A[i]]); i++; j++; }
+		else if (L[(i+1)*w+j] >= L[i*w+j+1]) { out.push(['-', A[i]]); i++; }
+		else                                 { out.push(['+', B[j]]); j++; }
+	}
+	for(; i<n; i++) out.push(['-', A[i]]);
+	for(; j<m; j++) out.push(['+', B[j]]);
+	for(let k=ea; k<a.length; k++) out.push([' ', a[k]]);
+	return out;
+}
+
+// 変更行の前後だけを表示する
+function render_diff(diff, $body) {
+	const ctx = 2;
+	const show = new Array(diff.length).fill(false);
+	diff.forEach(function(d, i){
+		if (d[0] == ' ') return;
+		for(let k=Math.max(0, i-ctx); k<=Math.min(diff.length-1, i+ctx); k++) show[k] = true;
+	});
+	$body.empty();
+	let skipped = false;
+	diff.forEach(function(d, i){
+		if (!show[i]) { skipped = true; return; }
+		if (skipped) { $body.append( $('<span>').addClass('rev-skip').text("…") ); skipped = false; }
+		const cls = d[0] == '-' ? 'rev-del' : d[0] == '+' ? 'rev-add' : 'rev-ctx';
+		$body.append( $('<span>').addClass(cls).text(d[0] + ' ' + d[1]) );
+	});
+	if (skipped) $body.append( $('<span>').addClass('rev-skip').text("…") );
+}
+
+//##############################################################################
 // ■更新履歴
 //##############################################################################
 {
@@ -326,7 +381,6 @@ adiary.load_contents_list($upsel);
 	const $list   = $dialog.find('#revision-list');
 	const $title  = $dialog.find('#revision-title');
 	const $body   = $dialog.find('#revision-body');
-	const max_cells = 4000000;	// 差分計算の上限（行数の積）
 	let cur_rev;			// 表示中の版
 
 	function ajax_revision(data, callback) {
@@ -349,58 +403,6 @@ adiary.load_contents_list($upsel);
 			+ ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
 	}
 
-	//--------------------------------------------------------------------------
-	// ●行単位の差分（a → b）。大きすぎる場合は null
-	//--------------------------------------------------------------------------
-	function line_diff(a, b) {
-		// 前後の共通部分は比較しない
-		let s = 0;
-		while(s < a.length && s < b.length && a[s] === b[s]) s++;
-		let ea = a.length, eb = b.length;
-		while(ea > s && eb > s && a[ea-1] === b[eb-1]) { ea--; eb--; }
-		const A = a.slice(s, ea), B = b.slice(s, eb);
-		const n = A.length, m = B.length, w = m + 1;
-		if (n * m > max_cells) return null;
-
-		// LCS
-		const L = new Uint32Array((n+1) * w);
-		for(let i=n-1; i>=0; i--)
-			for(let j=m-1; j>=0; j--)
-				L[i*w+j] = (A[i] === B[j]) ? L[(i+1)*w+j+1] + 1 : Math.max(L[(i+1)*w+j], L[i*w+j+1]);
-
-		const out = [];
-		for(let k=0; k<s; k++) out.push([' ', a[k]]);
-		let i=0, j=0;
-		while(i<n && j<m) {
-			if (A[i] === B[j])                  { out.push([' ', A[i]]); i++; j++; }
-			else if (L[(i+1)*w+j] >= L[i*w+j+1]) { out.push(['-', A[i]]); i++; }
-			else                                 { out.push(['+', B[j]]); j++; }
-		}
-		for(; i<n; i++) out.push(['-', A[i]]);
-		for(; j<m; j++) out.push(['+', B[j]]);
-		for(let k=ea; k<a.length; k++) out.push([' ', a[k]]);
-		return out;
-	}
-
-	// 変更行の前後だけを表示する
-	function render_diff(diff) {
-		const ctx = 2;
-		const show = new Array(diff.length).fill(false);
-		diff.forEach(function(d, i){
-			if (d[0] == ' ') return;
-			for(let k=Math.max(0, i-ctx); k<=Math.min(diff.length-1, i+ctx); k++) show[k] = true;
-		});
-		$body.empty();
-		let skipped = false;
-		diff.forEach(function(d, i){
-			if (!show[i]) { skipped = true; return; }
-			if (skipped) { $body.append( $('<span>').addClass('rev-skip').text("…") ); skipped = false; }
-			const cls = d[0] == '-' ? 'rev-del' : d[0] == '+' ? 'rev-add' : 'rev-ctx';
-			$body.append( $('<span>').addClass(cls).text(d[0] + ' ' + d[1]) );
-		});
-		if (skipped) $body.append( $('<span>').addClass('rev-skip').text("…") );
-	}
-
 	function show_revision() {
 		$title.empty();
 		$body.empty().removeClass('rev-full');
@@ -416,7 +418,7 @@ adiary.load_contents_list($upsel);
 			const now  = $edit.val().replace(/\r\n?/g, "\n");
 			if (now === text) { $body.text( $('#rev-same').text() ); return; }
 			const diff = line_diff(text.split("\n"), now.split("\n"));
-			if (diff) return render_diff(diff);
+			if (diff) return render_diff(diff, $body);
 			$title.append( $('<div>').addClass('rev-note').text( $('#rev-too-large').text() ) );
 		}
 		$body.addClass('rev-full').text(text);
@@ -485,6 +487,91 @@ adiary.load_contents_list($upsel);
 			beforeClose: function(){ $dialog.detach(); }
 		});
 		load_list();
+	});
+}
+
+//##############################################################################
+// ■保存の競合の確認（ほかの画面で先に保存されていないか）
+//##############################################################################
+// 保存する前に今の記事の要約を取り寄せ、この画面を開いたときの要約と比べる。
+// 違えば保存せず、今の記事とこの画面の本文の差分を見せる。
+// 取り寄せに失敗したときはそのまま送る（サーバー側でも確かめる）。
+{
+	const $form   = $('form[name="edit"]');
+	const $digest = $('#edit-digest');
+	const $dialog = $secure('#conflict-dialog').detach();
+	const $title  = $dialog.find('#conflict-title');
+	const $body   = $dialog.find('#conflict-body');
+	let checked = false;
+
+	function submit(submitter) {
+		const form = $form[0];
+		if (form.requestSubmit) {
+			// submitイベントは同期で起きる。入力のチェックで止まったら、次はまた確かめる
+			checked = true;
+			submitter ? form.requestSubmit(submitter) : form.requestSubmit();
+			checked = false;
+			return;
+		}
+		if (submitter && submitter.name)	// 押したボタン（下書き保存など）を送る
+			$('<input>').attr({ type: 'hidden', name: submitter.name, value: submitter.value }).appendTo(form);
+		form.submit();
+	}
+
+	function show_conflict(now, submitter) {
+		const text = now.text.replace(/\r\n?/g, "\n");
+		const mine = $edit.val().replace(/\r\n?/g, "\n");
+		const now_title  = adiary.tag_decode(now.title);
+		const mine_title = $form.find('input[name="title"]').val();
+
+		$title.empty();
+		if (now_title !== mine_title)
+			$title.text( $('#conflict-title-diff').text().replace('%n', now_title).replace('%m', mine_title) );
+		$body.empty().removeClass('rev-full');
+		if (text === mine) {
+			$body.text( $('#conflict-same-body').text() );
+		} else {
+			const diff = line_diff(text.split("\n"), mine.split("\n"));
+			if (diff) render_diff(diff, $body);
+			else $body.addClass('rev-full').text( $('#rev-too-large').text() + "\n\n" + text );
+		}
+		$dialog.find('#conflict-open').attr('href', adiary.myself2 + '0' + now.pkey);
+
+		const $div = $('<div>').append($dialog);
+		const buttons = {};
+		buttons[ $('#conflict-save').text() ] = function(){
+			$digest.val(now.digest);	// 今の記事を見た上で上書きする
+			$div.adiaryDialog('close');
+			submit(submitter);
+		};
+		buttons[ $('#conflict-cancel').text() ] = function(){
+			$div.adiaryDialog('close');
+		};
+		$div.adiaryDialog({
+			modal:	true,
+			width:	Math.min(960, $(window).width() - 20),
+			minHeight: 300,
+			title:	$dialog.data('title'),
+			buttons: buttons,
+			beforeClose: function(){ $dialog.detach(); }
+		});
+	}
+
+	$form.on('submit', function(evt){
+		if (checked || !$digest.length) return;
+		evt.preventDefault();
+		const submitter = evt.originalEvent && evt.originalEvent.submitter;
+		$.ajax({
+			type: 'POST',
+			url:  adiary.myself + '?etc/ajax_dummy',
+			dataType: 'json',
+			data: { action: 'ajax_revision', csrf_check_key: CSRF_key, now: $('#edit-pkey').val() },
+			success: function(now){
+				if (!now || now.digest === $digest.val()) return submit(submitter);
+				show_conflict(now, submitter);
+			},
+			error: function(){ submit(submitter) }
+		});
 	});
 }
 

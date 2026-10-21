@@ -362,7 +362,8 @@ sub update_user_data {
 	if ($r != 1) {
 		return { ret=>-1, msg => 'DB update error' };
 	}
-	if ($update->{disable}) {
+	# 無効化、パスワード変更時は全セッションを削除（盗まれたセッションを使えなくするため）
+	if ($update->{disable} || exists($update->{pass})) {
 		$DB->delete_match($self->{table} . '_sid', 'id', $id);
 	}
 

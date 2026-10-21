@@ -114,6 +114,7 @@
 	<input type="hidden" name="action" value="<@v.skeleton>">
 <@ifexec(edit_pkey, begin)>
 	<input type="hidden" name="edit_pkey_int" value="<@edit_pkey>" id="edit-pkey">
+	<input type="hidden" name="edit_digest" value="<@v.article_digest(edit_pkey)>" id="edit-digest">
 <$end>
 	<@ifexec(edit_pkey, begin)>
 	<div class="float-r">
@@ -382,5 +383,18 @@
 <span id="rev-same">現在の本文と同じです。</span>
 <span id="rev-too-large">差分を出すには大きすぎるため、全文を表示しています。</span>
 <span id="rev-chars">%n文字</span>
+
+<@> 保存の競合ダイアログ（ほかの画面で先に保存されていたとき）
+<div id="conflict-dialog" data-title="ほかの画面で先に保存されています">
+	<p>この記事は、この画面を開いた後に、ほかの画面（別のタブや端末）で保存されています。<br>
+	このまま保存すると、そちらの変更を上書きします。下の差分（<span class="rev-del">－今の記事</span>／<span class="rev-add">＋この画面</span>）を確かめてください。</p>
+	<p><a id="conflict-open" target="_blank">今の記事を別のタブで開く</a></p>
+	<div id="conflict-title"></div>
+	<pre id="conflict-body"></pre>
+</div>
+<span id="conflict-save">上書きして保存</span>
+<span id="conflict-cancel">保存しない</span>
+<span id="conflict-title-diff">題名：今の記事「%n」／この画面「%m」</span>
+<span id="conflict-same-body">本文は同じです（題名、タグ、公開状態など、本文以外が変わっています）。</span>
 
 </div><!-- display none end -->

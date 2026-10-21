@@ -109,8 +109,8 @@
 
 # パスワード最低文字数
 #<$auth.pass_min = 4>
-# セッション保持時間（秒） 180 days
-#<$Auth.expires = 180day>
+# セッション保持時間（秒） 14 days
+#<$Auth.expires = 14day>
 
 # 1ユーザーあたりの多重ログイン許可数
 #<$Auth.max_sessions = 1>

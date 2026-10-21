@@ -27,7 +27,7 @@ sub new {
 
 	$self->{disallow_num_pass}=1;
 	$self->{pass_min} = 4;
-	$self->{expires}  = 180*86400;	# 180days
+	$self->{expires}  = 14*86400;	# 14days
 
 	$self->{sessions}    = 1;
 	$self->{all_logout}  = 0;
