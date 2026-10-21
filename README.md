@@ -49,7 +49,7 @@ AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3 または
   - jQuery UI (MIT / GPLv2)
   - dynatree (MIT)
   - Color Picker (MIT / GPL)
-- [Fancybox v3.5.7](https://github.com/fancyapps/fancybox) (GPLv3)
+- [Lythumb-viewer](https://github.com/Lycolia/lythumb-viewer) (AGPLv3)
 - [Prism.js](https://prismjs.com/) (MIT)
 
 ## Perl

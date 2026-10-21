@@ -22,13 +22,13 @@ sphone_menu=1
 <div class="hatena-moduletitle">タグ</div>
 <div class="hatena-modulebody">
 <ul id="sidetag-root" class="hatena-section">
-	<li><span class="js-switch" data-target="#sidetag-314" data-default="show"><a href="#">日記</a> <span class="qt">(<span>414</span>)</span></span>
+	<li><details open><summary><a href="#">日記</a> <span class="qt">(<span>414</span>)</span></summary>
 	<ul id="sidetag-314">
 		<li><a href="#">日常</a> <span class="qt">(<span>88</span>)</span></li>
 		<li><a href="#">食事</a> <span class="qt">(<span>48</span>)</span></li>
 		<li><a href="#">イベント</a> <span class="qt">(<span>16</span>)</span></li>
 	</ul>
-	</li>
+	</details></li>
 	<li><a href="#">プログラム</a> <span class="qt">(<span>76</span>)</span></li>
 	<li><a href="#">Linux</a> <span class="qt">(<span>12</span>)</span></li>
 	<li><a href="#">ネット</a> <span class="qt">(<span>24</span>)</span></li>

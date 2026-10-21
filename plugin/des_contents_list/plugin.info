@@ -19,7 +19,7 @@ sphone_menu=1
 <div class="hatena-moduletitle">コンテンツ</div>
 <div class="hatena-modulebody">
 <ul class="hatena-section">
-	<li><span class="js-switch" data-target="#sidecon-X99" data-default="show"><a href="#">adiary</a> <span class="qt">(<span>414</span>)</span></span>
+	<li><details open><summary><a href="#">adiary</a> <span class="qt">(<span>414</span>)</span></summary>
 	<ul id="sidecon-X99">
 		<li><a href="#">雑記</a> <span class="qt">(<span>88</span>)</span></li>
 		<li><a href="#">snapshot</a> <span class="qt">(<span>48</span>)</span></li>
@@ -27,7 +27,7 @@ sphone_menu=1
 		<li><a href="#">仕様書</a> <span class="qt">(<span>8</span>)</span></li>
 		<li><a href="#">blogサービス</a> <span class="qt">(<span>8</span>)</span></li>
 	</ul>
-	</li>
+	</details></li>
 	<li><a href="#">プログラム</a> <span class="qt">(<span>76</span>)</span></li>
 	<li><a href="#">cgi</a> <span class="qt">(<span>12</span>)</span></li>
 	<li><a href="#">ネット</a> <span class="qt">(<span>24</span>)</span></li>

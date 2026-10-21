@@ -902,7 +902,7 @@ function update_view(flag, selected) {
 		});
 		if (file.isImg) {
 			link.attr({
-				'data-fancybox': 'roadtrip',
+				'data-lythumb': 'roadtrip',
 				'data-caption': file.name
 			});
 		}
@@ -938,7 +938,7 @@ function update_view(flag, selected) {
 		});
 		if (file.isImg) {
 			link.attr({
-				'data-fancybox': 'roadtrip',
+				'data-lythumb': 'roadtrip',
 				'data-caption': file.name,
 			});
 		}

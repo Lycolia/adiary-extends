@@ -41,7 +41,7 @@ sub new_parser {
 			image    => 'pub/blog/image/',
 		};
 		$SATSUKI->{seemore_msg} = '続きを読む';
-		$SATSUKI->{image_attr}  = 'data-fancybox="k%k"';
+		$SATSUKI->{image_attr}  = 'data-lythumb="k%k"';
 		$SATSUKI->{br_mode} = 1;
 		$SATSUKI->{p_mode}  = 0;
 		$SATSUKI->{ls_mode} = 1;
@@ -62,7 +62,7 @@ sub new_parser {
 		satsuki_footnote => 1,
 		qiita_math       => 1,
 		seemore_msg      => '続きを読む',
-		image_attr       => 'data-fancybox="k%k"',
+		image_attr       => 'data-lythumb="k%k"',
 		%opt
 	);
 	foreach(keys(%conf)) { $md->{$_} = $conf{$_}; }

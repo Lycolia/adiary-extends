@@ -236,6 +236,26 @@ div.body-footer:empty { display: none; }
 div.body-footer h3 { font-size: 1rem; margin: 1.5rem 0 .5rem; }
 div.com-count { margin-top: .75rem; font-size: .9rem; }
 
+/* 追従する目次（toc.js）。本文の枠の先頭に高さ0で置き、枠の中で画面の上端に貼り付ける
+   ボタンは、本文の目次が画面の上へ抜けたとき（is-shown）だけ出す */
+.toc-float { position: sticky; top: .5rem; z-index: 150; height: 0; display: flex; justify-content: flex-end; }
+.toc-float-button {
+	position: relative; display: none; align-items: center; gap: .3rem; height: 2rem; padding: 0 .6rem;
+	box-shadow: 0 1px 4px rgb(0 0 0 / .15);
+}
+.toc-float.is-shown .toc-float-button { display: inline-flex; }
+.toc-float-button svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.toc-float-button[aria-expanded="true"] { color: var(--link); border-color: var(--link); }
+.toc-float-panel {
+	position: absolute; top: 2.25rem; right: 0; box-sizing: border-box; width: min(24rem, 100%);
+	max-height: calc(100vh - 4rem); overflow-y: auto; overscroll-behavior: contain;
+	padding: .5rem 1rem .5rem 2rem; background: var(--bg); border: 1px solid var(--border);
+	box-shadow: 0 2px 8px rgb(0 0 0 / .2);
+}
+.toc-float:not(.is-shown) .toc-float-panel { display: none; }
+.toc-float-panel ul.toc { margin: 0; padding-left: 0; }
+.toc-float-panel ul ul { padding-left: 1.25rem; }
+
 /* 下書き、非公開の表示 */
 div.body-main > div > strong.warning { display: block; border: 1px solid #e0a800; border-left-width: 4px; padding: .5rem 1rem; color: inherit; font-weight: normal; }
 

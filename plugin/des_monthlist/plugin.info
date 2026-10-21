@@ -21,28 +21,28 @@ sphone_menu=1
 <div class="hatena-moduletitle">過去ログ</div>
 <div class="hatena-modulebody">
 <ul class="hatena-section">
- 	<li><span class="month-list-year js-switch" data-target="#month-list-2013"><a href="#">2013年</a></span> <span class="qt">(<span>8</span>)</span>
+	<li><details open><summary class="month-list-year"><a href="#">2013年</a> <span class="qt">(<span>8</span>)</span></summary>
 	<ul id="month-list-2013">
 		<li><a href="#">2013年08月</a> <span class="count">(<span>2</span>)</span></li>
 		<li><a href="#">2013年07月</a> <span class="count">(<span>1</span>)</span></li>
 		<li><a href="#">2013年06月</a> <span class="count">(<span>3</span>)</span></li>
 		<li><a href="#">2013年03月</a> <span class="count">(<span>1</span>)</span></li>
 		<li><a href="#">2013年01月</a> <span class="count">(<span>1</span>)</span></li>
-	</ul>
-	</li><li><span class="month-list-year js-switch" data-target="#month-list-2012"><a href="#">2012年</a></span> <span class="qt">(<span>8</span>)</span>
-	<ul id="month-list-2012" style="display: none">
+	</ul></details></li>
+	<li><details><summary class="month-list-year"><a href="#">2012年</a> <span class="qt">(<span>8</span>)</span></summary>
+	<ul id="month-list-2012">
 		<li><a href="#">2012年12月</a> <span class="count">(<span>1</span>)</span></li>
 		<li><a href="#">2012年11月</a> <span class="count">(<span>1</span>)</span></li>
 		<li><a href="#">2012年09月</a> <span class="count">(<span>1</span>)</span></li>
 		<li><a href="#">2012年08月</a> <span class="count">(<span>4</span>)</span></li>
 		<li><a href="#">2012年07月</a> <span class="count">(<span>1</span>)</span></li>
-	</ul>
-	</li><li><span class="month-list-year js-switch" data-target="#month-list-2011"><a href="#">2011年</a></span> <span class="qt">(<span>3</span>)</span>
-	<ul id="month-list-2011" style="display: none">
+	</ul></details></li>
+	<li><details><summary class="month-list-year"><a href="#">2011年</a> <span class="qt">(<span>3</span>)</span></summary>
+	<ul id="month-list-2011">
 		<li><a href="#">2011年08月</a> <span class="count">(<span>1</span>)</span></li>
 		<li><a href="#">2011年05月</a> <span class="count">(<span>1</span>)</span></li>
 		<li><a href="#">2011年02月</a> <span class="count">(<span>1</span>)</span></li>
-	</ul>
+	</ul></details></li>
 </ul>
 </div>
 </div>

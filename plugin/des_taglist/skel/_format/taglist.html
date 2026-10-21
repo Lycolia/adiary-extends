@@ -22,18 +22,15 @@
 <@p><ul id="<@id>-<@if(node.root,'root',node.pkey)>"<@if(depth == 0, ' class="hatena-section"')>>
 <@forexec(t, tree, begin.forexec)>
 <$ifnext(!ps.disp_noart_tag && !t.qtall)>
-<@ifexec(t.children && t.qt<t.qtall, begin, begin)>
-<@p>	<li> <@\>
-	<@ifexec(switch, begin)>	<@\>
-	<span class="js-switch" data-save data-target="#<@id>-<@t.pkey>"<@if(nclose, ' data-default="hide"')>> <@\>
-	<$end> <@\>
-	<a href="<@v.myself>?&amp;t=<@encode_uricom(x =t.name)>"><@t.sname></a><@if(switch, '</span>')> <span class="qt">(<span><@t.qtall></span>)</span>
+<@ifexec(t.children && t.qt<t.qtall, begin.children, begin.children)>
+<@p>	<li><@if(switch, if(nclose, '<details>', '<details open>') . '<summary>', ' ')><@\>
+	<a href="<@v.myself>?&amp;t=<@encode_uricom(x =t.name)>"><@t.sname></a> <span class="qt">(<span><@t.qtall></span>)</span><@if(switch, '</summary>')>
 <@exec(sub, t, depth+1)>
-<@p>	</li>
-<$else>
+<@p>	<@if(switch, '</details>')></li>
+<$else.children>
 <@p>	<li> <@\>
 	<a href="<@v.myself>?&amp;t=<@encode_uricom(x =t.name)>"><@t.sname></a> <span class="qt">(<span><@t.qtall></span>)</span></li>
-<$end>
+<$end.children>
 <$end.forexec>
 	<@ifexec(node.root && notag_arts && !ps.nodisp_notag, begin)>
 	<li><a href="<@v.myself>?&amp;t="><@ps.notag_title || '(none)'></a> <span class="qt">(<span><@notag_arts></span>)</span></li>
