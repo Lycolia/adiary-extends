@@ -24,11 +24,10 @@
 <$ifset(substr(t.elink_key,0,2) eq './', t.elink_key, substr(t.elink_key,2))>
 <$ifnext(t.tstat & v.tstat_nomenu)>
 <@ifexec(t.children && depth<max_depth, begin, begin)>
-<@p>	<li> <@\>
-	<@ifexec(switch, begin)><span class="js-switch" data-save data-target="#<@id>-<@t.pkey>"<@if(nclose, ' data-default="hide"')>> <@\>
-	<$end><a href="<@if(t.ctype eq 'link', t.elink_key, "<@v.myself2><@t.elink_key>")>"><@t.title></a><@if(switch, '</span>')>
+<@p>	<li><@if(switch, if(nclose, '<details>', '<details open>') . '<summary>', ' ')><@\>
+	<a href="<@if(t.ctype eq 'link', t.elink_key, "<@v.myself2><@t.elink_key>")>"><@t.title></a><@if(switch, '</summary>')>
 <@exec(sub, t, depth+1)>
-<@p>	</li>
+<@p>	<@if(switch, '</details>')></li>
 <$else>
 <@p>	<li> <@\>
 	<a href="<@if(t.ctype eq 'link', t.elink_key, "<@v.myself2><@t.elink_key>")>"><@t.title></a></li>

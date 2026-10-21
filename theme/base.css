@@ -1232,6 +1232,15 @@ span.tag span.ui-icon-close,
 	display:		inline-block;
 	vertical-align:		middle;
 }
+/* サイドバーのタグ、過去ログ、コンテンツの開閉
+   開閉の印の幅だけ子を余分に下げ、親の文字より子が下がって見えるようにする */
+.hatena-module details {
+	padding-left:		1em;
+}
+.hatena-module summary {
+	margin-left:		-1em;
+	cursor:			pointer;
+}
 /* クリックできるアイコン */
 .ui-icon-close,
 .ui-icon-search,
@@ -2276,6 +2285,3 @@ pre[class*="language-"].line-numbers > code {
 			padding-right: 0.8em;
 			text-align: right;
 		}
-
-
-/
