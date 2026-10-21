@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir>base.css<@if(v.sphone, get_lastmodified("?<@v.theme_dir>base.css"))>">
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir><@v.theme>/<@v.theme_name>.css<@if(v.sphone, get_lastmodified("?<@v.theme_dir><@v.theme>/<@v.theme_name>.css"))>" id="theme-css">
 <@>
-<@ifexec(!v.special_system_mode && s.theme_custom && s.theme eq v.theme, begin)>
+<@ifexec(!v.system_theme && s.theme_custom && s.theme eq v.theme, begin)>
 <link rel="stylesheet" href="<@Basepath><@s.theme_custom>?<@get_lastmodified(s.theme_custom)>" id="theme-custom-css">
 <$end>
 <@>

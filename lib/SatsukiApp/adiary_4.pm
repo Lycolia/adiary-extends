@@ -1425,7 +1425,6 @@ sub save_theme {
 	# テーマ保存
 	$self->update_cur_blogset('theme', $theme);
 	$self->update_cur_blogset('theme_custom', '');
-	$self->update_cur_blogset('sysmode_notheme', $form->{sysmode_notheme_flg});
 
 	# テーマカスタマイズ情報の保存
 	if (!$form->{custom}) { return 0; }

@@ -638,15 +638,17 @@ sub save_blogset_sys {
 # ●システムモードへ
 #-------------------------------------------------------------------------------
 sub system_mode {
-	my ($self, $title) = @_;
+	my ($self, $title, $keep_theme) = @_;
 	my $ROBJ = $self->{ROBJ};
 	$self->{system_mode}    = 1;
 	$ROBJ->{no_robots}      = 1;
 	if ($title ne '') { $self->{title} = $title; }
 
-	if ($self->{blog}->{sysmode_notheme}){
-		# デフォルトテーマの選択
+	# テーマは公開画面専用。管理画面は常に標準テーマを使う
+	# ※テーマの表示テストなど、公開画面の部品を見せるページは $keep_theme でテーマを残す
+	if (!$keep_theme) {
 		$self->load_theme( $self->{default_theme} );
+		$self->{system_theme} = 1;
 	}
 }
 
