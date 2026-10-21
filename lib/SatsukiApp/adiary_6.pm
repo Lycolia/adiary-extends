@@ -290,11 +290,11 @@ sub update_art_text_353 {
 		my $text = $self->normalize_file_alt( $_->{_text} );
 
 		my $parser = $_->{parser} ne '' && $self->load_parser( $_->{parser} );
-		if (ref($parser) && $parser->can('add_heading_ids')) {
+		if (ref($parser) && $_->{parser} eq 'markdown') {
 			$self->post_process_link_key( $_ );
 			$parser->{thisurl}  = $self->get_blog_path( $blogid ) . $_->{elink_key};
 			$parser->{thispkey} = $_->{pkey};
-			$text = $parser->add_heading_ids( $text );
+			$text = $self->freeze_heading_ids_353( $parser, $text );
 		}
 		if ($text ne $_->{_text}) {
 			$update{ $_->{pkey} } = { _text => $text };
@@ -307,6 +307,68 @@ sub update_art_text_353 {
 	}
 	my $r = $DB->commit();
 	if ($r) { $ROBJ->message("Blog '$blogid' database error($r)"); }
+}
+
+#-------------------------------------------------------------------------------
+# ●見出しに、今の見出しのIDを識別子 [#id] として書き足す（Ver3.53）
+#-------------------------------------------------------------------------------
+# 見出しは行を見て探す（引用とリストとコードフェンスの中は見ない）。
+# 書き足す前と後で変換結果がまったく同じになる時だけ書き足し、違えば元の原文を返す。
+sub freeze_heading_ids_353 {
+	my $self   = shift;
+	my $parser = shift;
+	my $text   = shift;
+	my $ID = qr/[^\x00-\x20\x7F\]]+/;	# 識別子に使える文字
+
+	my @before = $parser->parse($text);
+	my @ids    = @{ $parser->{heading_ids} || [] };
+	if (!@ids) { return $text; }
+
+	my $n = 0;
+	my $added = 0;
+	my $fence;
+	my $quote;
+	my $list;
+	my $blank;
+	my @lines = split(/\n/, $text, -1);
+	foreach(@lines) {
+		# 引用は空行まで続く（> の無い行も引用の中）。
+		# リストは、空行の後に字下げの無い行が来るまで続く（字下げの無い行も、空行の前なら項目の続き）。
+		if ($_ =~ /^\s*$/) {
+			undef $quote;
+			$blank = 1;
+		} else {
+			if (/^ ? ? ?>/) { $quote = 1; }
+			if (/^\s*(?:[\*\+\-]|\d+\.) +/) { $list = 1; }
+			elsif ($blank && /^\S/) { undef $list; }
+			undef $blank;
+		}
+		# 引用の > とリストの記号を除く
+		my $rest = $_;
+		$rest =~ s/^(?: ? ? ?>\s?|\s*(?:[\*\+\-]|\d+\.) +)*\s*//;
+		if (defined $fence) {
+			if ($rest =~ /^\Q$fence\E[`~]*\s*$/) { undef $fence; }
+			next;
+		}
+		if ($rest =~ /^(```+|~~~+)/) {
+			$fence = $1;
+			next;
+		}
+		if ($quote || $list) { next; }	# 引用とリストの中の # は見出しにならない
+		if ($_ !~ /^#+\s+(.*?)$/) { next; }
+		my $title = $1;
+		my $id = $ids[$n++];
+		if ($title =~ /^(?:(.*?)[ \t]+)?\[#$ID\][ \t]*$/) { next; }	# 識別子がある
+		if (!defined $id || $id !~ /^$ID$/) { return $text; }
+		$_ =~ s/[ \t]*$/ [#$id]/;
+		$added++;
+	}
+	if (!$added || $n != @ids) { return $text; }
+
+	my $new   = join("\n", @lines);
+	my @after = $parser->parse($new);
+	if ($before[0] ne $after[0] || $before[1] ne $after[1]) { return $text; }
+	return $new;
 }
 
 #-------------------------------------------------------------------------------
