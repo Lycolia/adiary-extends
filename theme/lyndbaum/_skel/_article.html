@@ -136,11 +136,12 @@
 <$secure_id  = v.make_secure_id( v.blogid . t.pkey )>
 <$secure_ary = string2ordary( secure_id )>
 <aside class="comment comments" id="com">
-	<div class="caption js-switch" data-target="#c<@t.pkey>n-block"><span class="caption-title">コメント</span><span class="com-num">（<span class="num"><@coms></span>件）</span>
+	<details class="comment-switch" open>
+	<summary class="caption"><span class="caption-title">コメント</span><span class="com-num">（<span class="num"><@coms></span>件）</span>
 	<@ifexec(view && view<coms, begin)>
 	<span class="abbr-msg"><a href="<@permalink>?&amp;c=all#com">※古いコメントもすべて表示</a></span>
 	<$end>
-	</div>
+	</summary>
 	<div class="commentbody" id="c<@t.pkey>n-block">
 	<div class="commentview">
 	<@ifexec(coms && v.allow_edit, begin)>
@@ -213,6 +214,7 @@
 	<$end>
 <@>$COMMENT_BOTTOM$------------------------------------------------------------
 	</div> <!-- commentbody -->
+	</details>
 </aside> <!-- comment -->
 <$end>
 </div> <!-- article-box -->
