@@ -208,6 +208,14 @@ sub edit_article {
 	my %opt;
 	$opt{edit_pkey} = $form->{edit_pkey_int};
 
+	# ほかの画面（別のタブや端末）で先に保存されていたら、保存しない
+	# ※プラグインに影響しないよう、イベントより前で確認する
+	if ($opt{edit_pkey} && $form->{edit_digest} ne ''
+	 && $form->{edit_digest} ne $self->article_digest($opt{edit_pkey})) {
+		$ROBJ->message('This article has already been saved on another screen');
+		return 6;
+	}
+
 	# イベント呼び出し
 	my $er = $self->call_event('ARTICLE_BEFORE', $form);
 	if ($er) { return; }
@@ -358,6 +366,8 @@ sub regist_article {
 			$ROBJ->form_error('link_key', 'Content key is empty');
 		} elsif ($link_key =~ m|^0\d*$|) {
 			$ROBJ->form_error('link_key', 'Content key can not numbers starting with "0"');
+		} elsif (my @err = $self->check_link_key_path($link_key)) {
+			$ROBJ->form_error('link_key', @err);
 		}
 
 		# link_key の重複回避
@@ -580,6 +590,42 @@ sub regist_article {
 }
 
 #-------------------------------------------------------------------------------
+# ●コンテンツkeyがURLとして使えるか
+#-------------------------------------------------------------------------------
+# 使えなければ、form_error に渡すメッセージと引数を返す
+#
+# ・数字だけのkeyは、記事番号（0始まり）か日付として解釈される
+# ・& で始まるkeyは、コンテンツとして解釈されない
+# ・先頭の階層がadiaryの置き場所にあるファイルやフォルダと同じだと、
+#   Webサーバーがファイルを先に返すか、アクセスを拒否する
+# ・nginxの設定（location /data、/__cache、~ \.cgi$）で拒否されるkey
+#   location は前方一致なので、data や __cache で始まるkeyはすべて拒否される
+#
+sub check_link_key_path {
+	my ($self, $link_key) = @_;
+	if ($link_key =~ m[^(?:/|https?://)]) { return; }	# リンク
+
+	if ($link_key =~ /^\d+$/) {
+		return ('Content key can not be only numbers');
+	}
+	if ($link_key =~ /^&/) {
+		return ('Can not use character "%s" in content key', '&');
+	}
+	if ($link_key =~ /^(data|__cache)/) {
+		return ('Content key can not start with "%s"', $1);
+	}
+	if ($link_key =~ /(\.cgi)$/) {
+		return ('Content key can not end with "%s"', $1);
+	}
+	my $top = $link_key =~ m|^([^/]+)| ? $1 : '';
+	my %files = map { $_ => 1 } @{ $self->{ROBJ}->search_files('./', { dir => 1, all => 1 }) };	# フォルダは末尾に / が付く
+	if ($files{$top} || $files{"$top/"}) {
+		return ('"%s" is used by the system and can not be the top of a content key', $top);
+	}
+	return;
+}
+
+#-------------------------------------------------------------------------------
 # ●記事からメイン画像を取得
 #-------------------------------------------------------------------------------
 sub get_main_image_from_article {
@@ -690,19 +736,64 @@ sub load_revision_json {
 	my $rev = $DB->select_match_limit1("$self->{blogid}_rev", 'pkey', int($pkey));
 	if (!$rev || !$self->check_editor($rev->{a_pkey})) { return; }
 
-	# json_encode() は \ を &#92; にするので、本文はここでエスケープする
-	my $text = $rev->{_text};
+	my $ROBJ = $self->{ROBJ};
+	my @ary = map { "\"$_\": " . $ROBJ->json_encode($rev->{$_}) } qw(pkey a_pkey tm update_tm title);
+	push(@ary, '"text": ' . $self->json_long_text($rev->{_text}));
+	return '{' . join(', ', @ary) . '}';
+}
+
+#-------------------------------------------------------------------------------
+# ●今の記事の取得（json）
+#-------------------------------------------------------------------------------
+# 編集画面で保存する前に、ほかの画面で先に保存されていないかを見るため
+sub load_article_now_json {
+	my ($self, $pkey) = @_;
+	$pkey = int($pkey);
+	if (!$pkey || !$self->check_editor($pkey)) { return; }
+	my $art = $self->{DB}->select_match_limit1("$self->{blogid}_art", 'pkey', $pkey);
+	if (!$art) { return; }
+
+	my $ROBJ = $self->{ROBJ};
+	my @ary = map { "\"$_\": " . $ROBJ->json_encode($art->{$_}) } qw(pkey update_tm title);
+	push(@ary, '"digest": "' . $self->article_digest($art) . '"');
+	push(@ary, '"text": ' . $self->json_long_text($art->{_text}));
+	return '{' . join(', ', @ary) . '}';
+}
+
+#-------------------------------------------------------------------------------
+# ●本文をjsonの文字列にする
+#-------------------------------------------------------------------------------
+# json_encode() は \ を &#92; にするので、本文はここでエスケープする
+sub json_long_text {
+	my ($self, $text) = @_;
 	$text =~ s/\\/\\\\/g;
 	$text =~ s/"/\\"/g;
 	$text =~ s/\n/\\n/g;
 	$text =~ s/\r/\\r/g;
 	$text =~ s/\t/\\t/g;
 	$text =~ s/([\x00-\x1f])/sprintf('\\u%04x', ord($1))/eg;
+	return "\"$text\"";
+}
 
-	my $ROBJ = $self->{ROBJ};
-	my @ary = map { "\"$_\": " . $ROBJ->json_encode($rev->{$_}) } qw(pkey a_pkey tm update_tm title);
-	push(@ary, "\"text\": \"$text\"");
-	return '{' . join(', ', @ary) . '}';
+#-------------------------------------------------------------------------------
+# ●記事の中身の要約
+#-------------------------------------------------------------------------------
+# 編集画面に入れておき、保存するときに今の記事と比べて、
+# ほかの画面（別のタブや端末）で先に保存されていないかを見る。
+# 記事一覧やコンテンツの編集は update_tm を変えずに書き換えるので、中身で比べる。
+# コメント数や変換後の本文は、記事を書き換えなくても変わるので入れない。
+my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok
+		    ctype link_key upnode priority main_image description);
+sub article_digest {
+	my ($self, $art) = @_;
+	if (!ref $art) {
+		$art = $self->{DB}->select_match_limit1("$self->{blogid}_art", 'pkey', int($art));
+		if (!$art) { return ''; }
+	}
+	my $str = join("\0", map { $art->{$_} } @DigestCols);
+	utf8::encode($str) if utf8::is_utf8($str);
+	require Digest::MD5;
+	return Digest::MD5::md5_hex($str);
 }
 
 #-------------------------------------------------------------------------------
@@ -1135,6 +1226,128 @@ sub update_contents_list {
 	# イベント処理
 	$self->call_event('CONTENT_STATE_CHANGE', $tree);
 	return $tree;
+}
+
+################################################################################
+# ■参照元（バックリンク）
+################################################################################
+#-------------------------------------------------------------------------------
+# ●参照元の更新
+#-------------------------------------------------------------------------------
+# 本文のリンクを ${blogid}_link に入れ直し、リンク先の記事の参照元のHTML（_art.backlinks）
+# を作り直す。表示のときは backlinks を読むだけ（dea_backlinks）。
+# ・$pkeys が配列refなら、その記事のリンクと、その記事が関わる参照元だけを作り直す
+#   それ以外（引数なし、件数が渡されたとき）は、全記事を作り直す
+# ・参照元に出すのは、公開中のブログ記事（コンテンツは除く）。新しい順
+# ・コンテンツの記事には参照元を出さない
+sub update_backlinks {
+	my $self  = shift;
+	my $pkeys = shift;
+	my $DB    = $self->{DB};
+	my $blogid = $self->{blogid};
+	my $table  = "${blogid}_link";
+
+	my $all = !ref($pkeys);
+	if (!$all && !@$pkeys) { return 0; }
+
+	#-------------------------------------------------------------
+	# リンクの入れ直し
+	#-------------------------------------------------------------
+	my $keys = $DB->select_match("${blogid}_art", '*cols', ['link_key']);
+	my %exists = map { $_->{link_key} => 1 } @$keys;
+
+	my $arts = $DB->select_match("${blogid}_art", ($all ? () : ('pkey', $pkeys)), '*cols', ['pkey', 'link_key', 'text']);
+	my %targets;	# 参照元を作り直す記事の link_key
+	if ($all) {
+		%targets = %exists;
+	} else {
+		# 消えたリンクのリンク先
+		my $old = $DB->select_match($table, 'a_pkey', $pkeys, '*cols', ['link_key']);
+		foreach(@$old) { $targets{ $_->{link_key} }=1; }
+	}
+
+	$DB->begin();
+	if ($all) {
+		$DB->delete_match($table);
+	} else {
+		$DB->delete_match($table, 'a_pkey', $pkeys);
+	}
+	foreach my $art (@$arts) {
+		# 自分自身（新規作成や、ゴミ箱から戻したとき）
+		$targets{ $art->{link_key} } = 1;
+
+		foreach( $self->extract_link_keys($art->{text}, \%exists) ) {
+			if ($_ eq $art->{link_key}) { next; }	# 自分自身へのリンク
+			$DB->insert($table, { a_pkey => $art->{pkey}, link_key => $_ });
+			$targets{$_} = 1;
+		}
+	}
+	my $r = $DB->commit();
+
+	#-------------------------------------------------------------
+	# 参照元のHTMLの生成
+	#-------------------------------------------------------------
+	my @keys = grep { $exists{$_} } keys(%targets);
+	if (!@keys) { return $r; }
+
+	my $dsts  = $DB->select_match("${blogid}_art", 'link_key', \@keys, '*cols', ['pkey', 'link_key', 'ctype', 'backlinks']);
+	my $links = $DB->select_match($table, 'link_key', \@keys, '*cols', ['a_pkey', 'link_key']);
+	my %from;	# link_key => { リンク元のpkey => 1 }
+	foreach(@$links) {
+		$from{ $_->{link_key} }->{ $_->{a_pkey} } = 1;
+	}
+	my %src = map { $_->{a_pkey} => 1 } @$links;
+	my $srcs = %src ? $DB->select("${blogid}_art", {
+		match    => { pkey => [ keys(%src) ], enable => 1, ctype => '' },
+		cols     => ['pkey', 'link_key', 'title', 'yyyymmdd', 'tm'],
+		sort     => ['yyyymmdd', 'tm'],
+		sort_rev => [1, 1]
+	}) : [];
+
+	my $path = $self->get_blog_path( $blogid );
+	foreach(@$srcs) {
+		$self->post_process_link_key( $_ );
+		$_->{html} = "<li><a href=\"$path$_->{elink_key}\">$_->{title}</a></li>\n";
+	}
+
+	$DB->begin();
+	foreach my $dst (@$dsts) {
+		my $from = $from{ $dst->{link_key} } || {};
+		my $html = $dst->{ctype} ne '' ? '' : join('', map { $_->{html} } grep { $from->{ $_->{pkey} } } @$srcs);
+		if ($html eq $dst->{backlinks}) { next; }
+		$DB->update_match("${blogid}_art", { backlinks => $html }, 'pkey', $dst->{pkey});
+	}
+	$r += $DB->commit();
+	return $r;
+}
+
+#-------------------------------------------------------------------------------
+# ●本文のHTMLから、ブログ内の記事へのリンクの link_key を取り出す
+#-------------------------------------------------------------------------------
+# $exists	今ある記事の link_key のハッシュ
+#		これ以外は、まだ無いブログ記事の link_key（"0"+pkey）の形のものだけ残す
+sub extract_link_keys {
+	my ($self, $text, $exists) = @_;
+	my $path = $self->get_blog_path( $self->{blogid} );
+	my @base = ($path);
+	if ($path =~ m|^/|) { unshift(@base, $self->{ROBJ}->{ServerURL} . $path); }
+
+	my %keys;
+	while ($text =~ /<a\s[^>]*?\bhref="([^"]*)"/g) {
+		my $url = $1;
+		my ($base) = grep { substr($url, 0, length($_)) eq $_ } @base;
+		if (!defined $base) { next; }
+
+		# link_key_encode の逆
+		my $key = substr($url, length($base));
+		$key =~ s/[?#].*//s;
+		$key =~ s|^\.//|/|;
+		$key =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
+		if ($key =~ /^0\d+$/) { $key = '0' . int($key); }
+
+		if ($exists->{$key} || $key =~ /^0[1-9]\d*$/) { $keys{$key}=1; }
+	}
+	return keys(%keys);
 }
 
 #-------------------------------------------------------------------------------

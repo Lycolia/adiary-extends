@@ -8,9 +8,9 @@ use Satsuki::AutoLoader;
 use Fcntl;
 #-------------------------------------------------------------------------------
 # データ管理上数値しか解釈できないので文字列にしてはならない
-our $VERSION    = 4.7;
+our $VERSION    = 4.08;
 our $OUTVERSION = "$VERSION";
-our $DATA_VERSION = 3.53;
+our $DATA_VERSION = 4.08;
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -22,6 +22,7 @@ $SysEvt{ARTICLE_STATE_CHANGE} = [qw(
 	update_bloginfo_article
 	update_taglist
 	update_contents_list
+	update_backlinks
 )];
 $SysEvt{COMMENT_STATE_CHANGE} = [qw(
 	update_bloginfo_comment

@@ -681,7 +681,8 @@ ul#thumbnail-picker {
 	font-size:		9pt;
 	color:			#888;
 }
-#revision-body {
+#revision-body,
+#conflict-body {
 	flex-grow:		1;
 	overflow:		auto;
 	margin:			4px 0 0 0;
@@ -692,21 +693,34 @@ ul#thumbnail-picker {
 	white-space:		pre-wrap;
 	word-break:		break-all;
 }
-#revision-body .rev-del {
+#revision-body .rev-del,
+#conflict-body .rev-del {
 	display:		block;
 	background-color:	#fdd;
 }
-#revision-body .rev-add {
+#revision-body .rev-add,
+#conflict-body .rev-add {
 	display:		block;
 	background-color:	#dfd;
 }
-#revision-body .rev-ctx {
+#revision-body .rev-ctx,
+#conflict-body .rev-ctx {
 	display:		block;
 	color:			#666;
 }
-#revision-body .rev-skip {
+#revision-body .rev-skip,
+#conflict-body .rev-skip {
 	display:		block;
 	color:			#aaa;
+}
+#conflict-body {
+	max-height:		50vh;
+}
+#conflict-dialog p .rev-del {
+	background-color:	#fdd;
+}
+#conflict-dialog p .rev-add {
+	background-color:	#dfd;
 }
 .sp #revision-dialog .rev-wrap {
 	flex-direction:		column;
@@ -1239,6 +1253,10 @@ span.tag span.ui-icon-close,
 }
 .hatena-module summary {
 	margin-left:		-1em;
+	cursor:			pointer;
+}
+/* コメント欄の開閉 */
+#com summary.caption {
 	cursor:			pointer;
 }
 /* クリックできるアイコン */

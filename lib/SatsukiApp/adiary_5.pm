@@ -701,6 +701,10 @@ sub create_tables {
 	$r = $self->create_rev_table($table);
 	if ($r) { return 900 + $r; }
 
+	# 記事のリンクテーブル
+	$r = $self->create_link_table($table);
+	if ($r) { return 1100 + $r; }
+
 	# ゴミ箱テーブル
 	$r = $self->create_trash_tables($table);
 	if ($r) { return 1000 + $r; }
@@ -709,7 +713,7 @@ sub create_tables {
 	$self->insert_bloglist($table);
 
 	return 0;
-} # End of create_tanble
+} # End of create_table
 
 #-------------------------------------------------------------------------------
 # ●記事テーブル、コメントテーブルの定義
@@ -720,7 +724,7 @@ sub create_tables {
 sub art_table_info {
 	my ($self, $table) = @_;
 	my %info;
-	$info{text}    = [ qw(title parser tags name id ip host agent link_key ctype main_image description) ];
+	$info{text}    = [ qw(title parser tags name id ip host agent link_key ctype main_image description backlinks) ];
 	$info{ltext}   = [ qw(text text_s _text) ];
 	$info{int}     = [ qw(yyyymmdd tm update_tm coms coms_all revision upnode priority) ];
 	$info{flag}    = [ qw(enable com_ok hcom_ok) ];
@@ -800,6 +804,23 @@ sub create_rev_table {
 }
 
 #-------------------------------------------------------------------------------
+# ●記事のリンクテーブルの作成
+#-------------------------------------------------------------------------------
+# a_pkey    リンク元の記事
+# link_key  リンク先の記事の link_key（まだ無い記事も持っておく）
+# ※参照元の生成に使う（update_backlinks）。記事を削除した後に消すので、参照は張らない
+sub create_link_table {
+	my ($self, $table) = @_;
+	my %info;
+	$info{text}    = [ qw(link_key) ];
+	$info{int}     = [ qw(a_pkey) ];
+	$info{idx}     = [ qw(a_pkey link_key) ];
+	$info{notnull} = [ qw(a_pkey link_key) ];
+	$info{ref}     = { };
+	return $self->{DB}->create_table_wrapper("${table}_link", \%info);
+}
+
+#-------------------------------------------------------------------------------
 # ●ブログテーブルの削除
 #-------------------------------------------------------------------------------
 sub drop_tables {
@@ -807,6 +828,7 @@ sub drop_tables {
 	my $DB = $self->{DB};
 
 	my $r = 0;	# blog_create の copy も変更するの忘れず
+	$r += $DB->drop_table("${table}_link");
 	$r += $DB->drop_table("${table}_trashcom");
 	$r += $DB->drop_table("${table}_trash");
 	$r += $DB->drop_table("${table}_rev");

@@ -45,7 +45,8 @@ my @update_versions = (
 	{ ver => 3.40, plugin=>1 },
 	{ ver => 3.50, plugin=>1, func => 'sys_update_350' },
 	{ ver => 3.52, func => 'sys_update_352' },
-	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' }
+	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' },
+	{ ver => 4.08, info=>1, func => 'sys_update_408' }
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -307,6 +308,25 @@ sub update_art_text_353 {
 	}
 	my $r = $DB->commit();
 	if ($r) { $ROBJ->message("Blog '$blogid' database error($r)"); }
+}
+
+#-------------------------------------------------------------------------------
+# ●システムアップデート for Ver4.08
+#-------------------------------------------------------------------------------
+# 参照元（バックリンク）のテーブルとカラムを追加する
+# ※参照元は、この後のブログ付加情報の再構築（ARTICLE_STATE_CHANGE）で作られる
+sub sys_update_408 {
+	my $self  = shift;
+	my $blogs = shift;
+	my $DB    = $self->{DB};
+	my $ROBJ  = $self->{ROBJ};
+	foreach(@$blogs) {
+		my $r = 0;
+		$r +=    $self->create_link_table($_);
+		$r += 10*$DB->add_column("${_}_art",   {name=>'backlinks', type=>'text'});
+		$r += 10*$DB->add_column("${_}_trash", {name=>'backlinks', type=>'text'});
+		if ($r) { $ROBJ->message("Blog '$_' database error($r)"); }
+	}
 }
 
 #-------------------------------------------------------------------------------

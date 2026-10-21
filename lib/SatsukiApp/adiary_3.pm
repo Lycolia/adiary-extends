@@ -1556,7 +1556,7 @@ sub contents_edit {
 	foreach(@$edits) {
 		my ($pkey,$upnode,$priority,$link_key) = split(',',$_,4);
 		$ROBJ->normalize_string($link_key);
-		if ($link_key =~ /^[\"\',]/ || $link_key =~ /^\s*$/ || $link_key =~ m|^[\d&]|) {
+		if ($link_key =~ /^[\"\',]/ || $link_key =~ /^\s*$/ || $link_key =~ m|^[\d&]| || $self->check_link_key_path($link_key)) {
 			$link_key = '';
 		}
 		my $org = $cons{ $pkey };

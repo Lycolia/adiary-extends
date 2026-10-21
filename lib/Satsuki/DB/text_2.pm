@@ -432,7 +432,7 @@ sub begin {
 }
 sub rollback {
 	my $self = shift;
-	if ($self->{begin}) {
+	if (!$self->{begin}) {
 		$self->warning("there is no transaction in progress");
 		return ;
 	}
@@ -471,6 +471,7 @@ sub commit {
 				my $pkey = $_->{pkey};
 				$write{$pkey}=$_;
 				delete $del{$pkey};
+				next;
 			}
 			# del
 			$del{$_}=1;

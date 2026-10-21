@@ -70,6 +70,18 @@ sub login {
 	# ログイン成功
 	$self->set_logininfo($udata, $secret);
 
+	# 期限切れセッションを削除（全ユーザー分）
+	my $expires = $self->{expires};
+	if (0<$expires) {
+		my $old = $DB->select($table.'_sid', {
+			lt   => { login_tm => $ROBJ->{TM} - $expires },
+			cols => ['pkey']
+		});
+		if (@$old) {
+			$DB->delete_match($table.'_sid', 'pkey', [ map { $_->{pkey} } @$old ]);
+		}
+	}
+
 	# 同一IDの古いログインセッションを削除
 	my @del_pkeys;
 	my $sessions = $DB->select_match($table.'_sid', 'id', $id);
