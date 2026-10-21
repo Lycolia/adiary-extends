@@ -118,6 +118,14 @@
 </div> <!-- body-footer -->
 </div> <!-- body -->
 </article>
+<@> 参照元は、本文とコメントの間に別の枠で出す（記事モジュールは本文の枠の中に入るため、テーマで直接出す）
+<@ifexec(t.backlinks, begin)>
+<section class="backlinks">
+<h2 class="backlinks-title">参照元</h2>
+<ul class="backlinks-list">
+<@t.backlinks></ul>
+</section>
+<$end>
 <script src="<@Basepath><@v.theme_dir>lyndbaum/lyndbaum/toc.js" defer></script>
 <@>$ARTICLE_BOTTOM:END$--------------------------------------------------------
 

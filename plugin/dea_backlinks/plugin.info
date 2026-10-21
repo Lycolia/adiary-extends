@@ -1,0 +1,33 @@
+######################################################################
+title=参照元の記事
+version=1.00
+######################################################################
+author=Lycolia Rizzim
+license=WTFPL
+
+adiary_version=4.08
+module_type=article
+
+# 参照元のリストは、記事の保存と再構築のときに作っておく（update_backlinks）
+# ここでは、作っておいたものを出すだけ
+
+*sample_html=<<HTML
+<div class="art-backlinks" data-module-name="<@this>">
+<h3>参照元</h3>
+<ul class="art-list backlinks-list">
+	<li><a href="#">この記事へリンクしている記事1</a></li>
+	<li><a href="#">この記事へリンクしている記事2</a></li>
+</ul>
+</div>
+HTML
+
+*module_html=<<HTML
+<@ifexec(t.backlinks, begin)>
+<div class="art-backlinks" data-module-name="<@this>">
+<h3>参照元</h3>
+<ul class="art-list backlinks-list">
+<@t.backlinks>
+</ul>
+</div>
+<$end>
+HTML
