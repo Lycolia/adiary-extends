@@ -1693,11 +1693,6 @@ ul.menu {
 .system.sp #sidebar {
 	display:		none;
 }
-/* lightbox 最小画像サイズ */
-.sp #lightbox-min-width {
-	display:		none;
-	width:			300px;
-}
 /* 画像アルバム */
 .sp #album-folder-tree > ul {
 	min-height:		60px;

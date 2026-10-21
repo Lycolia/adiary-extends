@@ -55,7 +55,7 @@ sub new {
 	$self->{timestamp_date} = '%Y/%m/%d';
 	$self->{indent} = '';		# indent all line
 	$self->{seemore_msg} = '';	# default "See More..."
-	$self->{image_attr}  = '';	# image link attribute for lightbox
+	$self->{image_attr}  = '';	# image link attribute for image viewer
 
 	$self->{vars} = {};		# 内部自由変数
 
