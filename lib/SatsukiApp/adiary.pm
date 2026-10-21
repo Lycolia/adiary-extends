@@ -7,7 +7,7 @@ package SatsukiApp::adiary;
 use Satsuki::AutoLoader;
 use Fcntl;
 #-------------------------------------------------------------------------------
-our $VERSION    = 4.4;
+our $VERSION    = 4.5;
 our $OUTVERSION = "$VERSION";
 our $DATA_VERSION = 3.53;
 ################################################################################
@@ -91,6 +91,7 @@ blog_cache_unit  => 100,	# ブログ記事キャッシュ保存時の分割単�
 dir_postfix_len  => 8,
 theme_skeleton_level => 10,
 user_skeleton_level  => 20,
+theme_design_skeleton_level => 21,	# テンプレート別に生成したデザイン
 sphone_skeleton_level => 100,
 default_tag_priority => 100000,
 default_wiki_priority=> 100000,
@@ -141,7 +142,11 @@ sub main {
 	# Query/Form処理  ※テーマ選択より後に処理
 	$self->read_query_form();
 
-	# スマホ向け処理
+	# スマホ向け処理（レスポンシブ対応テーマでは行わない）
+	if ($self->{responsive}) {
+		$self->{sphone_ua} = $self->{sphone};
+		$self->{sphone}    = 0;
+	}
 	if ($self->{sphone}) { $self->init_for_sphone(); }
 
 	# 表示スケルトン選択
@@ -378,6 +383,18 @@ sub init_for_sphone {
 }
 
 #-------------------------------------------------------------------------------
+# ●テーマ変更後のスマホ向け処理
+#-------------------------------------------------------------------------------
+# レスポンシブ対応テーマから非対応テーマに切り替わったとき用
+sub check_sphone_after_theme_change {
+	my $self = shift;
+	if ($self->{responsive} || $self->{sphone} || !$self->{sphone_ua}) { return; }
+
+	$self->{sphone} = $self->{sphone_ua};
+	$self->init_for_sphone();
+}
+
+#-------------------------------------------------------------------------------
 # ●スケルトン選択（theme.htmlからも呼び出される）
 #-------------------------------------------------------------------------------
 sub select_skeleton {
@@ -521,6 +538,7 @@ sub set_and_select_blog {
 
 	# スケルトン登録の削除
 	$ROBJ->delete_skeleton($self->{user_skeleton_level});
+	$ROBJ->delete_skeleton($self->{theme_design_skeleton_level});
 
 	# blogid の設定
 	if ($blogid eq '') { return; }				# 内部変数初期化時に使用
@@ -638,15 +656,18 @@ sub save_blogset_sys {
 # ●システムモードへ
 #-------------------------------------------------------------------------------
 sub system_mode {
-	my ($self, $title) = @_;
+	my ($self, $title, $keep_theme) = @_;
 	my $ROBJ = $self->{ROBJ};
 	$self->{system_mode}    = 1;
 	$ROBJ->{no_robots}      = 1;
 	if ($title ne '') { $self->{title} = $title; }
 
-	if ($self->{blog}->{sysmode_notheme}){
-		# デフォルトテーマの選択
+	# テーマは公開画面専用。管理画面は常に標準テーマを使う
+	# ※テーマの表示テストなど、公開画面の部品を見せるページは $keep_theme でテーマを残す
+	if (!$keep_theme) {
 		$self->load_theme( $self->{default_theme} );
+		$self->check_sphone_after_theme_change();
+		$self->{system_theme} = 1;
 	}
 }
 
@@ -1739,11 +1760,27 @@ sub load_theme {
 	$self->{template}   = $1;
 	$self->{theme_name} = $name;
 
+	# レスポンシブ対応テーマか？（README.txt のヘッダで判定）
+	$self->{responsive} = 0;
+	my $readme = "$dir$name/README.txt";
+	if (-r $readme) {
+		foreach(@{ $ROBJ->fread_lines_cached($readme) }) {
+			if ($_ !~ /^([\w\-]+):\s*(.*?)\s*$/) { last; }
+			if ($1 eq 'Responsive') { $self->{responsive} = ($2 eq 'yes') ? 1 : 0; last; }
+		}
+	}
+
 	# スケルトンテンプレートの登録
+	$ROBJ->delete_skeleton($self->{theme_skeleton_level});
+	$ROBJ->delete_skeleton($self->{theme_design_skeleton_level});
 	if (-r "${dir}_skel") {
 		$ROBJ->regist_skeleton("${dir}_skel/", $self->{theme_skeleton_level});
-	} else {
-		$ROBJ->delete_skeleton($self->{theme_skeleton_level});
+
+		# このテンプレートのスケルトンを元に生成したデザイン（デザインの保存時に生成）
+		my $tdir = $self->{blog_dir} . "skel_theme/$self->{template}/";
+		if ($self->{blog_dir} && !$self->{stop_all_plugins} && -d $tdir) {
+			$ROBJ->regist_skeleton($tdir, $self->{theme_design_skeleton_level});
+		}
 	}
 	return 0;
 }

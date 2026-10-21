@@ -1,17 +1,20 @@
-Title: wp
-Template: satsuki2
-Author: nabe@abk
-Access: https://twitter.com/nabe_abk
-License: GPL
+Title: lyco
+Template: lycolia
+Author: Lycolia
+Access: https://github.com/Lycolia/adiary-extends
+License: AGPLv3
 Smartphone: yes
-System-mode: yes
+Responsive: yes
 
-・WordPressでよくあるタイプのシンプルなテーマです。
-・カスタマイズしやすいようにあえてシンプルに作っています。
-
-・サイドバーの半分がフッタに移動しています。
-・ヘッダに「検索」と「ブログの説明」を配置してください。
-　あとお好みで「ドロップダウンメニュー」も。
+・lyndbaum の公開画面に合わせた、レスポンシブ対応のテーマです。
+・広い画面では「サイドバーA｜本文｜サイドバーB」の3カラム、
+　中くらいでは本文の右にサイドバーB、狭い画面では本文だけを表示します。
+　隠れたサイドバーは、ヘッダーのボタンで引き出しとして開きます。
+・マークアップは theme/lycolia/_skel/ のスケルトンで組んでいます。
+　スケルトンを変えたときは、デザイン編集で保存し直してください。
+・管理画面には使いません（管理画面は常に標準テーマで表示します）。
+・色の調整とオプションには対応していません。
 
 ChangeLog
-2015/07/19 初版
+2026/10/21 lyndbaum に合わせて作り直し
+2015/07/19 初版（wp テーマを元に作成）

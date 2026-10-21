@@ -980,147 +980,31 @@ sub save_design {
 	# そのブログ専用のスケルトンとして保存する準備
 	my $dir = $self->{blog_dir} . 'skel/';
 	$ROBJ->mkdir($dir);
-	my $ret = 0;
 
 	# 書き込み前にスケルトンを消す
 	$self->delete_design_skeleton( $dir );
 
-	#-----------------------------------------------------------------------
-	# _sidebar.html を生成
-	#-----------------------------------------------------------------------
-	if (!%save || $save{_sidebar}) {
-		my $file = '_sidebar';
-		my $h = $self->parse_original_skeleton($file);
-		my @html;
-		push(@html, @{$h->{HEADER} || []});
-		foreach(@side_a) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{SEPARATOR} || []});
-		foreach(@side_b) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{FOOTER} || []});
+	my %mod = (
+		side_a => \@side_a,
+		side_b => \@side_b,
+		main_a => \@main_a,
+		main_b => \@main_b,
+		header => \@header,
+		art_h  => \@art_h,
+		art_f  => \@art_f,
+		com    => \@com,
+		mart_h => \@mart_h,
+		mart_f => \@mart_f,
+		between=> \@between
+	);
+	my $ret = $self->generate_design_skeleton($dir, \%mod, $fail, \%save);
 
-		my $r = $ROBJ->fwrite_lines("$dir$file.html", \@html);
-		if ($r) {
-			$ret++;
-			$ROBJ->message('Design save failed : %s', "$file.html");
-		}
-	}
-
-	#-----------------------------------------------------------------------
-	# _header.html を生成
-	#-----------------------------------------------------------------------
-	if (!%save || $save{_header}) {
-		my $file = '_header';
-		my $h = $self->parse_original_skeleton($file);
-		my @html;
-		push(@html, @{$h->{HEADER} || []});
-		foreach(@header) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{FOOTER} || []});
-
-		my $r = $ROBJ->fwrite_lines("$dir$file.html", \@html);
-		if ($r) {
-			$ret++;
-			$ROBJ->message('Design save failed : %s', "$file.html");
-		}
-	}
-
-	#-----------------------------------------------------------------------
-	# _article.html を生成
-	#-----------------------------------------------------------------------
-	if (!%save || $save{_article}) {
-		my $file = '_article';
-		my $h = $self->parse_original_skeleton($file);
-
-		my @html;
-		push(@html, @{$h->{HEADER} || []});
-		foreach(@main_a) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		#---記事表示部------------------------------
-		push(@html, @{$h->{ARTICLE_TOP} || []});
-		foreach(@art_h) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{ARTICLE_MIDDLE} || []});
-		foreach(@art_f) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{ARTICLE_BOTTOM} || []});
-		push(@html, @{$h->{COMMENT_TOP}    || []});
-		foreach(@com) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{COMMENT_BOTTOM} || []});
-		#-------------------------------------------
-		foreach(@main_b) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{FOOTER} || []});
-
-		my $r = $ROBJ->fwrite_lines("$dir$file.html", \@html);
-		if ($r) {
-			$ret++;
-			$ROBJ->message('Design save failed : %s', "$file.html");
-		}
-	}
-
-	#-----------------------------------------------------------------------
-	# _main.html を生成
-	#-----------------------------------------------------------------------
-	if (!%save || $save{_main}) {
-		my $file = '_main';
-		my $h = $self->parse_original_skeleton($file);
-
-		my @html;
-		push(@html, @{$h->{HEADER} || []});
-		foreach(@main_a) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		#---記事と記事の間--------------------------
-		push(@html, @{$h->{BETWEEN_TOP} || []});
-		foreach(@between) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{BETWEEN_BOTTOM} || []});
-		#---記事表示部------------------------------
-		push(@html, @{$h->{ARTICLE_TOP} || []});
-		foreach(@mart_h) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{ARTICLE_MIDDLE} || []});
-		foreach(@mart_f) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{ARTICLE_BOTTOM} || []});
-		#-------------------------------------------
-		foreach(@main_b) {
-			if ($fail->{$_}) { next; }
-			push(@html, $self->load_module_html($_, $file) . "\n");
-		}
-		push(@html, @{$h->{FOOTER} || []});
-
-		my $r = $ROBJ->fwrite_lines("$dir$file.html", \@html);
-		if ($r) {
-			$ret++;
-			$ROBJ->message('Design save failed : %s', "$file.html");
-		}
+	# 独自のスケルトンを持つテンプレートには、それを元にしたものを別に生成する
+	foreach my $tpl (@{ $self->load_design_templates() }) {
+		my $tdir = $self->{blog_dir} . "skel_theme/$tpl/";
+		$ROBJ->mkdir($self->{blog_dir} . 'skel_theme/');
+		$ROBJ->mkdir($tdir);
+		$ret += $self->generate_design_skeleton($tdir, \%mod, $fail, \%save, $tpl);
 	}
 
 	#-----------------------------------------------------------------------
@@ -1148,6 +1032,189 @@ sub save_design {
 
 	return $ret;
 }
+
+#-------------------------------------------------------------------------------
+# ●デザインのスケルトン生成
+#-------------------------------------------------------------------------------
+# $tpl を指定すると、そのテンプレートの _skel を元にする
+#
+sub generate_design_skeleton {
+	my $self = shift;
+	my ($dir, $mod, $fail, $save, $tpl) = @_;
+	my $ROBJ = $self->{ROBJ};
+
+	# 元にするテンプレートのスケルトンに差し替える
+	my @bak;
+	if ($tpl ne '') {
+		@bak = $ROBJ->delete_skeleton($self->{theme_skeleton_level});
+		$ROBJ->regist_skeleton($self->{theme_dir} . "${tpl}/_skel/", $self->{theme_skeleton_level});
+	}
+	my $ret = 0;
+
+	#-----------------------------------------------------------------------
+	# _sidebar.html を生成
+	#-----------------------------------------------------------------------
+	if (!%$save || $save->{_sidebar}) {
+		my $file = '_sidebar';
+		my $h = $self->parse_original_skeleton($file);
+		my @html;
+		push(@html, @{$h->{HEADER} || []});
+		foreach(@{ $mod->{side_a} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{SEPARATOR} || []});
+		foreach(@{ $mod->{side_b} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{FOOTER} || []});
+
+		my $r = $ROBJ->fwrite_lines("$dir$file.html", \@html);
+		if ($r) {
+			$ret++;
+			$ROBJ->message('Design save failed : %s', "$file.html");
+		}
+	}
+
+	#-----------------------------------------------------------------------
+	# _header.html を生成
+	#-----------------------------------------------------------------------
+	if (!%$save || $save->{_header}) {
+		my $file = '_header';
+		my $h = $self->parse_original_skeleton($file);
+		my @html;
+		push(@html, @{$h->{HEADER} || []});
+		foreach(@{ $mod->{header} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{FOOTER} || []});
+
+		my $r = $ROBJ->fwrite_lines("$dir$file.html", \@html);
+		if ($r) {
+			$ret++;
+			$ROBJ->message('Design save failed : %s', "$file.html");
+		}
+	}
+
+	#-----------------------------------------------------------------------
+	# _article.html を生成
+	#-----------------------------------------------------------------------
+	if (!%$save || $save->{_article}) {
+		my $file = '_article';
+		my $h = $self->parse_original_skeleton($file);
+
+		my @html;
+		push(@html, @{$h->{HEADER} || []});
+		foreach(@{ $mod->{main_a} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		#---記事表示部------------------------------
+		push(@html, @{$h->{ARTICLE_TOP} || []});
+		foreach(@{ $mod->{art_h} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{ARTICLE_MIDDLE} || []});
+		foreach(@{ $mod->{art_f} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{ARTICLE_BOTTOM} || []});
+		push(@html, @{$h->{COMMENT_TOP}    || []});
+		foreach(@{ $mod->{com} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{COMMENT_BOTTOM} || []});
+		#-------------------------------------------
+		foreach(@{ $mod->{main_b} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{FOOTER} || []});
+
+		my $r = $ROBJ->fwrite_lines("$dir$file.html", \@html);
+		if ($r) {
+			$ret++;
+			$ROBJ->message('Design save failed : %s', "$file.html");
+		}
+	}
+
+	#-----------------------------------------------------------------------
+	# _main.html を生成
+	#-----------------------------------------------------------------------
+	if (!%$save || $save->{_main}) {
+		my $file = '_main';
+		my $h = $self->parse_original_skeleton($file);
+
+		my @html;
+		push(@html, @{$h->{HEADER} || []});
+		foreach(@{ $mod->{main_a} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		#---記事と記事の間--------------------------
+		push(@html, @{$h->{BETWEEN_TOP} || []});
+		foreach(@{ $mod->{between} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{BETWEEN_BOTTOM} || []});
+		#---記事表示部------------------------------
+		push(@html, @{$h->{ARTICLE_TOP} || []});
+		foreach(@{ $mod->{mart_h} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{ARTICLE_MIDDLE} || []});
+		foreach(@{ $mod->{mart_f} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{ARTICLE_BOTTOM} || []});
+		#-------------------------------------------
+		foreach(@{ $mod->{main_b} }) {
+			if ($fail->{$_}) { next; }
+			push(@html, $self->load_module_html($_, $file) . "\n");
+		}
+		push(@html, @{$h->{FOOTER} || []});
+
+		my $r = $ROBJ->fwrite_lines("$dir$file.html", \@html);
+		if ($r) {
+			$ret++;
+			$ROBJ->message('Design save failed : %s', "$file.html");
+		}
+	}
+
+	# テーマのスケルトンを元に戻す
+	if ($tpl ne '') {
+		$ROBJ->delete_skeleton($self->{theme_skeleton_level});
+		foreach(@bak) {
+			$ROBJ->regist_skeleton($_->{dir}, $_->{level});
+		}
+	}
+	return $ret;
+}
+
+#-------------------------------------------------------------------------------
+# ●独自のデザインスケルトンを持つテンプレートの一覧
+#-------------------------------------------------------------------------------
+sub load_design_templates {
+	my $self = shift;
+	my @ary;
+	foreach my $tpl (@{ $self->load_templates() }) {
+		chop($tpl);
+		my $dir = $self->{theme_dir} . "$tpl/_skel/";
+		if (grep { -r "$dir$_.html" } qw(_sidebar _header _article _main)) {
+			push(@ary, $tpl);
+		}
+	}
+	return \@ary;
+}
+
 #-------------------------------------------------------------------------------
 # ●オリジナルデザインのパース
 #-------------------------------------------------------------------------------
@@ -1324,6 +1391,7 @@ sub delete_design_skeleton {
 	$ROBJ->file_delete($dir . '_sidebar.html');
 	$ROBJ->file_delete($dir . '_article.html');
 	$ROBJ->file_delete($dir . '_main.html');
+	$ROBJ->dir_delete($self->{blog_dir} . 'skel_theme/');
 }
 
 
@@ -1425,7 +1493,6 @@ sub save_theme {
 	# テーマ保存
 	$self->update_cur_blogset('theme', $theme);
 	$self->update_cur_blogset('theme_custom', '');
-	$self->update_cur_blogset('sysmode_notheme', $form->{sysmode_notheme_flg});
 
 	# テーマカスタマイズ情報の保存
 	if (!$form->{custom}) { return 0; }
