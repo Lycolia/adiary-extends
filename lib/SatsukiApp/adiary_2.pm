@@ -358,6 +358,8 @@ sub regist_article {
 			$ROBJ->form_error('link_key', 'Content key is empty');
 		} elsif ($link_key =~ m|^0\d*$|) {
 			$ROBJ->form_error('link_key', 'Content key can not numbers starting with "0"');
+		} elsif (my @err = $self->check_link_key_path($link_key)) {
+			$ROBJ->form_error('link_key', @err);
 		}
 
 		# link_key の重複回避
@@ -577,6 +579,42 @@ sub regist_article {
 	}
 
 	return wantarray ? (\%art, $elink_key) : \%art;	# 書き込み成功
+}
+
+#-------------------------------------------------------------------------------
+# ●コンテンツkeyがURLとして使えるか
+#-------------------------------------------------------------------------------
+# 使えなければ、form_error に渡すメッセージと引数を返す
+#
+# ・数字だけのkeyは、記事番号（0始まり）か日付として解釈される
+# ・& で始まるkeyは、コンテンツとして解釈されない
+# ・先頭の階層がadiaryの置き場所にあるファイルやフォルダと同じだと、
+#   Webサーバーがファイルを先に返すか、アクセスを拒否する
+# ・nginxの設定（location /data、/__cache、~ \.cgi$）で拒否されるkey
+#   location は前方一致なので、data や __cache で始まるkeyはすべて拒否される
+#
+sub check_link_key_path {
+	my ($self, $link_key) = @_;
+	if ($link_key =~ m[^(?:/|https?://)]) { return; }	# リンク
+
+	if ($link_key =~ /^\d+$/) {
+		return ('Content key can not be only numbers');
+	}
+	if ($link_key =~ /^&/) {
+		return ('Can not use character "%s" in content key', '&');
+	}
+	if ($link_key =~ /^(data|__cache)/) {
+		return ('Content key can not start with "%s"', $1);
+	}
+	if ($link_key =~ /(\.cgi)$/) {
+		return ('Content key can not end with "%s"', $1);
+	}
+	my $top = $link_key =~ m|^([^/]+)| ? $1 : '';
+	my %files = map { $_ => 1 } @{ $self->{ROBJ}->search_files('./', { dir => 1, all => 1 }) };	# フォルダは末尾に / が付く
+	if ($files{$top} || $files{"$top/"}) {
+		return ('"%s" is used by the system and can not be the top of a content key', $top);
+	}
+	return;
 }
 
 #-------------------------------------------------------------------------------

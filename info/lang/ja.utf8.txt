@@ -191,6 +191,10 @@ Can not use character "%s" in content key=コンテンツkeyに文字「%s」は
 Can not use string "%s" in content key=コンテンツkeyに文字列「%s」は使えません
 Content key is empty=コンテンツkeyが空です
 Content key can not numbers starting with "0"=コンテンツkeyに「0」で始まる数字は使えません
+Content key can not be only numbers=数字だけのコンテンツkeyは使えません（記事番号や日付のURLになるため）
+Content key can not start with "%s"=コンテンツkeyを「%s」で始めることはできません（Webサーバーがアクセスを拒否するため）
+Content key can not end with "%s"=コンテンツkeyを「%s」で終えることはできません（Webサーバーがアクセスを拒否するため）
+"%s" is used by the system and can not be the top of a content key=「%s」はシステムのファイルやフォルダと同じ名前なので、コンテンツkeyの先頭の階層にはできません
 Load parser '%s' failed=パーサーのロードに失敗しました : %s
 
 Ping sending=更新通知を送信します
