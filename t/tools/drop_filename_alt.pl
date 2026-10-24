@@ -3,7 +3,7 @@ use strict;
 #-------------------------------------------------------------------------------
 # 画像の代替テキストや添付ファイルの名前がファイル名と同じものを、記事の原文から落とす
 #-------------------------------------------------------------------------------
-# [image:S:folder/:x.png:x.png] → [image:S:folder/:x.png]（image:L も同じ）
+# [image:S:folder/:x.png:x.png] → [image:S:folder/:x.png]（image:Lも同じ）
 # [file:mp4:folder/:x.mp4:x.mp4] → [file:mp4:folder/:x.mp4]
 #
 # 書き換えるのは記事データ（data/db/*_art/0*.dat）の原文（_text）だけ。
@@ -11,16 +11,16 @@ use strict;
 #
 # 使い方:
 #   perl t/tools/drop_filename_alt.pl            書き換える箇所と、変換結果が変わる記事を表示する（書き換えない）
-#   perl t/tools/drop_filename_alt.pl --apply    書き換える。元のファイルは data/tmp/ の下に残す
+#   perl t/tools/drop_filename_alt.pl --apply    書き換える。元のファイルはdata/tmp/の下に残す
 #   perl t/tools/drop_filename_alt.pl --data=data/db/lycolia_art   対象のブログを指定
-#   perl t/tools/drop_filename_alt.pl --lib=DIR  変換結果の確認に使うパーサー（既定は作業ツリーの lib）
+#   perl t/tools/drop_filename_alt.pl --lib=DIR  変換結果の確認に使うパーサー（既定は作業ツリーのlib）
 #
 # 注意:
-#   - 代替テキストを省いた画像の title がタグ名（image:S）にならないパーサーが必要。
-#     そうでないパーサーでは --apply を断る。
+#   - 代替テキストを省いた画像のtitleがタグ名（image:S）にならないパーサーが必要。
+#     そうでないパーサーでは--applyを断る。
 #     （添付ファイルは、名前を省いたらファイル名を出すパーサーであることも確かめる）
 #   - 書き換え中に記事を保存しないこと（読んだ後にファイルが変わっていたら、その記事は飛ばす）。
-#   - 保存済みの HTML（text 欄）は書き換えない。変換結果が変わる記事は、記事の再構築で作り直す。
+#   - 保存済みのHTML（text欄）は書き換えない。変換結果が変わる記事は、記事の再構築で作り直す。
 #
 use FindBin;
 use Getopt::Long ();
@@ -41,12 +41,12 @@ unshift(@INC, $lib, "$FindBin::Bin/../lib");
 require MarkdownTest;
 require Satsuki::Base::HTTP;
 {
-	# [&URL] などで外部へアクセスしない
+	# [&URL]などで外部へアクセスしない
 	no warnings 'redefine';
 	*Satsuki::Base::HTTP::get = sub { return; };
 }
 
-# 代替テキストを省いた画像の title がタグ名になるパーサーでは、書き換えると表示が悪くなる
+# 代替テキストを省いた画像のtitleがタグ名になるパーサーでは、書き換えると表示が悪くなる
 my $sample = MarkdownTest::parse_md('[image:S:a/:x.png] [file:pdf:a/:x.pdf]');
 my $parser_ok = $sample !~ /title="image:S"/ && $sample =~ m|>x\.pdf</a>|;
 if ($opt{apply} && !$parser_ok) {
@@ -83,7 +83,7 @@ sub drop_alt {
 			my $t = shift(@parts);
 			if (@parts) {
 				my $code = shift(@parts);
-				shift(@parts);	# split の中の \2 の分
+				shift(@parts);	# splitの中の\2の分
 				$count += replace_tags($t);
 				$out .= $t . $code;
 				next;
@@ -108,7 +108,7 @@ foreach my $dir (@dirs) {
 	foreach my $file (sort glob("$dir/0*.dat")) {
 		my $mtime = (stat($file))[9];
 		open(my $fh, '<', $file) or next;
-		my $d = do { local $/; <$fh> };	# $/ の変更はこの読み込みだけに限る
+		my $d = do { local $/; <$fh> };	# $/の変更はこの読み込みだけに限る
 		close($fh);
 		if ($d !~ /\*_text=<<__END_BLK_DATA\n(.*?)\n__END_BLK_DATA\n/s) { next; }
 		my ($text, $start, $len) = ($1, $-[1], $+[1] - $-[1]);
@@ -119,7 +119,7 @@ foreach my $dir (@dirs) {
 		$n_files++;
 		$n_tags += $count;
 
-		# 変換結果が変わるか（Markdown の記事だけ確かめる）
+		# 変換結果が変わるか（Markdownの記事だけ確かめる）
 		my $diff = '';
 		if ($d =~ /^parser=markdown$/m) {
 			my $a = MarkdownTest::parse_md($text);

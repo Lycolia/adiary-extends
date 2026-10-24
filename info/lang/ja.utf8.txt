@@ -211,7 +211,7 @@ Name must be %d characters or less=名前は%d文字以内で書いてくださ�
 Comment text must be at least %d characters (spaces and symbols are not counted)=本文は%d文字以上で書いてください（空白と記号は数えません）
 Comment text must be %d characters or less=本文は%d文字以内で書いてください
 Comment text must be %d lines or less=本文は%d行以内で書いてください
-Invalid IP address rule '%s'=IPアドレスの書き方が正しくありません : %s
+Invalid IP address rule '%s'=IPアドレスの書き方が正しくありません：%s
 
 ###############################################################################
 # adiary_3

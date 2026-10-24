@@ -667,7 +667,7 @@ sub system_mode {
 	if ($title ne '') { $self->{title} = $title; }
 
 	# テーマは公開画面専用。管理画面は常に標準テーマを使う
-	# ※テーマの表示テストなど、公開画面の部品を見せるページは $keep_theme でテーマを残す
+	# ※テーマの表示テストなど、公開画面の部品を見せるページは$keep_themeでテーマを残す
 	if (!$keep_theme) {
 		$self->load_theme( $self->{default_theme} );
 		$self->check_sphone_after_theme_change();
@@ -1680,13 +1680,13 @@ sub load_contents_postprocessor {
 #-------------------------------------------------------------------------------
 # ●コメントフォームのトークン
 #-------------------------------------------------------------------------------
-# 形：v1.記事番号.発行した時刻.署名（確かめるのは check_comment_token）
+# 形：v1.記事番号.発行した時刻.署名（確かめるのはcheck_comment_token）
 sub make_comment_token {
 	my ($self, $a_pkey, $tm) = @_;
 	my $payload = 'v1.' . int($a_pkey) . '.' . ($tm || $self->{ROBJ}->{TM});
 	return $payload . '.' . $self->sign_comment_token($payload);
 }
-# 署名：ブログIDと $payload を Secret_word で HMAC-SHA256 にし、base64url にしたもの
+# 署名：ブログIDと$payloadをSecret_wordでHMAC-SHA256にし、base64urlにしたもの
 sub sign_comment_token {
 	my ($self, $payload) = @_;
 	my $hmac = eval { require Digest::SHA; \&Digest::SHA::hmac_sha256_base64 };
@@ -1769,7 +1769,7 @@ sub load_theme {
 	$self->{template}   = $1;
 	$self->{theme_name} = $name;
 
-	# レスポンシブ対応テーマか？（README.txt のヘッダで判定）
+	# レスポンシブ対応テーマか？（README.txtのヘッダで判定）
 	$self->{responsive} = 0;
 	my $readme = "$dir$name/README.txt";
 	if (-r $readme) {

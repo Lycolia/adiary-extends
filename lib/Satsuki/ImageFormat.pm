@@ -3,10 +3,10 @@ use strict;
 # 画像の形式の判定と、ImageMagickでの読み込み
 #-------------------------------------------------------------------------------
 # ImageMagickはファイルの中身で形式を決めるため、拡張子が.pngでも中身がSVGやMVG、
-# PostScriptなどなら、その形式として処理してしまう（ImageTragick の入り口）。
+# PostScriptなどなら、その形式として処理してしまう（ImageTragickの入り口）。
 # ファイルの先頭のバイトで形式を確かめ、その形式を指定して読み込む。
 #
-# 扱う形式：JPEG, PNG（APNG は PNG として1枚目を読む）, GIF, WebP, AVIF
+# 扱う形式：JPEG, PNG（APNGはPNGとして1枚目を読む）, GIF, WebP, AVIF
 #
 package Satsuki::ImageFormat;
 our $VERSION = '1.00';
@@ -14,11 +14,11 @@ our $VERSION = '1.00';
 # ■メイン
 ################################################################################
 #-------------------------------------------------------------------------------
-# ●ImageMagick で読み込む
+# ●ImageMagickで読み込む
 #-------------------------------------------------------------------------------
-# $img  : Image::Magick オブジェクト
+# $img  : Image::Magickオブジェクト
 # $file : 読み込むファイル（実パス）
-# ret   : 成功なら空。失敗ならエラーメッセージ（Image::Magick の Read と同じ）
+# ret   : 成功なら空。失敗ならエラーメッセージ（Image::MagickのReadと同じ）
 #
 sub read {
 	my ($img, $file) = @_;
@@ -30,7 +30,7 @@ sub read {
 #-------------------------------------------------------------------------------
 # ●形式を判定する
 #-------------------------------------------------------------------------------
-# ret : ImageMagick の形式名（jpeg, png, gif, webp, avif）。扱えない形式なら undef
+# ret : ImageMagickの形式名（jpeg, png, gif, webp, avif）。扱えない形式ならundef
 #
 sub detect {
 	my $file = shift;
@@ -45,7 +45,7 @@ sub detect {
 	if ($head =~ /^GIF8[79]a/)               { return 'gif';  }
 	if ($head =~ /^RIFF.{4}WEBP/s)           { return 'webp'; }
 
-	# AVIF : ISO BMFF の ftyp ボックスの、メジャーブランドか互換ブランドが avif / avis
+	# AVIF : ISO BMFFのftypボックスの、メジャーブランドか互換ブランドがavifかavis
 	if (substr($head, 4, 4) eq 'ftyp') {
 		my $size = unpack('N', substr($head, 0, 4));
 		if ($size > length($head)) { $size = length($head); }

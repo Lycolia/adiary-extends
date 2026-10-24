@@ -1024,8 +1024,8 @@ sub save_design {
 		mart_f => join("\n", @mart_f),
 		between=> join("\n", @between),
 		save   => join("\n", keys(%save))
-	});	# ※reinstall_design_plugins() と対応させること！
-		# 　項目追加時は version の数値を増加させる
+	});	# ※reinstall_design_plugins()と対応させること！
+		# 　項目追加時はversionの数値を増加させる
 
 	# イベント
 	$self->call_event('EDIT_DESIGN');
@@ -1036,7 +1036,7 @@ sub save_design {
 #-------------------------------------------------------------------------------
 # ●デザインのスケルトン生成
 #-------------------------------------------------------------------------------
-# $tpl を指定すると、そのテンプレートの _skel を元にする
+# $tplを指定すると、そのテンプレートの_skelを元にする
 #
 sub generate_design_skeleton {
 	my $self = shift;

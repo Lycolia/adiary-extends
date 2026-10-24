@@ -592,14 +592,14 @@ sub regist_article {
 #-------------------------------------------------------------------------------
 # ●コンテンツkeyがURLとして使えるか
 #-------------------------------------------------------------------------------
-# 使えなければ、form_error に渡すメッセージと引数を返す
+# 使えなければ、form_errorに渡すメッセージと引数を返す
 #
 # ・数字だけのkeyは、記事番号（0始まり）か日付として解釈される
-# ・& で始まるkeyは、コンテンツとして解釈されない
+# ・&で始まるkeyは、コンテンツとして解釈されない
 # ・先頭の階層がadiaryの置き場所にあるファイルやフォルダと同じだと、
 #   Webサーバーがファイルを先に返すか、アクセスを拒否する
 # ・nginxの設定（location /data、/__cache、~ \.cgi$）で拒否されるkey
-#   location は前方一致なので、data や __cache で始まるkeyはすべて拒否される
+#   locationは前方一致なので、dataや__cacheで始まるkeyはすべて拒否される
 #
 sub check_link_key_path {
 	my ($self, $link_key) = @_;
@@ -618,7 +618,7 @@ sub check_link_key_path {
 		return ('Content key can not end with "%s"', $1);
 	}
 	my $top = $link_key =~ m|^([^/]+)| ? $1 : '';
-	my %files = map { $_ => 1 } @{ $self->{ROBJ}->search_files('./', { dir => 1, all => 1 }) };	# フォルダは末尾に / が付く
+	my %files = map { $_ => 1 } @{ $self->{ROBJ}->search_files('./', { dir => 1, all => 1 }) };	# フォルダは末尾に/が付く
 	if ($files{$top} || $files{"$top/"}) {
 		return ('"%s" is used by the system and can not be the top of a content key', $top);
 	}
@@ -670,8 +670,8 @@ sub get_main_image_from_input {
 #-------------------------------------------------------------------------------
 # $old : 更新前の記事データ
 #
-# PukiWikiのバックアップと同様に、前回履歴に追加してから rev_cycle 分以内なら
-# 追加しない（連続した保存を1つの版にまとめる）。rev_max を超えた古い版は削除する。
+# PukiWikiのバックアップと同様に、前回履歴に追加してからrev_cycle分以内なら
+# 追加しない（連続した保存を1つの版にまとめる）。rev_maxを超えた古い版は削除する。
 #
 sub save_revision {
 	my ($self, $blogid, $old) = @_;
@@ -763,7 +763,7 @@ sub load_article_now_json {
 #-------------------------------------------------------------------------------
 # ●本文をjsonの文字列にする
 #-------------------------------------------------------------------------------
-# json_encode() は \ を &#92; にするので、本文はここでエスケープする
+# json_encode()は\を&#92;にするので、本文はここでエスケープする
 sub json_long_text {
 	my ($self, $text) = @_;
 	$text =~ s/\\/\\\\/g;
@@ -780,7 +780,7 @@ sub json_long_text {
 #-------------------------------------------------------------------------------
 # 編集画面に入れておき、保存するときに今の記事と比べて、
 # ほかの画面（別のタブや端末）で先に保存されていないかを見る。
-# 記事一覧やコンテンツの編集は update_tm を変えずに書き換えるので、中身で比べる。
+# 記事一覧やコンテンツの編集はupdate_tmを変えずに書き換えるので、中身で比べる。
 # コメント数や変換後の本文は、記事を書き換えなくても変わるので入れない。
 my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok
 		    ctype link_key upnode priority main_image description);
@@ -1234,9 +1234,9 @@ sub update_contents_list {
 #-------------------------------------------------------------------------------
 # ●参照元の更新
 #-------------------------------------------------------------------------------
-# 本文のリンクを ${blogid}_link に入れ直し、リンク先の記事の参照元のHTML（_art.backlinks）
-# を作り直す。表示のときは backlinks を読むだけ（dea_backlinks）。
-# ・$pkeys が配列refなら、その記事のリンクと、その記事が関わる参照元だけを作り直す
+# 本文のリンクを${blogid}_linkに入れ直し、リンク先の記事の参照元のHTML（_art.backlinks）
+# を作り直す。表示のときはbacklinksを読むだけ（dea_backlinks）。
+# ・$pkeysが配列refなら、その記事のリンクと、その記事が関わる参照元だけを作り直す
 #   それ以外（引数なし、件数が渡されたとき）は、全記事を作り直す
 # ・参照元に出すのは、公開中のブログ記事（コンテンツは除く）。新しい順
 # ・コンテンツの記事には参照元を出さない
@@ -1257,7 +1257,7 @@ sub update_backlinks {
 	my %exists = map { $_->{link_key} => 1 } @$keys;
 
 	my $arts = $DB->select_match("${blogid}_art", ($all ? () : ('pkey', $pkeys)), '*cols', ['pkey', 'link_key', 'text']);
-	my %targets;	# 参照元を作り直す記事の link_key
+	my %targets;	# 参照元を作り直す記事のlink_key
 	if ($all) {
 		%targets = %exists;
 	} else {
@@ -1322,10 +1322,10 @@ sub update_backlinks {
 }
 
 #-------------------------------------------------------------------------------
-# ●本文のHTMLから、ブログ内の記事へのリンクの link_key を取り出す
+# ●本文のHTMLから、ブログ内の記事へのリンクのlink_keyを取り出す
 #-------------------------------------------------------------------------------
-# $exists	今ある記事の link_key のハッシュ
-#		これ以外は、まだ無いブログ記事の link_key（"0"+pkey）の形のものだけ残す
+# $exists	今ある記事のlink_keyのハッシュ
+#		これ以外は、まだ無いブログ記事のlink_key（"0"+pkey）の形のものだけ残す
 sub extract_link_keys {
 	my ($self, $text, $exists) = @_;
 	my $path = $self->get_blog_path( $self->{blogid} );
@@ -1338,7 +1338,7 @@ sub extract_link_keys {
 		my ($base) = grep { substr($url, 0, length($_)) eq $_ } @base;
 		if (!defined $base) { next; }
 
-		# link_key_encode の逆
+		# link_key_encodeの逆
 		my $key = substr($url, length($base));
 		$key =~ s/[?#].*//s;
 		$key =~ s|^\.//|/|;
@@ -1677,12 +1677,12 @@ sub post_comment {
 #-------------------------------------------------------------------------------
 # ●コメントのスパム対策
 #-------------------------------------------------------------------------------
-# 決まりは docs/コメントのスパム対策.md
+# 決まりはdocs/コメントのスパム対策.md
 #
 # ret = (はじく理由, 承認待ちにする理由)
-#	はじく理由	記録用（人には見せない）。はじかないなら undef
-#	承認待ち	理由を「,」でつないだもの。承認待ちにしないなら undef
-# 長さの決まりに合わないときは form_error を設定する。
+#	はじく理由	記録用（人には見せない）。はじかないならundef
+#	承認待ち	理由を「,」でつないだもの。承認待ちにしないならundef
+# 長さの決まりに合わないときはform_errorを設定する。
 #
 my %COM_SPAM_DEFAULT = (
 	com_hold_url   => 1,
@@ -1705,7 +1705,7 @@ sub check_comment_spam {
 	my $blog = $self->{blog};
 	my %s = map { $_ => ($blog->{$_} eq '' ? $COM_SPAM_DEFAULT{$_} : int($blog->{$_})) } keys(%COM_SPAM_DEFAULT);
 
-	# 文字の数で数えるため utf8 の文字列にする。改行は LF にそろえ、前後の空白を除く
+	# 文字の数で数えるためutf8の文字列にする。改行はLFにそろえ、前後の空白を除く
 	my ($name, $text, $url) = ($form->{name}, $form->{comment_txt}, $form->{url});
 	foreach($name, $text, $url) {
 		utf8::decode($_);
@@ -1787,7 +1787,7 @@ sub check_comment_spam {
 }
 
 #-------------------------------------------------------------------------------
-# ●コメントフォームのトークンを確かめる（作るのは make_comment_token）
+# ●コメントフォームのトークンを確かめる（作るのはmake_comment_token）
 #-------------------------------------------------------------------------------
 sub check_comment_token {
 	my ($self, $token, $a_pkey) = @_;
@@ -1817,9 +1817,9 @@ sub fold_comment_text {
 #-------------------------------------------------------------------------------
 #	192.0.2.10 / 2001:db8::1	そのアドレスだけ
 #	192.0.2.0/24 / 2001:db8::/32	CIDR
-#	192.0.2. / 2001:db8:		前方一致（末尾が . か : のとき）
+#	192.0.2. / 2001:db8:		前方一致（末尾が.か:のとき）
 #
-# $rules は1行に1つ。どれかに当たれば真
+# $rulesは1行に1つ。どれかに当たれば真
 sub match_ip_rules {
 	my ($self, $ip, $rules) = @_;
 	foreach(split(/\n/, $rules)) {
@@ -1841,7 +1841,7 @@ sub match_ip_rules {
 	}
 	return 0;
 }
-# 書き方が正しくなければ undef
+# 書き方が正しくなければundef
 sub parse_ip_rule {
 	my ($self, $rule) = @_;
 	if ($rule =~ m|^([0-9A-Fa-f:\.]+)/(\d{1,3})$|) {
@@ -1865,7 +1865,7 @@ sub pack_ip {
 #-------------------------------------------------------------------------------
 # ●スパム対策の設定を整える（ブログの設定の保存時）
 #-------------------------------------------------------------------------------
-# 1行に1つの設定の、前後の空白と空行を除く。IPアドレスの書き方が正しくなければ form_error
+# 1行に1つの設定の、前後の空白と空行を除く。IPアドレスの書き方が正しくなければform_error
 sub normalize_comment_spam_setting {
 	my ($self, $h) = @_;
 	my $ROBJ = $self->{ROBJ};
