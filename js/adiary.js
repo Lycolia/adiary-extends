@@ -499,6 +499,12 @@ $$.init( function(){
 		sid += String.fromCharCode( ary[i] ^ pkey );
 	}
 
+	// 記事を編集できる人（ブログ管理者と編集者）は待たせない（data-no-wait）
+	if ($form.data('no-wait')) {
+		$('#comment-form-sid').val(sid);
+		return;
+	}
+
 	// 投稿ボタンを disable に
 	const $btn = $('#post-comment');
 	$btn.prop('disabled', true);
