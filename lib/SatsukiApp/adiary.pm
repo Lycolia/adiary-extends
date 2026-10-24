@@ -1676,20 +1676,25 @@ sub load_contents_postprocessor {
 # security id system for post of no login
 ################################################################################
 #-------------------------------------------------------------------------------
-# ●特殊IDルーチン
+# ●コメントフォームのトークン
 #-------------------------------------------------------------------------------
-sub make_secure_id {
-	my $self = shift;
-	my $base = shift;
-	my $old  = shift;
-	my $ROBJ = $self->{ROBJ};
-
-	my $stime = $ROBJ->{Secure_time} || 3600;
-	my $code  = int($ROBJ->{TM} / $stime) - int($old);
-
-	my $id = $ROBJ->crypt_by_string_nosalt($self->{sys}->{Secret_word}, $base . $code);
-	$id =~ tr|/|-|;
-	return substr($id, 0, 32);
+# 形：v1.記事番号.発行した時刻.署名（確かめるのは check_comment_token）
+sub make_comment_token {
+	my ($self, $a_pkey, $tm) = @_;
+	my $payload = 'v1.' . int($a_pkey) . '.' . ($tm || $self->{ROBJ}->{TM});
+	return $payload . '.' . $self->sign_comment_token($payload);
+}
+# 署名：ブログIDと $payload を Secret_word で HMAC-SHA256 にし、base64url にしたもの
+sub sign_comment_token {
+	my ($self, $payload) = @_;
+	my $hmac = eval { require Digest::SHA; \&Digest::SHA::hmac_sha256_base64 };
+	if (!$hmac) {
+		require Digest::SHA::PurePerl;
+		$hmac = \&Digest::SHA::PurePerl::hmac_sha256_base64;
+	}
+	my $sig = $hmac->("$self->{blogid}.$payload", $self->{sys}->{Secret_word});
+	$sig =~ tr|+/|-_|;
+	return $sig;
 }
 
 ################################################################################

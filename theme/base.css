@@ -120,6 +120,15 @@ table.plugins button {
 	margin-right:		1em;
 }
 
+/* おとりの欄（スパム対策。人には見せない） */
+#com div.comment-website {
+	position:		absolute;
+	left:			-10000px;
+	width:			1px;
+	height:			1px;
+	overflow:		hidden;
+}
+
 /*--------------------------------------------------------------------
 ●記法関連
 --------------------------------------------------------------------*/

@@ -106,8 +106,6 @@
 <$coms = if(v.allow_edit, t.coms_all, t.coms)>
 <@ifexec(t.com_ok || coms, begin)>
 <$view = if(Query.c ne 'all', s.view_coms || 20)>
-<$secure_id  = make_secure_id( v.blogid . t.pkey )>
-<$secure_ary = string2ordary( secure_id )>
 <aside class="comment" id="com">
 	<div class="caption js-switch" data-target="#c<@t.pkey>n-block"><span class="caption-title">コメント</span><span class="com-num">（<span class="num"><@coms></span>件）</span>
 	<@ifexec(view && view<coms, begin)>
@@ -133,7 +131,7 @@
 			<label>	<@\>
 			<$end>
 			<span class="commentator author<@if(c.id, " login-user")>"<@if(c.id, " title=<@c.id>")>><@ifexec(c.email && v.allow_edit, begin, begin)><a href="mailto:<@c.email>"><@c.name></a><$else><@c.name><$end></span>
-			<@ifexec(c.url, begin)><span class="comment-url"><a href="<@c.url>" rel="nofollow">URL</a></span><$end>
+			<@ifexec(c.url, begin)><span class="comment-url"><a href="<@c.url>" rel="nofollow ugc noopener noreferrer">URL</a></span><$end>
 			<span class="comment-date"><@print_tm(c.tm)></span>
 			<@ifexec(!c.enable, begin)>
 			<@if(c.hidden, '<strong class="comment-hidden">（非公開コメント）', '<strong class="comment-disable">（非表示）')></strong>

@@ -1587,18 +1587,8 @@ sub post_comment {
 	my $blogid = $self->{blogid};
 	if (! $self->{allow_com}) { $ROBJ->message('Operation not permitted'); return 5; }
 
-	# SPAM対策 secu_id の確認
-	my $a_pkey = int($form->{a_pkey});
-	if (! $auth->{ok}) {
-		my $secure_id = $form->{secure_id};
-		if ($secure_id ne $self->make_secure_id($blogid . $a_pkey)
-		 && $secure_id ne $self->make_secure_id($blogid . $a_pkey, 1)) {
-			$ROBJ->message('Security error. Please repost.');
-			return 9;
-		}
-	}
-
 	# 記事を確認
+	my $a_pkey = int($form->{a_pkey});
 	my $art = $self->load_article_current_blog("0$a_pkey");
 	if (!$art) {
 		$ROBJ->message("Article '0%d' not found", $a_pkey);
@@ -1621,6 +1611,20 @@ sub post_comment {
 	} else {
 		delete $form->{id};
 	}
+
+	# スパム対策（編集権限者は対象外）
+	my $hold;
+	if (! $self->{allow_edit}) {
+		my $reason;
+		($reason, $hold) = $self->check_comment_spam($form, $a_pkey);
+		if ($reason) {
+			warn "コメントに失敗しました（$reason）: blog=$blogid, a_pkey=$a_pkey, ip=$ENV{REMOTE_ADDR}\n";
+			$ROBJ->message('Comment post failed. Please reload the page and try again later.');
+			return 9;
+		}
+		if ($ROBJ->form_error()) { return 99; }
+	}
+
 	# 実体参照の無効化
 	$form->{name}        =~ s/&/&amp;/g;
 	$form->{comment_txt} =~ s/&/&amp;/g;
@@ -1636,7 +1640,7 @@ sub post_comment {
 	if (!$self->{allow_edit} && $defer) {
 		if ($defer==2 && $auth->{ok}) { $defer=0; }	# ユーザーのみ許可
 	}
-	if ($defer) { $form->{enable}=0; }	# コメント保留
+	if ($defer || $hold) { $form->{enable}=0; }	# コメント保留
 
 	# コメント投稿前イベント
 	my $er = $self->call_event('COMMENT_BEFORE', $form, $art);
@@ -1668,6 +1672,212 @@ sub post_comment {
 	$self->call_event('ARTCOM_STATE_CHANGE',  [$a_pkey], [$pkey]);
 
 	return 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●コメントのスパム対策
+#-------------------------------------------------------------------------------
+# 決まりは docs/コメントのスパム対策.md
+#
+# ret = (はじく理由, 承認待ちにする理由)
+#	はじく理由	記録用（人には見せない）。はじかないなら undef
+#	承認待ち	理由を「,」でつないだもの。承認待ちにしないなら undef
+# 長さの決まりに合わないときは form_error を設定する。
+#
+my %COM_SPAM_DEFAULT = (
+	com_hold_url   => 1,
+	com_require_ja => 1,
+	com_rate_count => 3,
+	com_rate_min   => 10,
+	com_name_max   => 32,
+	com_body_min   => 5,
+	com_body_max   => 3000,
+	com_body_lines => 100
+);
+my $COM_TOKEN_MIN_AGE = 3;		# フォームを出してから、これより早い投稿ははじく（秒）
+my $COM_TOKEN_MAX_AGE = 24*60*60;	# これより古いフォームからの投稿ははじく（秒）
+
+sub check_comment_spam {
+	my ($self, $form, $a_pkey) = @_;
+	my $ROBJ = $self->{ROBJ};
+	my $DB   = $self->{DB};
+	my $auth = $ROBJ->{Auth};
+	my $blog = $self->{blog};
+	my %s = map { $_ => ($blog->{$_} eq '' ? $COM_SPAM_DEFAULT{$_} : int($blog->{$_})) } keys(%COM_SPAM_DEFAULT);
+
+	# 文字の数で数えるため utf8 の文字列にする。改行は LF にそろえ、前後の空白を除く
+	my ($name, $text, $url) = ($form->{name}, $form->{comment_txt}, $form->{url});
+	foreach($name, $text, $url) {
+		utf8::decode($_);
+		$_ =~ s/\r\n?/\n/g;
+		$_ =~ s/^\s+|\s+$//g;
+	}
+
+	#-----------------------------------------------------------------------
+	# はじくもの
+	#-----------------------------------------------------------------------
+	if ($form->{website} ne '') { return 'honeypot'; }
+	if (! $auth->{ok}) {
+		# ログイン中はフォームにトークンを入れない（CSRFの確認キーがあるため）
+		if (! $self->check_comment_token($form->{secure_id}, $a_pkey)) { return 'token'; }
+
+		my $ip = $ENV{REMOTE_ADDR};
+		if ($self->match_ip_rules($ip, $blog->{com_block_ips})) { return 'blocked_ip'; }
+
+		my $folded = $self->fold_comment_text($name);
+		my $users  = $auth->{DB}->select_match($auth->{table}, '*cols', ['id', 'name']);
+		foreach(@$users) {
+			if ($folded eq $self->fold_comment_text($_->{id})
+			 || $folded eq $self->fold_comment_text($_->{name})) { return 'user_name'; }
+		}
+
+		if ($s{com_rate_count}) {
+			my $coms = $DB->select("$self->{blogid}_com", {
+				match => { ip => $ip },
+				min   => { tm => $ROBJ->{TM} - $s{com_rate_min}*60 },
+				cols  => ['pkey']
+			});
+			if ($s{com_rate_count} <= @$coms) { return 'rate_limit'; }
+		}
+	}
+
+	#-----------------------------------------------------------------------
+	# 理由を書いて返すもの
+	#-----------------------------------------------------------------------
+	if (! $auth->{ok}) {
+		if ($name eq '') {
+			$ROBJ->form_error('name', 'name is empty');
+		} elsif ($s{com_name_max} < length($name)) {
+			$ROBJ->form_error('name', 'Name must be %d characters or less', $s{com_name_max});
+		}
+	}
+	if ($text eq '') {
+		$ROBJ->form_error('comment_txt', 'comment text is empty');
+	} else {
+		my $letters = () = $text =~ /[\p{L}\p{N}]/g;
+		if (! $auth->{ok} && $letters < $s{com_body_min}) {
+			$ROBJ->form_error('comment_txt', 'Comment text must be at least %d characters (spaces and symbols are not counted)', $s{com_body_min});
+		}
+		if ($s{com_body_max} < length($text)) {
+			$ROBJ->form_error('comment_txt', 'Comment text must be %d characters or less', $s{com_body_max});
+		}
+		if ($s{com_body_lines} < 1 + ($text =~ tr/\n//)) {
+			$ROBJ->form_error('comment_txt', 'Comment text must be %d lines or less', $s{com_body_lines});
+		}
+	}
+	if ($ROBJ->form_error()) { return; }
+
+	#-----------------------------------------------------------------------
+	# 承認待ちにするもの
+	#-----------------------------------------------------------------------
+	if ($auth->{ok}) { return; }
+	my @hold;
+	if ($s{com_hold_url} && ("$name\n$text" =~ m{h?ttps?://}i || $url ne '')) {
+		push(@hold, 'url');
+	}
+	my $folded = $self->fold_comment_text("$name\n$text");
+	foreach(split(/\n/, $blog->{com_ng_words})) {
+		my $word = $self->fold_comment_text( $ROBJ->tag_unescape($_) );
+		if ($word ne '' && 0 <= index($folded, $word)) { push(@hold, 'ng_word'); last; }
+	}
+	if ($s{com_require_ja} && $text !~ /[\p{Hiragana}\p{Katakana}\p{Han}]/) {
+		push(@hold, 'not_japanese');
+	}
+	return (undef, @hold ? join(',', @hold) : undef);
+}
+
+#-------------------------------------------------------------------------------
+# ●コメントフォームのトークンを確かめる（作るのは make_comment_token）
+#-------------------------------------------------------------------------------
+sub check_comment_token {
+	my ($self, $token, $a_pkey) = @_;
+	my ($ver, $pkey, $tm, $sig) = split(/\./, $token, 4);
+	if ($ver ne 'v1' || $pkey ne int($a_pkey) || $tm !~ /^\d+$/) { return 0; }
+	if ($sig ne $self->sign_comment_token("v1.$pkey.$tm")) { return 0; }
+
+	my $age = $self->{ROBJ}->{TM} - $tm;
+	return ($COM_TOKEN_MIN_AGE <= $age && $age <= $COM_TOKEN_MAX_AGE) ? 1 : 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●比べるための形にする
+#-------------------------------------------------------------------------------
+# 全角と半角をそろえ（NFKC）、小文字にし、空白を除く
+sub fold_comment_text {
+	my ($self, $x) = @_;
+	require Unicode::Normalize;
+	if (! utf8::is_utf8($x)) { utf8::decode($x); }
+	$x = lc( Unicode::Normalize::NFKC($x) );
+	$x =~ s/\s+//g;
+	return $x;
+}
+
+#-------------------------------------------------------------------------------
+# ●IPアドレスの規則
+#-------------------------------------------------------------------------------
+#	192.0.2.10 / 2001:db8::1	そのアドレスだけ
+#	192.0.2.0/24 / 2001:db8::/32	CIDR
+#	192.0.2. / 2001:db8:		前方一致（末尾が . か : のとき）
+#
+# $rules は1行に1つ。どれかに当たれば真
+sub match_ip_rules {
+	my ($self, $ip, $rules) = @_;
+	foreach(split(/\n/, $rules)) {
+		my $r = $self->parse_ip_rule($_);
+		if (!$r) { next; }
+		if ($r->{prefix}) {
+			if (index(lc($ip), lc($r->{prefix})) == 0) { return 1; }
+			next;
+		}
+		my $packed = &pack_ip($ip);
+		if (!$packed || length($packed) != length($r->{net})) { next; }
+
+		my $bytes = int($r->{bits} / 8);
+		if (substr($packed, 0, $bytes) ne substr($r->{net}, 0, $bytes)) { next; }
+		my $rest = $r->{bits} % 8;
+		if (!$rest) { return 1; }
+		my $mask = (0xff << (8 - $rest)) & 0xff;
+		if ((ord(substr($packed, $bytes, 1)) & $mask) == (ord(substr($r->{net}, $bytes, 1)) & $mask)) { return 1; }
+	}
+	return 0;
+}
+# 書き方が正しくなければ undef
+sub parse_ip_rule {
+	my ($self, $rule) = @_;
+	if ($rule =~ m|^([0-9A-Fa-f:\.]+)/(\d{1,3})$|) {
+		my $bits = $2;
+		my $net  = &pack_ip($1);
+		if (!$net || length($net)*8 < $bits) { return; }
+		return { net => $net, bits => $bits };
+	}
+	if ($rule =~ /^[0-9A-Fa-f:\.]+[\.:]$/ && $rule =~ /[0-9A-Fa-f]/) {
+		return { prefix => $rule };
+	}
+	my $net = &pack_ip($rule);
+	return $net && { net => $net, bits => length($net)*8 };
+}
+sub pack_ip {
+	my $ip = shift;
+	require Socket;
+	return Socket::inet_pton($ip =~ /:/ ? Socket::AF_INET6() : Socket::AF_INET(), $ip);
+}
+
+#-------------------------------------------------------------------------------
+# ●スパム対策の設定を整える（ブログの設定の保存時）
+#-------------------------------------------------------------------------------
+# 1行に1つの設定の、前後の空白と空行を除く。IPアドレスの書き方が正しくなければ form_error
+sub normalize_comment_spam_setting {
+	my ($self, $h) = @_;
+	my $ROBJ = $self->{ROBJ};
+	foreach my $key (qw(com_ng_words com_block_ips)) {
+		my @lines = split(/\r?\n/, $h->{$key});
+		foreach(@lines) { $_ =~ s/^\s+|\s+$//g; }
+		$h->{$key} = join("\n", grep { $_ ne '' } @lines);
+	}
+	foreach(split(/\n/, $h->{com_block_ips})) {
+		if ($self->parse_ip_rule($_)) { next; }
+		$ROBJ->form_error('com_block_ips', "Invalid IP address rule '%s'", $_);
+	}
 }
 
 #-------------------------------------------------------------------------------

@@ -169,7 +169,6 @@ Illegal day=日付（日）の指定が不正です
 ###############################################################################
 Blog not found=ブログがみつかりません
 Blog '%s' not found=ブログ「%s」がみつかりません
-Security error. Please repost.=セキュリティーエラー。再度投稿してください。
 Article '0%d' not found=記事番号「0%d」が見つかりません
 Now maintenance mode=現在メンテナンスモードで動作中です。
 Require update=アップデートが必要です。
@@ -207,6 +206,12 @@ Ping sended : %s (from %s)=Ping送信 : %s（from %s）
 # &comment_post
 comment text is empty=コメント本文がありません
 name is empty=名前を入力してください
+Comment post failed. Please reload the page and try again later.=コメントを投稿できませんでした。ページを開き直し、しばらくたってからもう一度試してください。
+Name must be %d characters or less=名前は%d文字以内で書いてください
+Comment text must be at least %d characters (spaces and symbols are not counted)=本文は%d文字以上で書いてください（空白と記号は数えません）
+Comment text must be %d characters or less=本文は%d文字以内で書いてください
+Comment text must be %d lines or less=本文は%d行以内で書いてください
+Invalid IP address rule '%s'=IPアドレスの書き方が正しくありません : %s
 
 ###############################################################################
 # adiary_3

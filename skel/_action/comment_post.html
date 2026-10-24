@@ -2,6 +2,13 @@
 <$action_return = v.post_comment(Form)>
 
 <@>
+<@> 書き間違い（長さの決まりなど）は、記事のページのコメントフォームに理由を出す（書いた内容を残すため）
+<@>
+<$ifexec(action_return eq '99', begin)>
+	<$v.comment_form_msg = message_split('message')>
+<$end>
+
+<@>
 <@> POST成功時の処理
 <@>
 <$ifexec(action_return eq '0', begin)>

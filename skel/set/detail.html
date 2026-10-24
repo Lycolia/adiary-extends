@@ -94,6 +94,36 @@
 		<label><input type="radio" name="defer_com" value="0"<@if(!s.defer_com     , ' checked')>>OFF</label>
 		</td>
 	</tr>
+	<tr><th>コメントのスパム対策<span class="help" data-help="ログインしている人のコメントは、承認待ちにしません。">?</span></th>
+		<td>
+		<label><input type="checkbox" name="com_hold_url" value="1"<@if(s.com_hold_url eq '' || s.com_hold_url, ' checked')>>URLを含むコメントを承認待ちにする</label><br>
+		<label><input type="checkbox" name="com_require_ja" value="1"<@if(s.com_require_ja eq '' || s.com_require_ja, ' checked')>>日本語を含まないコメントを承認待ちにする</label>
+		</td>
+	</tr>
+	<tr><th>連投の制限<span class="help" data-help="同じIPアドレスからの投稿を、期間の中でこの回数までに制限します。承認待ちのコメントも数えます。0にすると制限しません。">?</span></th>
+		<td<@if(err.com_rate_count || err.com_rate_min, ' class="error"')>>
+			<input type="number" class="int w50" name="com_rate_min" value="<@if(s.com_rate_min eq '', 10, s.com_rate_min)>" min="1" max="1440">分に
+			<input type="number" class="int w50" name="com_rate_count" value="<@if(s.com_rate_count eq '', 3, s.com_rate_count)>" min="0" max="100">回まで
+		</td>
+	</tr>
+	<tr><th>コメントの長さ<span class="help" data-help="本文の下限は、文字と数字だけを数えます（空白と記号は数えません）。ログインしている人には、本文の下限と名前の上限を適用しません。">?</span></th>
+		<td<@if(err.com_name_max || err.com_body_min || err.com_body_max || err.com_body_lines, ' class="error"')>>
+			名前<input type="number" class="int w50" name="com_name_max" value="<@if(s.com_name_max eq '', 32, s.com_name_max)>" min="1" max="200">文字まで<br>
+			本文<input type="number" class="int w50" name="com_body_min" value="<@if(s.com_body_min eq '', 5, s.com_body_min)>" min="0" max="1000">文字以上、
+			<input type="number" class="int w80" name="com_body_max" value="<@if(s.com_body_max eq '', 3000, s.com_body_max)>" min="1" max="100000">文字まで、
+			<input type="number" class="int w50" name="com_body_lines" value="<@if(s.com_body_lines eq '', 100, s.com_body_lines)>" min="1" max="10000">行まで
+		</td>
+	</tr>
+	<tr><th>NGワード<span class="help" data-help="これを含むコメントを承認待ちにします。1行に1つ書きます。全角と半角、大文字と小文字、空白の違いは区別しません。">?</span></th>
+		<td>
+		<textarea name="com_ng_words" class="w320" rows="4"><@s.com_ng_words></textarea>
+		</td>
+	</tr>
+	<tr><th>拒否するIPアドレス<span class="help" data-help="1行に1つ書きます。192.0.2.10、192.0.2.0/24、192.0.2.（前方一致）、2001:db8::/32 の形で書けます。">?</span></th>
+		<td<@err.c_com_block_ips>>
+		<textarea name="com_block_ips" class="w320" rows="4"><@s.com_block_ips></textarea>
+		</td>
+	</tr>
 	</tbody>
 	</table>
 
