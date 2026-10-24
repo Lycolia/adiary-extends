@@ -1718,7 +1718,7 @@ sub check_comment_spam {
 	#-----------------------------------------------------------------------
 	if ($form->{website} ne '') { return 'honeypot'; }
 	if (! $auth->{ok}) {
-		# ログイン中はフォームにトークンを入れない（CSRFの確認キーがあるため）
+		# ログインできる人はボットではないので、トークンは確かめない
 		if (! $self->check_comment_token($form->{secure_id}, $a_pkey)) { return 'token'; }
 
 		my $ip = $ENV{REMOTE_ADDR};
