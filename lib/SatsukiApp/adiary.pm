@@ -438,7 +438,8 @@ sub output_html {
 		$out = $ROBJ->call($frame_name, $out);
 	}
 
-	if (!$self->{output_stop}) {
+	# テンプレートの中でredirect()したときは、転送のページを出し終えているので出さない
+	if (!$self->{output_stop} && !$ROBJ->{Redirected}) {
 		$ROBJ->output($out);
 	}
 }

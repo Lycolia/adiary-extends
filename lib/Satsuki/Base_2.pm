@@ -1262,6 +1262,7 @@ sub redirect {
 
 	$uri =~ s/[\x00-\x1f]//g;		# 不正文字除去
 	if ($self->{No_redirect}) { $status_msg='200 OK'; }
+	$self->{Redirected} = 1;		# このあと本文を出さないための印
 
 	my $status = ($status_msg =~ /^(\d+)/) ? $1 : 302 ;
 	if ($status !~ /^200/) { $self->set_header('Location', $uri); }
