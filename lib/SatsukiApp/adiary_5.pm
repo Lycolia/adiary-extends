@@ -981,7 +981,6 @@ sub art_import {
 		delete $h{file};
 		delete $h{action};
 		delete $h{ajax};
-		delete $h{csrf_check_key};
 		delete $h{class};
 		foreach(sort(keys(%h))) {
 			$session->say("[option] $_=$h{$_}");

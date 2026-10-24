@@ -487,8 +487,6 @@ $$.init( function(){
 $$.init( function(){
 	const $form = $('#comment-form');
 	if (!$form.length) return;
-	const $csrf = $form.find('[name="csrf_check_key"]');
-	if ($csrf.length) return;		// login中は無用
 
 	let   pkey = $('#comment-form-apkey').val() || '';
 	const ary  = ($form.data('secure') || '').split(',');
@@ -714,8 +712,7 @@ $$.session = function(btn, opt){
 
 	// セッション初期化
 	$.post( load_session, {
-			action: 'etc/init_session',
-			csrf_check_key: opt.csrf_key || $('#csrf-key').val()
+			action: 'etc/init_session'
 		}, function(data) {
 			var reg = data.match(/snum=(\d+)/);
 			if (reg) {

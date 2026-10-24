@@ -78,23 +78,10 @@ col		span
 ### iframe ######################
 iframe		src, seamless, sandbox, width, height, frameborder, marginwidth, marginheight, scrolling, allowfullscreen
 
-### フォーム #################### ※inputの属性リストは一部略
-form		accept-charset, action, autocomplete, enctype, method, name, novalidate, target
-input		type, name, value, checked, size, maxlength, readonly, required, list, checked, min, max, autocomplete
-select		autofocus, disabled, form, name, size, multiple
-button		autofocus, disabled, name, type, value, form, formaction, fomenctype, formmethod, formnovalidate, formtarget
-option		value, selected
-textarea	autofocus, cols, disabled, form, maxlength, name, placeholder, readonly, required, rows, wrap
-keygen		autofocus, challenge, disabled form, keytype, name
-label		for, form
-
-optgroup
-fieldset	disabled, form, name
-legend
-datalist
-
-output		for, form, name
-progress	value, max, form
+### 進み具合・量の表示 ##########
+# フォームの部品（form、input、buttonなど）は書けない。同じサイトの中から、ログイン中の人に
+# 管理画面の操作を送らせることができるため（CSRF。adiaryは確認キーを使っていない）
+progress	value, max
 meter		value, min, max, low, height, optimum
 
 menu		type, label
