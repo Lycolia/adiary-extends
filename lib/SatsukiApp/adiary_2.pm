@@ -1723,13 +1723,6 @@ sub check_comment_spam {
 		my $ip = $ENV{REMOTE_ADDR};
 		if ($self->match_ip_rules($ip, $blog->{com_block_ips})) { return 'blocked_ip'; }
 
-		my $folded = $self->fold_comment_text($name);
-		my $users  = $auth->{DB}->select_match($auth->{table}, '*cols', ['id', 'name']);
-		foreach(@$users) {
-			if ($folded eq $self->fold_comment_text($_->{id})
-			 || $folded eq $self->fold_comment_text($_->{name})) { return 'user_name'; }
-		}
-
 		if ($s{com_rate_count}) {
 			my $coms = $DB->select("$self->{blogid}_com", {
 				match => { ip => $ip },
@@ -1748,6 +1741,8 @@ sub check_comment_spam {
 			$ROBJ->form_error('name', 'name is empty');
 		} elsif ($s{com_name_max} < length($name)) {
 			$ROBJ->form_error('name', 'Name must be %d characters or less', $s{com_name_max});
+		} elsif ($self->is_registered_user_name($name)) {
+			$ROBJ->form_error('name', 'This name is used by a registered user. Please use another name');
 		}
 	}
 	if ($text eq '') {
@@ -1783,6 +1778,23 @@ sub check_comment_spam {
 		push(@hold, 'not_japanese');
 	}
 	return (undef, @hold ? join(',', @hold) : undef);
+}
+
+#-------------------------------------------------------------------------------
+# ●登録ユーザーの名前か
+#-------------------------------------------------------------------------------
+# 全角と半角、大文字と小文字、空白の違いは無視して比べる（fold_comment_text）。
+# IDとは比べない。なりすましで困るのは表に出る名前のほうで、IDと比べて理由を出すと、
+# その文字列がログインのIDだと分かってしまうため
+sub is_registered_user_name {
+	my ($self, $name) = @_;
+	my $auth   = $self->{ROBJ}->{Auth};
+	my $folded = $self->fold_comment_text($name);
+	my $users  = $auth->{DB}->select_match($auth->{table}, '*cols', ['name']);
+	foreach(@$users) {
+		if ($folded eq $self->fold_comment_text($_->{name})) { return 1; }
+	}
+	return 0;
 }
 
 #-------------------------------------------------------------------------------
