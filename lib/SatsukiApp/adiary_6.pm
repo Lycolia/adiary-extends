@@ -333,12 +333,20 @@ sub sys_update_408 {
 # ●システムアップデート for Ver4.09
 #-------------------------------------------------------------------------------
 # 履歴を残す間隔（rev_cycle）の単位を時間から分に変える
+# 記事とゴミ箱のテーブルから、使われていなかったrevisionのカラムを消す
 # ※コメントフォームのトークンを変えたため、プラグインの再インストールでデザインのスケルトンも作り直す
 sub sys_update_409 {
 	my $self  = shift;
 	my $blogs = shift;
+	my $DB    = $self->{DB};
 	my $ROBJ  = $self->{ROBJ};
 	foreach(@$blogs) {
+		# 定義から外した後に作ったブログにはカラムが無く、エラーになるので出さない
+		my $noerr = $DB->set_noerror(1);
+		$DB->drop_column("${_}_art",   'revision');
+		$DB->drop_column("${_}_trash", 'revision');
+		$DB->set_noerror($noerr);
+
 		my $blog = $self->load_blogset($_);
 		if ($blog->{rev_cycle} eq '') { next; }
 		$self->update_blogset($blog, 'rev_cycle', int($blog->{rev_cycle}) * 60);
