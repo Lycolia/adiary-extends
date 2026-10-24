@@ -1743,6 +1743,8 @@ sub check_comment_spam {
 			$ROBJ->form_error('name', 'Name must be %d characters or less', $s{com_name_max});
 		} elsif ($self->is_registered_user_name($name)) {
 			$ROBJ->form_error('name', 'This name is used by a registered user. Please use another name');
+		} elsif ($self->is_admin_like_name($name)) {
+			$ROBJ->form_error('name', 'This name looks like an administrator. Please use another name');
 		}
 	}
 	if ($text eq '') {
@@ -1793,6 +1795,30 @@ sub is_registered_user_name {
 	my $users  = $auth->{DB}->select_match($auth->{table}, '*cols', ['name']);
 	foreach(@$users) {
 		if ($folded eq $self->fold_comment_text($_->{name})) { return 1; }
+	}
+	return 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●管理者を名乗るような名前か
+#-------------------------------------------------------------------------------
+# 記号と空白を除いて比べる。英語は名前全体が一致するときだけ（後ろの数字は無視する。
+# "badminton"などをはじかないため）、日本語は名前に含まれるとき（「管理人です」などもはじくため）
+my @ADMIN_LIKE_NAMES = qw(admin administrator administrater sysadmin sysop root webmaster moderator owner);
+my @ADMIN_LIKE_WORDS = qw(管理人 管理者 運営);
+sub is_admin_like_name {
+	my ($self, $name) = @_;
+	my $x = $self->fold_comment_text($name);
+	$x =~ s/[^\p{L}\p{N}]//g;
+	my $en = $x;
+	$en =~ s/\d+$//;
+	foreach(@ADMIN_LIKE_NAMES) {
+		if ($en eq $_) { return 1; }
+	}
+	foreach(@ADMIN_LIKE_WORDS) {
+		my $w = $_;
+		utf8::decode($w);
+		if (0 <= index($x, $w)) { return 1; }
 	}
 	return 0;
 }
