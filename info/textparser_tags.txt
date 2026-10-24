@@ -126,6 +126,8 @@ img        = 画像, image
 image:L      = 画像アルバム, image, 2,  ${image}$1$2
 image:S      = 画像アルバム, image, 2,  ${image}$1.thumbnail/$2.jpg
 image:S#link = 画像アルバム, image, 2,  ${image}$1$2
+# 360度写真（sp_view360プラグインで見回せる。tag-image-360のクラスが付く）
+image:360    = 360度写真,    image, 2,  ${image}$1$2
 
 # Ver2互換設定
 image       = 画像アルバム, image, 3,  ${image}$2$3
