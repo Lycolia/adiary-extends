@@ -124,6 +124,7 @@ sub load_coms_list {
 		$_->{text_nobr} = $_->{text};
 		$_->{text_nobr} =~ s/<br>/ /g;
 	}
+	$self->set_comment_by_admin($logs);
 
 	my %ret;
 	$ret{hits} = $hits;

@@ -141,10 +141,10 @@
 <!-- ポップアップ表示用のデータ -->
 <div style="display: none">
 <@forexec(c, logs, begin)>
-	<div class="comment-one<@if(!c.enable, ' hidden')>" id="c<@c.pkey>">
+	<div class="comment-one<@if(c.by_admin, ' comment-admin')><@if(!c.enable, ' hidden')>" id="c<@c.pkey>">
 		<div class="commentator">
 			<span class="canchor"><a href="#c<@c.num>"><@c.num></a>:</span>	<@\>
-			<span class="commentator author<@if(c.id, " login-user")>"><@ifexec(c.email && v.allow_edit, begin, begin)><a href="mailto:<@c.email>"><@c.name></a><$else><@c.name><$end></span>
+			<span class="commentator author<@if(c.id, " login-user")>"><@ifexec(c.email && v.allow_edit, begin, begin)><a href="mailto:<@c.email>"><@c.name></a><$else><@c.name><$end></span><@if(c.by_admin, ' <span class="comment-badge">管理者</span>')>
 			<@ifexec(c.url, begin)><span class="comment-url"><a href="<@c.url>" rel="nofollow">URL</a></span><$end>
 			<span class="comment-date"><@print_tm(c.tm)></span>
 			<@ifexec(!c.enable, begin)>

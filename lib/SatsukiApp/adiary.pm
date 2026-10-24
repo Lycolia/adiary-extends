@@ -1286,8 +1286,32 @@ sub load_comments {
 
 	# ロード
 	my $comments = $DB->select("${blogid}_com", \%h);
+	$self->set_comment_by_admin($comments);
 	if (defined $loads) {
 		return [ reverse(@$comments) ];
+	}
+	return $comments;
+}
+
+#-------------------------------------------------------------------------------
+# ●管理者が書いたコメントに印を付ける
+#-------------------------------------------------------------------------------
+# ブログの管理者かシステムの管理者が書いたコメントに by_admin=1 を付ける
+#
+sub set_comment_by_admin {
+	my $self = shift;
+	my $comments = shift;
+	my $auth = $self->{ROBJ}->{Auth};
+
+	if (!$self->{_admin_ids}) {
+		my $admins = $auth->{DB}->select_match($auth->{table}, 'isadmin', 1, '*cols', ['id']);
+		$self->{_admin_ids} = { map { $_->{id} => 1 } @$admins };
+	}
+	my $ids = $self->{_admin_ids};
+	foreach(@$comments) {
+		my $id = $_->{id};
+		if ($id eq '') { next; }
+		$_->{by_admin} = ($ids->{$id} || $self->users_check($self->{blog}->{admin_users}, $id)) ? 1 : 0;
 	}
 	return $comments;
 }

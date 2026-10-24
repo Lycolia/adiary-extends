@@ -9,7 +9,7 @@
 		<@ifexec(v.comment_form_msg, begin)><div class="messages"><@join("\n", v.comment_form_msg)></div><$end>
 		<div class="comment-website" aria-hidden="true"><input type="text" name="website" value="" tabindex="-1" autocomplete="off"></div>
 		<span class="caption-name">名前</span><span class="separater">:</span>
-		<@ifexec(Auth.ok, begin, begin)><span class="comment-author"><@Auth.name></span><$else><input type="text" name="name" class="w160 comment-author" value="<@esc(Form.name)>" required><$end>
+		<@ifexec(Auth.ok, begin, begin)><span class="comment-author"><@Auth.name></span><@if(v.blog_admin, ' <span class="comment-badge">管理者</span>')><$else><input type="text" name="name" class="w160 comment-author" value="<@esc(Form.name)>" required><$end>
 		<@ifexec(t.hcom_ok, begin)>&emsp;<label><input type="checkbox" name="hidden" value="1">非公開</label><@if(ps.hidden_help, #'<span class="help" data-help="<@ps.hidden_help>">?</span>')><$end>
 		&emsp;<button type="submit" id="post-comment">投稿</button><span class="help" data-help="返信は「>>n」\n空白、タブ有効。タグ無効。\n押せない時は少しお待ちください。">?</span><br>
 		<textarea class="comment-txt w600" name="comment_txt" rows="3" required><@esc(Form.comment_txt)></textarea>

@@ -114,6 +114,16 @@ table.plugins button {
 /*	font-family:		monospace;	*/
 }
 
+/* 管理者の印 */
+.comment-badge {
+	border:			1px solid;
+	border-radius:		3px;
+	padding:		0 0.3em;
+	font-size:		80%;
+	font-weight:		normal;
+	white-space:		nowrap;
+}
+
 /* 投稿者情報 */
 #com div.ip-host-agent {
 	text-align:		right;
