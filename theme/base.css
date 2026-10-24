@@ -923,85 +923,82 @@ span.highlight4	{ background-color: #f6f; }
 /*--------------------------------------------------------------------
 ●ソーシャルボタン
 --------------------------------------------------------------------*/
-.social-button {
-	display:		inline-block;
-}
-.social-button * {
-	vertical-align:		middle;
-}
-.social-button a.share {
-	display:		inline-block;
-	width:			60px;
-	height:			20px;
-
-	background-image:	url("_img/social-buttons.png");
-	background-repeat:	no-repeat;
-	border-radius:		4px;
-}
-.social-button.twitter-share a.share {
-	background-position:	0 0;
-}
-.social-button.facebook-share a.share {
-	background-position:	0 -20px;
-}
-.social-button.hatena-bookmark a.share {
-	background-position:	0 -40px;
-	width:			80px;
-}
-.social-button.pocket-bookmark a.share {
-	background-position:	0 -60px;
-	width:			64px;
-}
-.social-button a, .social-button a:link, .social-button a:visited, .social-button a:hover {
-	text-decoration:	none;
-	color:			inherit;
-}
-/* 吹き出し */
-.social-button a.count {
-	position:		relative;
-	display:		inline-block;
-	border:			1px solid #aaa;
-	margin-left:		5px;
-	height:			20px;
-	box-sizing:		border-box;
-	line-height:		100%;
-}
-.social-button a.count:before,
-.social-button a.count:after {
-	content:		"";
-	display:		block;
-	position:		absolute;
-	top:			5px;
-	left:			-4px;
-
-	border:			4px solid transparent;
-	border-left-width:	0;
-}
-.social-button a.count:after {
-	left:			-3px;
-}
-
-/* カスタマイズ領域 */
+/* X、Facebook、はてなブックマークは、それぞれのサービスの色の地に、ロゴと文字をCSSで出す（4.09）。
+   画像のファイルは使わない。ロゴはそれぞれのサービスのもの */
 .social-buttons {
 	margin:			1em 0;
 }
 .social-button {
-	color:			#000;
+	display:		inline-block;
 	margin-right:		8px;
+	vertical-align:		middle;
 }
-.social-button a.count {
-	font-size:		14px;
-	padding:		3px 8px;
-
+.social-button a, .social-button a:link, .social-button a:visited, .social-button a:hover {
+	text-decoration:	none;
+}
+.social-button a.share,
+.social-button a.share:link,
+.social-button a.share:visited,
+.social-button a.share:hover {
+	display:		inline-block;
+	height:			20px;
 	border-radius:		4px;
-	border-color:		#aaa;	/* 吹き出し枠線 */
-	background-color:	#fff;	/* 吹き出し背景 */
+	color:			#fff;
+	font-size:		12px;
+	line-height:		20px;
+	vertical-align:		middle;
 }
-.social-button a.count:before {
-	border-right-color:	#888;	/* 枠線と同色 */
+/* X */
+.social-button.x-share a.share {
+	padding:		0 8px 0 24px;
+	background:		#000 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'/%3E%3C/svg%3E") no-repeat 7px center / 12px 12px;
 }
-.social-button a.count:after {
-	border-right-color:	#fff;	/* 背景と同色 */
+/* Facebook */
+.social-button.fb-share a.share {
+	padding:		0 8px 0 24px;
+	background:		#1877f2 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z'/%3E%3C/svg%3E") no-repeat 6px center / 13px 13px;
+}
+/* はてなブックマーク。公式のボタン（b.st-hatena.com/js/bookmark_button.js）の
+   「B!ブックマーク」の絵と件数を、はてなブックマークの色の地に並べる */
+.social-button.hatena-share {
+	display:		inline-flex;
+	align-items:		center;
+	height:			20px;
+	padding:		0 3px;
+	box-sizing:		border-box;
+	border-radius:		3px;
+	background-color:	#00a4de;
+}
+.social-button.hatena-share:hover {
+	background-color:	#0091c5;
+}
+.social-button.hatena-share a.share {
+	width:			78px;
+	height:			14px;
+	margin-left:		3px;	/* 公式のボタンと同じ（.btn-standard.show-count .icon） */
+	border-radius:		0;
+	background:		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 78 14' fill='%23fff'%3E%3Cpath d='M8.24 7.36a2.37 2.37 0 0 0-1.66-.75 2.72 2.72 0 0 0 1.42-.76 2 2 0 0 0 .43-1.35 2.42 2.42 0 0 0-.33-1.2 2.15 2.15 0 0 0-.84-.82 3.59 3.59 0 0 0-1.16-.37 17.41 17.41 0 0 0-2.36-.11h-2.74v10h2.83a18.33 18.33 0 0 0 2.45-.12 4 4 0 0 0 1.26-.39 2.31 2.31 0 0 0 1-.94 2.86 2.86 0 0 0 .34-1.41 2.57 2.57 0 0 0-.64-1.78zm-4.71-3.14h.59a2.77 2.77 0 0 1 1.37.23.88.88 0 0 1 .35.79.82.82 0 0 1-.38.76 3 3 0 0 1-1.38.22h-.55zm2.32 5.78a2.79 2.79 0 0 1-1.37.24h-1v-2.24h1a2.61 2.61 0 0 1 1.36.25 1 1 0 0 1 .37.88.87.87 0 0 1-.36.87z'/%3E%3Ccircle cx='11.73' cy='10.73' r='1.27'/%3E%3Cpath d='M10.63 2h2.2v6.67h-2.2z'/%3E%3Cpath d='M25.45 4.31a1.65 1.65 0 0 0-.08.23s0 .13-.08.29a10.17 10.17 0 0 1-6.29 7.24 5.94 5.94 0 0 0-1.4-1.85 7.68 7.68 0 0 0 5.54-5.43h-4.75a10.6 10.6 0 0 0-1.68.07v-2a9.72 9.72 0 0 0 1.71.14h4.74a7.33 7.33 0 0 0 .85 0v-.08a4.56 4.56 0 0 0-.45-.73l1-.3a6.63 6.63 0 0 1 .94 1.76l-.5.07zm.55-2.81a4.88 4.88 0 0 1 .86 1.67l-.86.31a6.64 6.64 0 0 0-.86-1.7zM29.22 4.57a13.83 13.83 0 0 1 1.07 2.79l-1.72.52a14.05 14.05 0 0 0-1-2.86zm6.42.19a4.31 4.31 0 0 0-.17.67 9.92 9.92 0 0 1-1.38 3.57 8 8 0 0 1-2.31 2.24 15.11 15.11 0 0 1-1.33.74 5.63 5.63 0 0 0-1.21-1.55 6.24 6.24 0 0 0 4.1-3.79 7.74 7.74 0 0 0 .49-2.33zm-4-.65a11.29 11.29 0 0 1 1.07 2.69l-1.71.51a13 13 0 0 0-1-2.77zM42.49 2.23a1.51 1.51 0 0 0-.13.28s0 .1-.08.16l-.1.23-.22.47h2.77a1.85 1.85 0 0 0 .82-.12l.91.9a2.72 2.72 0 0 0-.32.78 11.65 11.65 0 0 1-2.28 4.37 11.39 11.39 0 0 1-4.06 2.84 5.09 5.09 0 0 0-1.32-1.68 9.67 9.67 0 0 0 3.68-2.25 7.74 7.74 0 0 0 1.84-3.15h-2.93a10.32 10.32 0 0 1-2.5 2.77 5.5 5.5 0 0 0-1.57-1.29 8.68 8.68 0 0 0 2.93-3.36 4.2 4.2 0 0 0 .47-1.32zM49.6 4.72c-.91 0-1.3 0-1.79.06v-1.95a13.75 13.75 0 0 0 1.82.09h6a2.08 2.08 0 0 0 .76-.11l1.11 1.19a2.53 2.53 0 0 0-.5.7 14.79 14.79 0 0 1-3.5 4.22c.47.56.78 1 1.31 1.68l-1.65 1.29a18.6 18.6 0 0 0-2.16-2.89 16.43 16.43 0 0 0-2.22-2.19l1.51-1.06a17 17 0 0 1 1.91 1.75 12.18 12.18 0 0 0 1.72-1.74 7.58 7.58 0 0 0 .7-1.07zM58 5.91a15.56 15.56 0 0 0 2.26.1h5.27a18 18 0 0 0 2.26-.1v2.09a21.38 21.38 0 0 0-2.32 0h-7.470000000000001zM74 2.23a1.58 1.58 0 0 0-.13.28s0 .1-.08.16l-.1.23-.22.47h2.77a1.84 1.84 0 0 0 .82-.12l.91.9a2.71 2.71 0 0 0-.32.78 11.65 11.65 0 0 1-2.25 4.34 11.39 11.39 0 0 1-4.06 2.84 5.12 5.12 0 0 0-1.34-1.67 9.65 9.65 0 0 0 3.7-2.25 7.74 7.74 0 0 0 1.84-3.13h-2.93a10.3 10.3 0 0 1-2.5 2.77 5.49 5.49 0 0 0-1.57-1.32 8.67 8.67 0 0 0 2.93-3.36 4.18 4.18 0 0 0 .47-1.32z'/%3E%3C/svg%3E") center / 78px 14px no-repeat;
+}
+.social-button.hatena-share .hidden-text {
+	display:		none;
+}
+.social-button.hatena-share a.count,
+.social-button.hatena-share a.count:link,
+.social-button.hatena-share a.count:visited,
+.social-button.hatena-share a.count:hover {
+	min-width:		15px;
+	margin-left:		1px;
+	padding:		2px;
+	border-radius:		3px;
+	color:			#fff;
+	font-family:		Helvetica, Arial, sans-serif;
+	font-size:		11px;
+	font-weight:		bold;
+	line-height:		1;
+	text-align:		center;
+}
+.social-button.hatena-share a.count:hover {
+	background-color:	#006b92;
 }
 
 /*--------------------------------------------------------------------
