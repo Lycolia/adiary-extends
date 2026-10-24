@@ -61,7 +61,7 @@ sub save_usercss {
 	my ($self, $css_txt) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $auth = $ROBJ->{Auth};
-	if (! $self->{allow_edit}) { $ROBJ->message('Operation not permitted'); return 5; }
+	if (! $self->{blog_admin}) { $ROBJ->message('Operation not permitted'); return 5; }
 
 	if ($css_txt =~ /^\s*$/s) {
 		return $self->delete_dynamic_css( '_usercss' );
