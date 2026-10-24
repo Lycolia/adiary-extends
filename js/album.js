@@ -807,7 +807,6 @@ function set_current_folder(node) {
 function ajax_submit(opt) {
 	var data = opt.data || {};
 	data.action = $('#action-base').val() + opt.action;
-	data.csrf_check_key = $('#csrf-key').val();
 
 	folder_icon.attr('class', 'dynatree-statusnode-wait');	// Loding.gif
 	$.ajax(adiary.myself + '?etc/ajax_dummy', {

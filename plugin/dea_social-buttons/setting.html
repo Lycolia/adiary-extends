@@ -3,36 +3,31 @@
 <$ps=argv#0>
 	<table class="blog-setting">
 	<tbody>
-	<tr><th rowspan=4>Twitter</th>
+	<tr><th rowspan=4>X</th>
 		<td colspan="2">
-			<label><input type="checkbox" name="twitter" value="1"<@if(ps.twitter ne '0', ' checked')>>表示する</label><span class="help" data-help="Twitterの仕様によりツイート数は表示されません">?</span>
+			<label><input type="checkbox" name="twitter" value="1"<@if(ps.twitter ne '0', ' checked')>>表示する</label><span class="help" data-help="Xの投稿画面へのリンクを出します。ポスト数は表示されません">?</span>
 		</td>
 	</tr>
 	<tr>
-		<td>リプライ先<span class="help" data-help="ツイート時に標準で含まれるリプライ先を指定します">?</span></td>
+		<td>via<span class="help" data-help="ポストに「@ID」として含めるIDを指定します">?</span></td>
 		<td><em><span class="mono">＠</span></em><input type="text" class="w100" name="twitter_id" value="<@ps.twitter_id>"></td>
 	</tr>
 	<tr>
-		<td>フォロー推奨ID<span class="help" data-help="ツイート後に特定のIDのフォローを推奨する画面を表示します">?</span></td>
+		<td>フォロー推奨ID<span class="help" data-help="ポストの後に、このIDのフォローを勧めます">?</span></td>
 		<td><em><span class="mono">＠</span></em><input type="text" class="w100" name="twitter_follow" value="<@ps.twitter_follow>"></td>
 	</tr>
 	<tr>
-		<td>ハッシュタグ<span class="help" data-help="ツイート時に標準で含まれるハッシュ(#)を指定します">?</span></td>
+		<td>ハッシュタグ<span class="help" data-help="ポストに含めるハッシュタグ(#)を指定します">?</span></td>
 		<td><em><span class="mono">＃</span></em><input type="text" class="w100" name="twitter_hash" value="<@ps.twitter_hash>"></td>
 	</tr>
 	<tr><th>Facebook</th>
 		<td colspan="2">
-			<label><input type="checkbox" name="facebook" value="1"<@if(ps.facebook ne '0', ' checked')>>表示する</label>
+			<label><input type="checkbox" name="facebook" value="1"<@if(ps.facebook ne '0', ' checked')>>表示する</label><span class="help" data-help="シェアの画面へのリンクを出します。シェア数は表示されません">?</span>
 		</td>
 	</tr>
 	<tr><th>はてなブックマーク</th>
 		<td colspan="2">
-			<label><input type="checkbox" name="hatena" value="1"<@if(ps.hatena ne '0', ' checked')>>表示する</label>
-		</td>
-	</tr>
-	<tr><th>Pocket</th>
-		<td colspan="2">
-			<label><input type="checkbox" name="pocket" value="1"<@if(ps.pocket ne '0', ' checked')>>表示する</label>
+			<label><input type="checkbox" name="hatena" value="1"<@if(ps.hatena ne '0', ' checked')>>表示する</label><span class="help" data-help="ブックマークの画面へのリンクと、ブックマーク数を出します">?</span>
 		</td>
 	</tr>
 	</tbody>

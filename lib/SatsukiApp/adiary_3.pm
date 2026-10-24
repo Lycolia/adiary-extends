@@ -228,10 +228,10 @@ sub make_thumbnail_for_image {
 		my $f = "$dir$file";
 		if ($tmpfile &&  $f =~ /[^\x20-\x7e]/) {
 			rename($f, $tmpfile);
-			$img->Read( $tmpfile );
+			$self->read_image( $img, $tmpfile );
 			rename($tmpfile, $f);
 		} else {
-			$img->Read( $f );
+			$self->read_image( $img, $f );
 		}
 		$img = $img->[0];
 		$img->AutoOrient();
@@ -310,7 +310,7 @@ sub make_thumbnail_for_notimage {
 	}
 	my $icon = $self->load_image_magick();
 	eval {
-		$icon->Read( $icon_dir . $icon_file );
+		$self->read_image( $icon, $icon_dir . $icon_file );
 
 		my ($x, $y) = $icon->Get('width', 'height');
 		$x = ($size - $x) / 2;
@@ -781,6 +781,12 @@ sub load_image_magick {
 	eval { require Image::Magick; };
 	if ($@) { return ; }
 	return Image::Magick->new(@_);
+}
+# 中身の形式を確かめてから読み込む（Satsuki::ImageFormat）。画像の読み込みは必ずこれを使う
+sub read_image {
+	my $self = shift;
+	require Satsuki::ImageFormat;
+	return Satsuki::ImageFormat::read(@_);
 }
 
 #-------------------------------------------------------------------------------

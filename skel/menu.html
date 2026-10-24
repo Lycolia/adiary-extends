@@ -10,9 +10,6 @@
 	<$v.update_sysdat('myself2', myself2)>
 <$end>
 
-<@> Version2からの移行処理
-<$ifredirect(Auth.isadmin && !Develop && v.v2conf,  myself . '?system/v2conv')>
-
 <@> 階層ツリー
 <@call("_sub/menu_tree")>
 
@@ -22,14 +19,11 @@
 <article class="system">
 <h2><@v.title></h2>
 <div class="body">
-	<@ifexec(v.v2conf, begin)>
-		<p><a href="<@myself>?system/v2conv">Version2からの移行ツール</a></p>
-	<$end>
 	<@ifexec(Auth.auto, begin)>
 		<p><a href="<@myself>?user/add">最初のユーザーを追加してください</a></p>
 	<$end>
 
-<@ifexec(!v.v2conf && !Auth.auto, begin)>
+<@ifexec(!Auth.auto, begin)>
 	<@ifexec(Auth.isadmin && v.require_update, begin)>
 		<p><strong class="warning">すぐに<a href="<@v.myself>?system/update">アップデート処理</a>を実行してください。</strong></p>
 	<$end>

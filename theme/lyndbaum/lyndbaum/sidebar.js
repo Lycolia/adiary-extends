@@ -1,7 +1,7 @@
 // サイドバーを引き出しにして、ヘッダーのボタンで開く。1カラムでは左右、2カラムでは左だけ
-//   ボタンは theme/lyndbaum/_skel/_header.html、サイドバーは _sidebar.html
-//   見た目と切り替わる幅は lyndbaum.css（48rem 未満と 72rem 未満）
-//   JavaScript が無いときはボタンを出さず、サイドバーは本文の下に縦に並ぶ
+//   ボタンはtheme/lyndbaum/_skel/_header.html、サイドバーは_sidebar.html
+//   見た目と切り替わる幅はlyndbaum.css（48rem未満と72rem未満）
+//   JavaScriptが無いときはボタンを出さず、サイドバーは本文の下に縦に並ぶ
 'use strict';
 (function () {
 	var buttons = document.querySelectorAll('.sidebar-toggle');
@@ -33,7 +33,7 @@
 		current = button;
 		drawer.classList.add('is-open');
 		button.setAttribute('aria-expanded', 'true');
-		// スクロールバーがあったときは、その幅を残す（lyndbaum.css の drawer-keep-gutter）
+		// スクロールバーがあったときは、その幅を残す（lyndbaum.cssのdrawer-keep-gutter）
 		root.classList.toggle('drawer-keep-gutter', window.innerWidth > root.clientWidth);
 		root.classList.add('drawer-open');
 		backdrop.hidden = false;

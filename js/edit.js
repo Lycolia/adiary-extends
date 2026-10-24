@@ -12,7 +12,6 @@ $(function(){
 const $tagsel = $secure('#tag-select');
 const $upsel  = $secure('#upnode-select');
 const $edit   = $('#editarea');
-const CSRF_key = $('#csrf-key').val();
 
 // タグ一覧 [{ name: "親::子", qt: 使用数 }, ...]
 const all_tags = [];
@@ -222,7 +221,7 @@ adiary.load_contents_list($upsel);
 	const $ogp    = $('#ogp-input');
 	const imgdir  = $('#image-dir').text();		// 画像ディレクトリ（相対）
 	const img_url = adiary.Basepath + imgdir;
-	const img_ext = /\.(?:jpe?g|png|gif|webp|apng|bmp|tiff?|ico)$/i;
+	const img_ext = /\.(?:jpe?g|png|gif|webp|apng|avif)$/i;
 
 	// [image:S:folder/:file:caption] 記法と、画像ディレクトリ内を指すURLを出現順に拾う
 	const dir_re = imgdir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -321,7 +320,7 @@ adiary.load_contents_list($upsel);
 // ■差分（更新履歴、保存の競合で使う）
 //##############################################################################
 //------------------------------------------------------------------------------
-// ●行単位の差分（a → b）。大きすぎる場合は null
+// ●行単位の差分（a → b）。大きすぎる場合はnull
 //------------------------------------------------------------------------------
 function line_diff(a, b) {
 	// 前後の共通部分は比較しない
@@ -385,7 +384,6 @@ function render_diff(diff, $body) {
 
 	function ajax_revision(data, callback) {
 		data.action = 'ajax_revision';
-		data.csrf_check_key = CSRF_key;
 		$.ajax({
 			type: 'POST',
 			url:  adiary.myself + '?etc/ajax_dummy',
@@ -565,7 +563,7 @@ function render_diff(diff, $body) {
 			type: 'POST',
 			url:  adiary.myself + '?etc/ajax_dummy',
 			dataType: 'json',
-			data: { action: 'ajax_revision', csrf_check_key: CSRF_key, now: $('#edit-pkey').val() },
+			data: { action: 'ajax_revision', now: $('#edit-pkey').val() },
 			success: function(now){
 				if (!now || now.digest === $digest.val()) return submit(submitter);
 				show_conflict(now, submitter);
@@ -821,7 +819,6 @@ edit.prototype.ajax_lock = function(opt) {
 		dataType: 'json',
 		data: {
 			action: opt.action,
-			csrf_check_key: CSRF_key,
 			pkey:   opt.pkey || this.pkey,
 			sid:    opt.sid  || this.sid,
 			unlock: opt.unlock ? 1 : 0,
@@ -1001,7 +998,6 @@ function ajax_upload( form_dom, files, option ) {
 	// FormData生成
 	var fd = new FormData( form_dom );
 	if (!$file_btn.val()) fd.delete('_file_btn');
-	fd.append('csrf_check_key', $('#csrf-key').val());
 	fd.append('action', 'etc/ajax_upload');
 	fd.append('folder', folder);
 
@@ -1101,7 +1097,6 @@ const uploadFile = (file, successCb, errorCb) => {
 
 	fd.append('paste', 1); // 謎パラメタ
 	fd.append('size', 320); // TODO: サムネサイズ：どっかで既定値を設定したい
-	fd.append('csrf_check_key', undefined); // 使われていないゴミ
 	fd.append('action', 'etc/ajax_upload');
 	fd.append('folder', folder);
 	fd.append('file_ary', file);

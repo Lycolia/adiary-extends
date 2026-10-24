@@ -415,8 +415,12 @@ sub reinstall_design_plugins {
 	# uninstall
 	$self->reset_design({no_event => 1});
 
-	# dem_footer を無効にする
-	$h->{main_b_ary} = [ grep {$_ ne 'dem_footer'} @{$h->{main_b_ary}} ];
+	# 削除したモジュールを取り除く（別名の「名前,番号」も）
+	my $removed = qr/^(?:dem_footer|des_twitter)(?:,\d+)?$/;
+	foreach(keys(%$h)) {
+		if (ref($h->{$_}) ne 'ARRAY') { next; }
+		$h->{$_} = [ grep { $_ !~ $removed } @{$h->{$_}} ];
+	}
 
 	return $self->save_design($h);
 }
@@ -726,7 +730,7 @@ sub art_table_info {
 	my %info;
 	$info{text}    = [ qw(title parser tags name id ip host agent link_key ctype main_image description backlinks) ];
 	$info{ltext}   = [ qw(text text_s _text) ];
-	$info{int}     = [ qw(yyyymmdd tm update_tm coms coms_all revision upnode priority) ];
+	$info{int}     = [ qw(yyyymmdd tm update_tm coms coms_all upnode priority) ];
 	$info{flag}    = [ qw(enable com_ok hcom_ok) ];
 	$info{idx}     = [ qw(name id link_key ctype upnode yyyymmdd tm update_tm coms coms_all enable priority) ];
 	$info{idx_tdb} = [ qw(title tags) ];
@@ -807,7 +811,7 @@ sub create_rev_table {
 # ●記事のリンクテーブルの作成
 #-------------------------------------------------------------------------------
 # a_pkey    リンク元の記事
-# link_key  リンク先の記事の link_key（まだ無い記事も持っておく）
+# link_key  リンク先の記事のlink_key（まだ無い記事も持っておく）
 # ※参照元の生成に使う（update_backlinks）。記事を削除した後に消すので、参照は張らない
 sub create_link_table {
 	my ($self, $table) = @_;
@@ -981,7 +985,6 @@ sub art_import {
 		delete $h{file};
 		delete $h{action};
 		delete $h{ajax};
-		delete $h{csrf_check_key};
 		delete $h{class};
 		foreach(sort(keys(%h))) {
 			$session->say("[option] $_=$h{$_}");
@@ -1506,7 +1509,7 @@ sub import_img {
 
 				my $img = $self->load_image_magick();
 				eval {
-					$img->Read( $file );
+					$self->read_image( $img, $file );
 					$img->Set( quality => ($self->{album_jpeg_quality} || 80) );
 					$img->Write( $thumb_file );
 				};

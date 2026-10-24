@@ -96,29 +96,6 @@ sub _filter {
 	}
 
 	#-------------------------------------------------------------
-	# Amazon
-	#-------------------------------------------------------------
-	if ($url =~ m!^https?://www\.amazon\.co\.jp/(?:([^/]+)/)*(?:dp|gp/product)/(\w+)!) {
-		my $title = $1;
-		my $asin  = $2;
-		my $tag   = $pobj->load_tag('asin');
-		$title =~ s/%([0-9a-fA-F][0-9a-fA-F])/chr(hex($1))/eg;
-		$title =~ s/[\x00-\x1F\"]//g;
-		if (!exists($tags->{asin}) || ref($tag) ne 'HASH' || ref($tag->{data}) ne 'CODE') {
-			my $name = join(':', @$ary) || $title || $asin;
-			return "<a href=\"http://www.amazon.co.jp/dp/$asin\">$name</a>";
-		}
-		if ($title ne '') { unshift(@$ary, $title); }
-		if ($ary->[$#$ary] eq 'text') {
-			pop(@$ary);		# text link
-		} else {
-			unshift(@$ary, 'img');	# image link
-		}
-		unshift(@$ary, $asin);
-		return &{$tag->{data}}($pobj, $tag, 'asin', $ary);
-	}
-
-	#-------------------------------------------------------------
 	# github/gist
 	#-------------------------------------------------------------
 	if ($url =~ m|^https://gist\.github\.com(/[\w\-/\.]*)|) {

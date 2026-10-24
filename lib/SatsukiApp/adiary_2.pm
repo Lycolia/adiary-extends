@@ -124,6 +124,7 @@ sub load_coms_list {
 		$_->{text_nobr} = $_->{text};
 		$_->{text_nobr} =~ s/<br>/ /g;
 	}
+	$self->set_comment_by_admin($logs);
 
 	my %ret;
 	$ret{hits} = $hits;
@@ -184,7 +185,6 @@ sub edit_article {
 	# データチェックなど
 	#-----------------------------------------------------------------------
 	my $ping    = $form->{ping}    ? 1:0;
-	my $tw_ping = $form->{tw_ping} ? 1:0;
 	$form->{id}   = $auth->{id};
 	$form->{name} = $auth->{name};
 	$self->delete_ip_host_agent($form);
@@ -592,14 +592,14 @@ sub regist_article {
 #-------------------------------------------------------------------------------
 # ●コンテンツkeyがURLとして使えるか
 #-------------------------------------------------------------------------------
-# 使えなければ、form_error に渡すメッセージと引数を返す
+# 使えなければ、form_errorに渡すメッセージと引数を返す
 #
 # ・数字だけのkeyは、記事番号（0始まり）か日付として解釈される
-# ・& で始まるkeyは、コンテンツとして解釈されない
+# ・&で始まるkeyは、コンテンツとして解釈されない
 # ・先頭の階層がadiaryの置き場所にあるファイルやフォルダと同じだと、
 #   Webサーバーがファイルを先に返すか、アクセスを拒否する
 # ・nginxの設定（location /data、/__cache、~ \.cgi$）で拒否されるkey
-#   location は前方一致なので、data や __cache で始まるkeyはすべて拒否される
+#   locationは前方一致なので、dataや__cacheで始まるkeyはすべて拒否される
 #
 sub check_link_key_path {
 	my ($self, $link_key) = @_;
@@ -618,7 +618,7 @@ sub check_link_key_path {
 		return ('Content key can not end with "%s"', $1);
 	}
 	my $top = $link_key =~ m|^([^/]+)| ? $1 : '';
-	my %files = map { $_ => 1 } @{ $self->{ROBJ}->search_files('./', { dir => 1, all => 1 }) };	# フォルダは末尾に / が付く
+	my %files = map { $_ => 1 } @{ $self->{ROBJ}->search_files('./', { dir => 1, all => 1 }) };	# フォルダは末尾に/が付く
 	if ($files{$top} || $files{"$top/"}) {
 		return ('"%s" is used by the system and can not be the top of a content key', $top);
 	}
@@ -670,8 +670,8 @@ sub get_main_image_from_input {
 #-------------------------------------------------------------------------------
 # $old : 更新前の記事データ
 #
-# PukiWikiのバックアップと同様に、前回履歴に追加してから rev_cycle 時間以内なら
-# 追加しない（連続した保存を1つの版にまとめる）。rev_max を超えた古い版は削除する。
+# PukiWikiのバックアップと同様に、前回履歴に追加してからrev_cycle分以内なら
+# 追加しない（連続した保存を1つの版にまとめる）。rev_maxを超えた古い版は削除する。
 #
 sub save_revision {
 	my ($self, $blogid, $old) = @_;
@@ -680,14 +680,14 @@ sub save_revision {
 	if ($self->{require_update}) { return; }	# 履歴テーブル未作成
 
 	my $blog  = $self->load_blogset($blogid);
-	my $cycle = $blog->{rev_cycle} eq '' ?   3 : int($blog->{rev_cycle});
+	my $cycle = $blog->{rev_cycle} eq '' ? 180 : int($blog->{rev_cycle});
 	my $max   = $blog->{rev_max}   eq '' ? 120 : int($blog->{rev_max});
 	my $a_pkey= $old->{pkey};
 	my $now   = $ROBJ->{TM};
 
 	if ($cycle > 0) {
 		my $last = $DB->select_match_limit1("${blogid}_rev", 'a_pkey', $a_pkey, '*sort', '-tm', '*cols', ['tm']);
-		if ($last && $now - $last->{tm} < $cycle * 3600) { return; }
+		if ($last && $now - $last->{tm} < $cycle * 60) { return; }
 	}
 
 	$DB->insert("${blogid}_rev", {
@@ -763,7 +763,7 @@ sub load_article_now_json {
 #-------------------------------------------------------------------------------
 # ●本文をjsonの文字列にする
 #-------------------------------------------------------------------------------
-# json_encode() は \ を &#92; にするので、本文はここでエスケープする
+# json_encode()は\を&#92;にするので、本文はここでエスケープする
 sub json_long_text {
 	my ($self, $text) = @_;
 	$text =~ s/\\/\\\\/g;
@@ -780,7 +780,7 @@ sub json_long_text {
 #-------------------------------------------------------------------------------
 # 編集画面に入れておき、保存するときに今の記事と比べて、
 # ほかの画面（別のタブや端末）で先に保存されていないかを見る。
-# 記事一覧やコンテンツの編集は update_tm を変えずに書き換えるので、中身で比べる。
+# 記事一覧やコンテンツの編集はupdate_tmを変えずに書き換えるので、中身で比べる。
 # コメント数や変換後の本文は、記事を書き換えなくても変わるので入れない。
 my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok
 		    ctype link_key upnode priority main_image description);
@@ -840,7 +840,7 @@ sub get_main_image_size {
 	$file =~ s|^/+||g;
 	$file =~ s|\.+/||g;
 
-	$im->Read( $self->blogimg_dir() . $file );
+	$self->read_image( $im, $self->blogimg_dir() . $file );
 	my ($w, $h) = $im->Get('width', 'height');
 
 	$art->{main_image_w} = $w;
@@ -1234,9 +1234,9 @@ sub update_contents_list {
 #-------------------------------------------------------------------------------
 # ●参照元の更新
 #-------------------------------------------------------------------------------
-# 本文のリンクを ${blogid}_link に入れ直し、リンク先の記事の参照元のHTML（_art.backlinks）
-# を作り直す。表示のときは backlinks を読むだけ（dea_backlinks）。
-# ・$pkeys が配列refなら、その記事のリンクと、その記事が関わる参照元だけを作り直す
+# 本文のリンクを${blogid}_linkに入れ直し、リンク先の記事の参照元のHTML（_art.backlinks）
+# を作り直す。表示のときはbacklinksを読むだけ（dea_backlinks）。
+# ・$pkeysが配列refなら、その記事のリンクと、その記事が関わる参照元だけを作り直す
 #   それ以外（引数なし、件数が渡されたとき）は、全記事を作り直す
 # ・参照元に出すのは、公開中のブログ記事（コンテンツは除く）。新しい順
 # ・コンテンツの記事には参照元を出さない
@@ -1257,7 +1257,7 @@ sub update_backlinks {
 	my %exists = map { $_->{link_key} => 1 } @$keys;
 
 	my $arts = $DB->select_match("${blogid}_art", ($all ? () : ('pkey', $pkeys)), '*cols', ['pkey', 'link_key', 'text']);
-	my %targets;	# 参照元を作り直す記事の link_key
+	my %targets;	# 参照元を作り直す記事のlink_key
 	if ($all) {
 		%targets = %exists;
 	} else {
@@ -1322,10 +1322,10 @@ sub update_backlinks {
 }
 
 #-------------------------------------------------------------------------------
-# ●本文のHTMLから、ブログ内の記事へのリンクの link_key を取り出す
+# ●本文のHTMLから、ブログ内の記事へのリンクのlink_keyを取り出す
 #-------------------------------------------------------------------------------
-# $exists	今ある記事の link_key のハッシュ
-#		これ以外は、まだ無いブログ記事の link_key（"0"+pkey）の形のものだけ残す
+# $exists	今ある記事のlink_keyのハッシュ
+#		これ以外は、まだ無いブログ記事のlink_key（"0"+pkey）の形のものだけ残す
 sub extract_link_keys {
 	my ($self, $text, $exists) = @_;
 	my $path = $self->get_blog_path( $self->{blogid} );
@@ -1338,7 +1338,7 @@ sub extract_link_keys {
 		my ($base) = grep { substr($url, 0, length($_)) eq $_ } @base;
 		if (!defined $base) { next; }
 
-		# link_key_encode の逆
+		# link_key_encodeの逆
 		my $key = substr($url, length($base));
 		$key =~ s/[?#].*//s;
 		$key =~ s|^\.//|/|;
@@ -1587,18 +1587,8 @@ sub post_comment {
 	my $blogid = $self->{blogid};
 	if (! $self->{allow_com}) { $ROBJ->message('Operation not permitted'); return 5; }
 
-	# SPAM対策 secu_id の確認
-	my $a_pkey = int($form->{a_pkey});
-	if (! $auth->{ok}) {
-		my $secure_id = $form->{secure_id};
-		if ($secure_id ne $self->make_secure_id($blogid . $a_pkey)
-		 && $secure_id ne $self->make_secure_id($blogid . $a_pkey, 1)) {
-			$ROBJ->message('Security error. Please repost.');
-			return 9;
-		}
-	}
-
 	# 記事を確認
+	my $a_pkey = int($form->{a_pkey});
 	my $art = $self->load_article_current_blog("0$a_pkey");
 	if (!$art) {
 		$ROBJ->message("Article '0%d' not found", $a_pkey);
@@ -1621,6 +1611,20 @@ sub post_comment {
 	} else {
 		delete $form->{id};
 	}
+
+	# スパム対策（編集権限者は対象外）
+	my $hold;
+	if (! $self->{allow_edit}) {
+		my $reason;
+		($reason, $hold) = $self->check_comment_spam($form, $a_pkey);
+		if ($reason) {
+			warn "コメントに失敗しました（$reason）: blog=$blogid, a_pkey=$a_pkey, ip=$ENV{REMOTE_ADDR}\n";
+			$ROBJ->message('Comment post failed. Please reload the page and try again later.');
+			return 9;
+		}
+		if ($ROBJ->form_error()) { return 99; }
+	}
+
 	# 実体参照の無効化
 	$form->{name}        =~ s/&/&amp;/g;
 	$form->{comment_txt} =~ s/&/&amp;/g;
@@ -1636,7 +1640,7 @@ sub post_comment {
 	if (!$self->{allow_edit} && $defer) {
 		if ($defer==2 && $auth->{ok}) { $defer=0; }	# ユーザーのみ許可
 	}
-	if ($defer) { $form->{enable}=0; }	# コメント保留
+	if ($defer || $hold) { $form->{enable}=0; }	# コメント保留
 
 	# コメント投稿前イベント
 	my $er = $self->call_event('COMMENT_BEFORE', $form, $art);
@@ -1668,6 +1672,250 @@ sub post_comment {
 	$self->call_event('ARTCOM_STATE_CHANGE',  [$a_pkey], [$pkey]);
 
 	return 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●コメントのスパム対策
+#-------------------------------------------------------------------------------
+# 決まりはdocs/コメントのスパム対策.md
+#
+# ret = (はじく理由, 承認待ちにする理由)
+#	はじく理由	記録用（人には見せない）。はじかないならundef
+#	承認待ち	理由を「,」でつないだもの。承認待ちにしないならundef
+# 長さの決まりに合わないときはform_errorを設定する。
+#
+my %COM_SPAM_DEFAULT = (
+	com_hold_url   => 1,
+	com_require_ja => 1,
+	com_rate_count => 3,
+	com_rate_min   => 10,
+	com_name_max   => 32,
+	com_body_min   => 5,
+	com_body_max   => 3000,
+	com_body_lines => 100
+);
+my $COM_TOKEN_MIN_AGE = 3;		# フォームを出してから、これより早い投稿ははじく（秒）
+my $COM_TOKEN_MAX_AGE = 24*60*60;	# これより古いフォームからの投稿ははじく（秒）
+
+sub check_comment_spam {
+	my ($self, $form, $a_pkey) = @_;
+	my $ROBJ = $self->{ROBJ};
+	my $DB   = $self->{DB};
+	my $auth = $ROBJ->{Auth};
+	my $blog = $self->{blog};
+	my %s = map { $_ => ($blog->{$_} eq '' ? $COM_SPAM_DEFAULT{$_} : int($blog->{$_})) } keys(%COM_SPAM_DEFAULT);
+
+	# 文字の数で数えるためutf8の文字列にする。改行はLFにそろえ、前後の空白を除く
+	my ($name, $text, $url) = ($form->{name}, $form->{comment_txt}, $form->{url});
+	foreach($name, $text, $url) {
+		utf8::decode($_);
+		$_ =~ s/\r\n?/\n/g;
+		$_ =~ s/^\s+|\s+$//g;
+	}
+
+	#-----------------------------------------------------------------------
+	# はじくもの
+	#-----------------------------------------------------------------------
+	if ($form->{website} ne '') { return 'honeypot'; }
+	if (! $auth->{ok}) {
+		# ログインできる人はボットではないので、トークンは確かめない
+		if (! $self->check_comment_token($form->{secure_id}, $a_pkey)) { return 'token'; }
+
+		my $ip = $ENV{REMOTE_ADDR};
+		if ($self->match_ip_rules($ip, $blog->{com_block_ips})) { return 'blocked_ip'; }
+
+		if ($s{com_rate_count}) {
+			my $coms = $DB->select("$self->{blogid}_com", {
+				match => { ip => $ip },
+				min   => { tm => $ROBJ->{TM} - $s{com_rate_min}*60 },
+				cols  => ['pkey']
+			});
+			if ($s{com_rate_count} <= @$coms) { return 'rate_limit'; }
+		}
+	}
+
+	#-----------------------------------------------------------------------
+	# 理由を書いて返すもの
+	#-----------------------------------------------------------------------
+	if (! $auth->{ok}) {
+		if ($name eq '') {
+			$ROBJ->form_error('name', 'name is empty');
+		} elsif ($s{com_name_max} < length($name)) {
+			$ROBJ->form_error('name', 'Name must be %d characters or less', $s{com_name_max});
+		} elsif ($self->is_registered_user_name($name)) {
+			$ROBJ->form_error('name', 'This name is used by a registered user. Please use another name');
+		} elsif ($self->is_admin_like_name($name)) {
+			$ROBJ->form_error('name', 'This name looks like an administrator. Please use another name');
+		}
+	}
+	if ($text eq '') {
+		$ROBJ->form_error('comment_txt', 'comment text is empty');
+	} else {
+		my $letters = () = $text =~ /[\p{L}\p{N}]/g;
+		if (! $auth->{ok} && $letters < $s{com_body_min}) {
+			$ROBJ->form_error('comment_txt', 'Comment text must be at least %d characters (spaces and symbols are not counted)', $s{com_body_min});
+		}
+		if ($s{com_body_max} < length($text)) {
+			$ROBJ->form_error('comment_txt', 'Comment text must be %d characters or less', $s{com_body_max});
+		}
+		if ($s{com_body_lines} < 1 + ($text =~ tr/\n//)) {
+			$ROBJ->form_error('comment_txt', 'Comment text must be %d lines or less', $s{com_body_lines});
+		}
+	}
+	if ($ROBJ->form_error()) { return; }
+
+	#-----------------------------------------------------------------------
+	# 承認待ちにするもの
+	#-----------------------------------------------------------------------
+	if ($auth->{ok}) { return; }
+	my @hold;
+	if ($s{com_hold_url} && ("$name\n$text" =~ m{h?ttps?://}i || $url ne '')) {
+		push(@hold, 'url');
+	}
+	my $folded = $self->fold_comment_text("$name\n$text");
+	foreach(split(/\n/, $blog->{com_ng_words})) {
+		my $word = $self->fold_comment_text( $ROBJ->tag_unescape($_) );
+		if ($word ne '' && 0 <= index($folded, $word)) { push(@hold, 'ng_word'); last; }
+	}
+	if ($s{com_require_ja} && $text !~ /[\p{Hiragana}\p{Katakana}\p{Han}]/) {
+		push(@hold, 'not_japanese');
+	}
+	return (undef, @hold ? join(',', @hold) : undef);
+}
+
+#-------------------------------------------------------------------------------
+# ●登録ユーザーの名前か
+#-------------------------------------------------------------------------------
+# 全角と半角、大文字と小文字、空白の違いは無視して比べる（fold_comment_text）。
+# IDとは比べない。なりすましで困るのは表に出る名前のほうで、IDと比べて理由を出すと、
+# その文字列がログインのIDだと分かってしまうため
+sub is_registered_user_name {
+	my ($self, $name) = @_;
+	my $auth   = $self->{ROBJ}->{Auth};
+	my $folded = $self->fold_comment_text($name);
+	my $users  = $auth->{DB}->select_match($auth->{table}, '*cols', ['name']);
+	foreach(@$users) {
+		if ($folded eq $self->fold_comment_text($_->{name})) { return 1; }
+	}
+	return 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●管理者を名乗るような名前か
+#-------------------------------------------------------------------------------
+# 記号と空白を除いて比べる。英語は名前全体が一致するときだけ（後ろの数字は無視する。
+# "badminton"などをはじかないため）、日本語は名前に含まれるとき（「管理人です」などもはじくため）
+my @ADMIN_LIKE_NAMES = qw(admin administrator administrater sysadmin sysop root webmaster moderator owner);
+my @ADMIN_LIKE_WORDS = qw(管理人 管理者 運営);
+sub is_admin_like_name {
+	my ($self, $name) = @_;
+	my $x = $self->fold_comment_text($name);
+	$x =~ s/[^\p{L}\p{N}]//g;
+	my $en = $x;
+	$en =~ s/\d+$//;
+	foreach(@ADMIN_LIKE_NAMES) {
+		if ($en eq $_) { return 1; }
+	}
+	foreach(@ADMIN_LIKE_WORDS) {
+		my $w = $_;
+		utf8::decode($w);
+		if (0 <= index($x, $w)) { return 1; }
+	}
+	return 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●コメントフォームのトークンを確かめる（作るのはmake_comment_token）
+#-------------------------------------------------------------------------------
+sub check_comment_token {
+	my ($self, $token, $a_pkey) = @_;
+	my ($ver, $pkey, $tm, $sig) = split(/\./, $token, 4);
+	if ($ver ne 'v1' || $pkey ne int($a_pkey) || $tm !~ /^\d+$/) { return 0; }
+	if ($sig ne $self->sign_comment_token("v1.$pkey.$tm")) { return 0; }
+
+	my $age = $self->{ROBJ}->{TM} - $tm;
+	return ($COM_TOKEN_MIN_AGE <= $age && $age <= $COM_TOKEN_MAX_AGE) ? 1 : 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●比べるための形にする
+#-------------------------------------------------------------------------------
+# 全角と半角をそろえ（NFKC）、小文字にし、空白を除く
+sub fold_comment_text {
+	my ($self, $x) = @_;
+	require Unicode::Normalize;
+	if (! utf8::is_utf8($x)) { utf8::decode($x); }
+	$x = lc( Unicode::Normalize::NFKC($x) );
+	$x =~ s/\s+//g;
+	return $x;
+}
+
+#-------------------------------------------------------------------------------
+# ●IPアドレスの規則
+#-------------------------------------------------------------------------------
+#	192.0.2.10 / 2001:db8::1	そのアドレスだけ
+#	192.0.2.0/24 / 2001:db8::/32	CIDR
+#	192.0.2. / 2001:db8:		前方一致（末尾が.か:のとき）
+#
+# $rulesは1行に1つ。どれかに当たれば真
+sub match_ip_rules {
+	my ($self, $ip, $rules) = @_;
+	foreach(split(/\n/, $rules)) {
+		my $r = $self->parse_ip_rule($_);
+		if (!$r) { next; }
+		if ($r->{prefix}) {
+			if (index(lc($ip), lc($r->{prefix})) == 0) { return 1; }
+			next;
+		}
+		my $packed = &pack_ip($ip);
+		if (!$packed || length($packed) != length($r->{net})) { next; }
+
+		my $bytes = int($r->{bits} / 8);
+		if (substr($packed, 0, $bytes) ne substr($r->{net}, 0, $bytes)) { next; }
+		my $rest = $r->{bits} % 8;
+		if (!$rest) { return 1; }
+		my $mask = (0xff << (8 - $rest)) & 0xff;
+		if ((ord(substr($packed, $bytes, 1)) & $mask) == (ord(substr($r->{net}, $bytes, 1)) & $mask)) { return 1; }
+	}
+	return 0;
+}
+# 書き方が正しくなければundef
+sub parse_ip_rule {
+	my ($self, $rule) = @_;
+	if ($rule =~ m|^([0-9A-Fa-f:\.]+)/(\d{1,3})$|) {
+		my $bits = $2;
+		my $net  = &pack_ip($1);
+		if (!$net || length($net)*8 < $bits) { return; }
+		return { net => $net, bits => $bits };
+	}
+	if ($rule =~ /^[0-9A-Fa-f:\.]+[\.:]$/ && $rule =~ /[0-9A-Fa-f]/) {
+		return { prefix => $rule };
+	}
+	my $net = &pack_ip($rule);
+	return $net && { net => $net, bits => length($net)*8 };
+}
+sub pack_ip {
+	my $ip = shift;
+	require Socket;
+	return Socket::inet_pton($ip =~ /:/ ? Socket::AF_INET6() : Socket::AF_INET(), $ip);
+}
+
+#-------------------------------------------------------------------------------
+# ●スパム対策の設定を整える（ブログの設定の保存時）
+#-------------------------------------------------------------------------------
+# 1行に1つの設定の、前後の空白と空行を除く。IPアドレスの書き方が正しくなければform_error
+sub normalize_comment_spam_setting {
+	my ($self, $h) = @_;
+	my $ROBJ = $self->{ROBJ};
+	foreach my $key (qw(com_ng_words com_block_ips)) {
+		my @lines = split(/\r?\n/, $h->{$key});
+		foreach(@lines) { $_ =~ s/^\s+|\s+$//g; }
+		$h->{$key} = join("\n", grep { $_ ne '' } @lines);
+	}
+	foreach(split(/\n/, $h->{com_block_ips})) {
+		if ($self->parse_ip_rule($_)) { next; }
+		$ROBJ->form_error('com_block_ips', "Invalid IP address rule '%s'", $_);
+	}
 }
 
 #-------------------------------------------------------------------------------
@@ -2011,93 +2259,6 @@ sub update_lock_file {
 
 	my @lines = map { "$_->{id}\t$_->{sid}\t$_->{tm}\n" } @$ary;
 	return $ROBJ->fedit_writelines($fh, \@lines);
-}
-
-################################################################################
-# ■スマホメニュー再生成
-################################################################################
-#-------------------------------------------------------------------------------
-# ●スマホメニューの生成
-#-------------------------------------------------------------------------------
-sub generate_spmenu {
-	my $self = shift;
-	my $blog  = $self->{blog};
-
-	my $ary = $self->load_spmenu_info();
-	if (! @$ary) {
-		my $info = $blog->{spmenu_info_all};
-		$ary = $self->load_spmenu_info( $info );
-	}
-
-	# 要素がある
-	my $out = "<ul>\n";
-	foreach(@$ary) {
-		my $html  = $blog->{"p:$_->{name}:html"};
-		my $h = $self->parse_html_for_spmenu($html);
-		my $title = $h->{title} || $_->{title};
-		my $url   = $h->{url} || '#';
-		$out .= "<li><a href=\"$url\">$title</a>\n$h->{html}\n</li>\n";
-	}
-	$out .= "</ul>\n";
-	if ($#$ary != 0) {
-		my $title = $blog->{spmenu_title} || 'menu';
-		if (!@$ary) { $title = '&ensp;'; }
-
-		$out = "<ul><li><a href=\"#\">$title</a>\n$out</li></ul>\n";
-	}
-	$self->update_cur_blogset('spmenu', $out);
-	return 0;
-}
-
-#-------------------------------------------------------------------------------
-# ●保存してあるスマホメニュー情報を分解
-#-------------------------------------------------------------------------------
-sub load_spmenu_info {
-	my $self = shift;
-	my $blog = $self->{blog};
-	my $info = shift || $blog->{spmenu_info};
-
-	my @ary;
-	foreach(split("\n", $info)) {
-		chomp($_);
-		my ($name,$title) = split(/=/, $_, 2);
-		push(@ary, {
-			name  => $name,
-			title => $title
-		});
-	}
-	return \@ary;
-}
-
-#-------------------------------------------------------------------------------
-# ●メニュー用に要素を加工
-#-------------------------------------------------------------------------------
-sub parse_html_for_spmenu {
-	my $self = shift;
-	my $html = shift;
-	my $ROBJ = $self->{ROBJ};
-
-	my %h;
-	my $title;
-	$html =~ s|<div\s*class="\s*hatena-moduletitle\s*">\s*(.*?)\s*</div>|$title=$1,''|e;
-	if ($title =~ /<a.*? href\s*=\s*"([^"]+)"/) {
-		$h{url} = $1;
-	}
-	$ROBJ->tag_delete($title);
-
-	my $escaper = $self->load_tag_escaper_force( 'spmenu' );
-	$title = $escaper->escape( $title );
-	$html  = $escaper->escape( $html  );
-
-	$html =~ s!</a>(.*?)(</li>|\n?\s*<ul>)!$1</a>$2!ig;
-	$html =~ s/^[\s\n\r]+//;
-	$html =~ s/[\s\n\r]+$//;
-	if ($html !~ m|^<ul>|) { return; }
-	if ($html !~ m|</ul>$|) { return; }
-
-	$h{html}  = $html;
-	$h{title} = $title;
-	return \%h;
 }
 
 ################################################################################

@@ -105,12 +105,12 @@ sub image {
 			last;
 		}
 	}
-	if ($caption) {
+	if (defined $caption) {		# 1番目（0）の引数がキャプションのこともある
 		my $cap = substr(join(':', splice(@$ary,$caption)),1);
 		$caption = "<figcaption>$cap</figcaption>";
 	}
 
-	# 属性値。title は alt と同じく、残りの引数をすべてつないだもの（代替テキストに : を含められる）
+	# 属性値。titleはaltと同じく、残りの引数をすべてつないだもの（代替テキストに:を含められる）
 	my @rest = @$ary;
 	while(@rest && $rest[0] =~ /^(?:title|class|target)=/) { shift(@rest); }
 	my $name = join(':', @rest);
@@ -119,7 +119,7 @@ sub image {
 	$tag2{title} = $name;
 	my $attr = $pobj->make_attr($ary, \%tag2, exists($tags->{"$tag_name#ext"}) ? '' : 'image');
 	   $name = $pobj->make_name($ary, $name);
-	# 代替テキストが無ければ title も空にする（タグ名を出さない）
+	# 代替テキストが無ければtitleも空にする（タグ名を出さない）
 	if ($name eq '') { $attr =~ s/title="[^"]*"/title=""/; }
 
 	# ファイル名と$nameが同じ場合、それは初期値で無価値なものなので、altやtitleを空文字にする

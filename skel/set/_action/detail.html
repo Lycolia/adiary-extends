@@ -30,6 +30,51 @@
 	defer_com:min = 0
 	defer_com:max = 2
 
+	com_hold_url   = flag
+	com_require_ja = flag
+
+	com_rate_count = 連投を制限する回数
+	com_rate_count:type = int
+	com_rate_count:default = 3
+	com_rate_count:min = 0
+	com_rate_count:max = 100
+
+	com_rate_min = 連投を数える期間
+	com_rate_min:type = int
+	com_rate_min:default = 10
+	com_rate_min:min = 1
+	com_rate_min:max = 1440
+
+	com_name_max = 名前の文字数の上限
+	com_name_max:type = int
+	com_name_max:default = 32
+	com_name_max:min = 1
+	com_name_max:max = 200
+
+	com_body_min = 本文の文字数の下限
+	com_body_min:type = int
+	com_body_min:default = 5
+	com_body_min:min = 0
+	com_body_min:max = 1000
+
+	com_body_max = 本文の文字数の上限
+	com_body_max:type = int
+	com_body_max:default = 3000
+	com_body_max:min = 1
+	com_body_max:max = 100000
+
+	com_body_lines = 本文の行数の上限
+	com_body_lines:type = int
+	com_body_lines:default = 100
+	com_body_lines:min = 1
+	com_body_lines:max = 10000
+
+	com_ng_words = NGワード
+	com_ng_words:filter0 = tag
+
+	com_block_ips = 拒否するIPアドレス
+	com_block_ips:filter0 = tag
+
 	rss_items_int = RSSの配信件数
 	rss_items_int:min =  0
 	rss_items_int:max = 30
@@ -49,12 +94,6 @@
 	desc_len:min  =  20
 	desc_len:max  = 200
 
-	fb_admins = Facebook admins
-	fb_admins:filter0 = reg_del:[^\w]
-
-	fb_app_id = Facebook app_id
-	fb_app_id:filter0 = reg_del:[^\w]
-
 	tw_owner_id = Twitter ID
 	tw_owner_id:filter0 = reg_del:[^\w]
 
@@ -65,6 +104,10 @@
 
 <$end>
 <$ifset(h.tw_owner_id, h.tw_owner_id, '@' . h.tw_owner_id)>
+<$v.normalize_comment_spam_setting(h)>
+<$ifexec(!form_error() && h.com_body_max < h.com_body_min, begin)>
+	<$form_error('com_body_min', '本文の文字数の下限は、上限以下にしてください')>
+<$end>
 
 <@> ファイル無効化
 <$v.void_plugin_images(h, Form)>

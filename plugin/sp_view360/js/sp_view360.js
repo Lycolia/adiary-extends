@@ -26,14 +26,10 @@ function sp_view360(){
 
 // 初期化
 	me.init = function(){
-		// 360度画像の要素を探す
-		var x = $("a.view360 img");
-		var y = $("a:not(.view360) img").filter(function(idx){
-			var file = this.getAttribute('src');
-			return file && file.match(/[-_]360\./);
-		});
-		x.each(me.make);
-		y.each(me.make);
+		// 360度画像の要素を探す。[image:360:…]の記法（tag-image-360）か、view360のクラスを付けたリンクの画像
+		// ※以前はファイル名の末尾が「-360」「_360」の画像も対象にしていたが、
+		//   貼り付けた画像の名前（時刻のミリ秒が360）とぶつかるのでやめた
+		$("a.tag-image-360 img, a.view360 img").each(me.make);
 
 		// ドキュメントのマウスイベントに登録
 		$(document).on("mousemove", me.onMouseMove);

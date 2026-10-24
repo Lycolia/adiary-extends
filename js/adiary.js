@@ -51,14 +51,6 @@ $(function(){
 		this.load_script('https://www.googletagmanager.com/gtag/js?id=' + data.GA4_ID);
 	}
 
-	// Google Analytics - UA (2023/07 obsolute)
-	if (data.GA_ID) {
-		var ga=function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-		ga('create', data.GA_ID, 'auto');
-		ga('send', 'pageview');
-		this.load_script('https://www.google-analytics.com/analytics.js');
-	}
-
 	// load message
 	this.load_msg('[data-secure].adiary-msgs');
 
@@ -491,11 +483,10 @@ $$.init( function(){
 ////////////////////////////////////////////////////////////////////////////////
 //●セキュリティコードの設定
 ////////////////////////////////////////////////////////////////////////////////
+// コメントのスパム対策。決まりはdocs/コメントのスパム対策.mdの「投稿ボタンが押せるようになるまで」
 $$.init( function(){
 	const $form = $('#comment-form');
 	if (!$form.length) return;
-	const $csrf = $form.find('[name="csrf_check_key"]');
-	if ($csrf.length) return;		// login中は無用
 
 	let   pkey = $('#comment-form-apkey').val() || '';
 	const ary  = ($form.data('secure') || '').split(',');
@@ -506,6 +497,12 @@ $$.init( function(){
 	for(var i=0; i<ary.length-1; i++) {
 		if (!ary[i].match(/^\d+$/)) return;
 		sid += String.fromCharCode( ary[i] ^ pkey );
+	}
+
+	// 記事を編集できる人（ブログ管理者と編集者）は待たせない（data-no-wait）
+	if ($form.data('no-wait')) {
+		$('#comment-form-sid').val(sid);
+		return;
 	}
 
 	// 投稿ボタンを disable に
@@ -616,66 +613,29 @@ $$.load_contents_list = function(id) {
 ////////////////////////////////////////////////////////////////////////////////
 //●ソーシャルボタンの加工
 ////////////////////////////////////////////////////////////////////////////////
+// はてなブックマークの件数を読む（ほかのサービスは件数を出さない）
 $$.init( function(){
-  $('.social-button').each(function(idx,dom) {
-	var obj = $(dom);
-	var url_orig = obj.data('url') || '';
-	if (0<url_orig || !url_orig.match(/^https?:\/\//i)) return;
+  $('.social-button.hatena-share').each(function(idx,dom) {
+	const obj = $(dom);
+	const url_orig = obj.data('url') || '';
+	if (!url_orig.match(/^https?:\/\//i)) return;
 
-	var url = encodeURIComponent( url_orig );
-	var share = obj.children('a.share');
-	var count = obj.children('a.count');
+	// data-urlはencode_uricom済みなので、一度戻してから符号化する
+	let url;
+	try { url = encodeURIComponent( decodeURIComponent(url_orig) ); }
+	catch(e) { url = encodeURIComponent( url_orig ); }
 
-	var share_link = share.attr('href');
-	var count_link = count.attr('href');
-	if (obj.hasClass('twitter-share')) {
-		share_link += url;
-		count_link += url_orig.replace(/^https?:\/\/(?:www\.)?/i, '').replace(/^www\./i, '');
-	} else {
-		share_link += url;
-		count_link += url;
-	}
-	share.attr('href', share_link);
-	count.attr('href', count_link);
-
-	//////////////////////////////////////////////////////////////
-	// カウンタ値のロード
-	//////////////////////////////////////////////////////////////
+	const count = obj.children('a.count');
 	count.text('-');
-	function load_and_set_counter(obj, url, key) {
-		$.ajax({
-			url: url,
-			dataType: "jsonp",
-			success: function(c) {
-				if (key && typeof(c) == 'object') c = c[key];
-				c = c || 0;
-				obj.text(c);
-			}
-		})
-	}
-
-	// 値のロード
-	if (obj.hasClass('twitter-share'))
-		// return load_and_set_counter(count, '//urls.api.twitter.com/1/urls/count.json?url=' + url, 'count');
-		return;
-
-	if (obj.hasClass('facebook-share'))
-		return load_and_set_counter(count, '//graph.facebook.com/?id=' + url, 'shares');
-
-	if (obj.hasClass('hatena-bookmark'))
-		return load_and_set_counter(count, 'https://b.hatena.ne.jp/entry.count?url=' + url);	// for SSL
-
-	if (obj.hasClass('pocket-bookmark')) {
-		// Deleted. Because "query.yahooapis.com" is dead
-		return count.hide();
-	}
+	$.ajax({
+		url: 'https://bookmark.hatenaapis.com/count/entry?url=' + url,
+		dataType: 'jsonp',
+		success: function(c) {
+			count.text( parseInt(c) || 0 );
+		}
+	});
   });
 });
-
-////////////////////////////////////////////////////////////////////////////////
-//●twitterウィジェットのデザイン変更スクリプト
-////////////////////////////////////////////////////////////////////////////////
-$$.twitter_css_fix = function(){}
 
 ////////////////////////////////////////////////////////////////////////////////
 //●月別過去ログリストのリロード
@@ -753,8 +713,7 @@ $$.session = function(btn, opt){
 
 	// セッション初期化
 	$.post( load_session, {
-			action: 'etc/init_session',
-			csrf_check_key: opt.csrf_key || $('#csrf-key').val()
+			action: 'etc/init_session'
 		}, function(data) {
 			var reg = data.match(/snum=(\d+)/);
 			if (reg) {

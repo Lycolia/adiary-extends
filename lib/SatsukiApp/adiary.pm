@@ -8,9 +8,9 @@ use Satsuki::AutoLoader;
 use Fcntl;
 #-------------------------------------------------------------------------------
 # データ管理上数値しか解釈できないので文字列にしてはならない
-our $VERSION    = 4.08;
+our $VERSION    = 4.09;
 our $OUTVERSION = "$VERSION";
-our $DATA_VERSION = 4.08;
+our $DATA_VERSION = 4.09;
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -29,14 +29,6 @@ $SysEvt{COMMENT_STATE_CHANGE} = [qw(
 )];
 $SysEvt{ARTCOM_STATE_CHANGE} = [qw(
 	generate_rss
-)];
-$SysEvt{'ARTCOM_STATE_CHANGE#after'} = [qw(
-	generate_spmenu
-)];
-$SysEvt{EDIT_DESIGN} = [qw(
-	save_spmenu_all_items
-	check_spmenu_items
-	generate_spmenu
 )];
 
 ################################################################################
@@ -229,8 +221,6 @@ sub secure_http_host {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 
-	if ($self->{subdomain_mode}) { return; }
-
 	my $srv  = $ROBJ->{ServerURL};
 	my $save = $self->{sys}->{ServerURL};
 
@@ -273,28 +263,6 @@ sub blogid_and_pinfo {
 		# 自分のブログ
 		$self->{myself3} = ($authid eq $default) ? $myself : "$myself2$authid/";
 
-	} elsif ($self->{subdomain_mode}) {
-		#-------------------------------------------
-		# サブドメインモード
-		#-------------------------------------------
-		my $host_name = $ENV{SERVER_NAME};
-		$host_name =~ s/[^\w\.\-]//g;
-		my $domain = $self->{subdomain_mode};
-		if (! $self->{subdomain_secure}) {	# Cookieを全ドメインで共通化
-			$ROBJ->{CookieDomain} = $domain;
-		}
-		$self->{subdomain_proto} ||= 'http://';
-
-		if ((my $x = index($host_name, ".$domain")) > 0) {
-			$blogid = substr($host_name, 0, $x);
-		} else {
-			$blogid = shift(@pinfo);
-			$blogid =~ s/\W//g;
-			if ($blogid ne '') {
-				$ROBJ->redirect("//$blogid.$domain/" . join('/', @pinfo));
-			}
-		}
-		$self->{myself3} = "//$authid.$domain/";	# 自分のブログ
 	} else {
 		#-------------------------------------------
 		# マルチユーザーモード
@@ -348,6 +316,8 @@ sub read_query_form {
 	# 特殊Queryの処理
 	foreach(qw(_sphone _theme)) {
 		if (!$q->{$_}) { next; }
+		# テーマ指定は、デザイン編集のテーマのプレビュー用。ブログの管理者のみ
+		if ($_ eq '_theme' && !$self->{blog_admin}) { delete $q->{$_}; next; }
 		my $v = $q->{$_};
 		$v =~ s|[^\w\-/]||g;
 
@@ -460,7 +430,8 @@ sub output_html {
 		$out = $ROBJ->call($frame_name, $out);
 	}
 
-	if (!$self->{output_stop}) {
+	# テンプレートの中でredirect()したときは、転送のページを出し終えているので出さない
+	if (!$self->{output_stop} && !$ROBJ->{Redirected}) {
 		$ROBJ->output($out);
 	}
 }
@@ -560,10 +531,7 @@ sub set_and_select_blog {
 	$self->{blog_dir}    = $self->blog_dir();
 	$self->{blogpub_dir} = $self->blogpub_dir();
 	# myself(通常用,QUERY用)、myself2(PATH_INFO用) の設定
-	if ($self->{subdomain_mode}) {
-		$self->{myself}  = '/';
-		$self->{myself2} = '/';
-	} elsif ($blogid ne $self->{sys}->{default_blogid}) {
+	if ($blogid ne $self->{sys}->{default_blogid}) {
 		$self->{myself}  = $ROBJ->{myself2} . "$blogid/";
 		$self->{myself2} = $ROBJ->{myself2} . "$blogid/";
 	}
@@ -665,7 +633,7 @@ sub system_mode {
 	if ($title ne '') { $self->{title} = $title; }
 
 	# テーマは公開画面専用。管理画面は常に標準テーマを使う
-	# ※テーマの表示テストなど、公開画面の部品を見せるページは $keep_theme でテーマを残す
+	# ※テーマの表示テストなど、公開画面の部品を見せるページは$keep_themeでテーマを残す
 	if (!$keep_theme) {
 		$self->load_theme( $self->{default_theme} );
 		$self->check_sphone_after_theme_change();
@@ -1318,8 +1286,32 @@ sub load_comments {
 
 	# ロード
 	my $comments = $DB->select("${blogid}_com", \%h);
+	$self->set_comment_by_admin($comments);
 	if (defined $loads) {
 		return [ reverse(@$comments) ];
+	}
+	return $comments;
+}
+
+#-------------------------------------------------------------------------------
+# ●管理者が書いたコメントに印を付ける
+#-------------------------------------------------------------------------------
+# ブログの管理者かシステムの管理者が書いたコメントに by_admin=1 を付ける
+#
+sub set_comment_by_admin {
+	my $self = shift;
+	my $comments = shift;
+	my $auth = $self->{ROBJ}->{Auth};
+
+	if (!$self->{_admin_ids}) {
+		my $admins = $auth->{DB}->select_match($auth->{table}, 'isadmin', 1, '*cols', ['id']);
+		$self->{_admin_ids} = { map { $_->{id} => 1 } @$admins };
+	}
+	my $ids = $self->{_admin_ids};
+	foreach(@$comments) {
+		my $id = $_->{id};
+		if ($id eq '') { next; }
+		$_->{by_admin} = ($ids->{$id} || $self->users_check($self->{blog}->{admin_users}, $id)) ? 1 : 0;
 	}
 	return $comments;
 }
@@ -1676,20 +1668,25 @@ sub load_contents_postprocessor {
 # security id system for post of no login
 ################################################################################
 #-------------------------------------------------------------------------------
-# ●特殊IDルーチン
+# ●コメントフォームのトークン
 #-------------------------------------------------------------------------------
-sub make_secure_id {
-	my $self = shift;
-	my $base = shift;
-	my $old  = shift;
-	my $ROBJ = $self->{ROBJ};
-
-	my $stime = $ROBJ->{Secure_time} || 3600;
-	my $code  = int($ROBJ->{TM} / $stime) - int($old);
-
-	my $id = $ROBJ->crypt_by_string_nosalt($self->{sys}->{Secret_word}, $base . $code);
-	$id =~ tr|/|-|;
-	return substr($id, 0, 32);
+# 形：v1.記事番号.発行した時刻.署名（確かめるのはcheck_comment_token）
+sub make_comment_token {
+	my ($self, $a_pkey, $tm) = @_;
+	my $payload = 'v1.' . int($a_pkey) . '.' . ($tm || $self->{ROBJ}->{TM});
+	return $payload . '.' . $self->sign_comment_token($payload);
+}
+# 署名：ブログIDと$payloadをSecret_wordでHMAC-SHA256にし、base64urlにしたもの
+sub sign_comment_token {
+	my ($self, $payload) = @_;
+	my $hmac = eval { require Digest::SHA; \&Digest::SHA::hmac_sha256_base64 };
+	if (!$hmac) {
+		require Digest::SHA::PurePerl;
+		$hmac = \&Digest::SHA::PurePerl::hmac_sha256_base64;
+	}
+	my $sig = $hmac->("$self->{blogid}.$payload", $self->{sys}->{Secret_word});
+	$sig =~ tr|+/|-_|;
+	return $sig;
 }
 
 ################################################################################
@@ -1724,10 +1721,6 @@ sub get_blog_path {
 	my ($self, $blogid) = @_;
 	my $ROBJ = $self->{ROBJ};
 	$blogid =~ s/[^\w\-]//g;
-	if ($self->{subdomain_mode}) {
-		my $url = $self->{subdomain_proto} . "$blogid\.$self->{subdomain_mode}";
-		return $ROBJ->{ServerURL} eq $url ? '/' : "$url/";
-	}
 	my $myself2 = $ROBJ->{myself2};
 	return ($blogid eq $self->{sys}->{default_blogid}) ? $myself2
 		: $myself2 . $blogid . '/';
@@ -1762,7 +1755,7 @@ sub load_theme {
 	$self->{template}   = $1;
 	$self->{theme_name} = $name;
 
-	# レスポンシブ対応テーマか？（README.txt のヘッダで判定）
+	# レスポンシブ対応テーマか？（README.txtのヘッダで判定）
 	$self->{responsive} = 0;
 	my $readme = "$dir$name/README.txt";
 	if (-r $readme) {

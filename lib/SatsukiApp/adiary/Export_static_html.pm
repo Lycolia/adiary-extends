@@ -26,7 +26,6 @@ sub export {
 	my ($self, $logs, $option) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $aobj = $option->{aobj};
-	$option->{sphinx} = 1;
 
 	#-------------------------------------------------------------
 	# セッション開始
@@ -207,7 +206,7 @@ sub export {
 	local($aobj->{blog}) = \%s;
 
 	if (!$option->{custom_css}) { $s{theme_custom}=0; }
-	if (!$option->{gaid}) { $s{gaid} = ''; }
+	if (!$option->{ga4id}) { $s{ga4id} = ''; }
 
 	$s{'p:deh_login:erase_login'} = 1;	# ログインを消す
 	$s{theme_custom}  = $s{theme_custom} ? "${static_theme_dir}custom.css" : '';

@@ -3,7 +3,6 @@ use strict;
 # adiary_6.pm (C)nabe@abk
 #-------------------------------------------------------------------------------
 # ・システムアップデート
-# ・Version2からの移行機能
 #-------------------------------------------------------------------------------
 use SatsukiApp::adiary ();
 use SatsukiApp::adiary_2 ();
@@ -46,7 +45,8 @@ my @update_versions = (
 	{ ver => 3.50, plugin=>1, func => 'sys_update_350' },
 	{ ver => 3.52, func => 'sys_update_352' },
 	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' },
-	{ ver => 4.08, info=>1, func => 'sys_update_408' }
+	{ ver => 4.08, info=>1, func => 'sys_update_408' },
+	{ ver => 4.09, plugin=>1, func => 'sys_update_409' }
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -274,7 +274,7 @@ sub sys_update_352 {
 #-------------------------------------------------------------------------------
 # 記事の原文を書き換える（書き換えた後、全記事を再構築する）
 # ・画像の代替テキストや添付ファイルの名前がファイル名と同じものを落とす。代替テキストの無い画像は末尾に : を付ける
-# ・見出しに、今の見出しのIDを識別子 [#id] として書き足す（Markdownの記事）
+# ・見出しに、今の見出しのIDを識別子[#id]として書き足す（Markdownの記事）
 sub sys_update_353 {
 	my $self = shift;
 	$self->do_all_blogs('update_art_text_353');
@@ -330,7 +330,75 @@ sub sys_update_408 {
 }
 
 #-------------------------------------------------------------------------------
-# ●見出しに、今の見出しのIDを識別子 [#id] として書き足す（Ver3.53）
+# ●システムアップデート for Ver4.09
+#-------------------------------------------------------------------------------
+# 履歴を残す間隔（rev_cycle）の単位を時間から分に変える
+# 記事とゴミ箱のテーブルから、使われていなかったrevisionのカラムを消す
+# ※コメントフォームのトークンを変えたため、プラグインの再インストールでデザインのスケルトンも作り直す
+sub sys_update_409 {
+	my $self  = shift;
+	my $blogs = shift;
+	my $DB    = $self->{DB};
+	my $ROBJ  = $self->{ROBJ};
+	foreach(@$blogs) {
+		# 定義から外した後に作ったブログにはカラムが無く、エラーになるので出さない
+		my $noerr = $DB->set_noerror(1);
+		$DB->drop_column("${_}_art",   'revision');
+		$DB->drop_column("${_}_trash", 'revision');
+		$DB->set_noerror($noerr);
+
+		my $blog = $self->load_blogset($_);
+		if ($blog->{rev_cycle} eq '') { next; }
+		$self->update_blogset($blog, 'rev_cycle', int($blog->{rev_cycle}) * 60);
+	}
+
+	# 削除したプラグインを、入れたままのブログから外す
+	$self->do_all_blogs('uninstall_removed_plugins_409');
+
+	# デフォルトのブログ設定値
+	my $file = $self->{my_default_setting_file};
+	if (!-e $file) { return; }
+	my $def = $ROBJ->fread_hash($file);
+	if ($def->{rev_cycle} eq '') { return; }
+	$def->{rev_cycle} = int($def->{rev_cycle}) * 60;
+	$ROBJ->fwrite_hash($file, $def);
+}
+
+# プラグインの管理画面での保存（save_use_plugins）は、plugin/に今あるプラグインしか見ないので、
+# フォルダを消したプラグインは外せない。ブログに写したファイルとイベントが残り、動き続けてしまう。
+sub uninstall_removed_plugins_409 {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $pd   = $self->load_plugins_dat();
+
+	my $flag;
+	# twitter_post : Twitter API v1.1が使えなくなったため削除
+	# amp        : Googleの検索でAMPが有利でなくなり、手入れもされていないため削除
+	# des_twitter: Xのタイムラインの埋め込みが、ログインしていない人に表示されなくなったため削除
+	#              （デザインからは、デザインの作り直しで取り除く。reinstall_design_plugins）
+	foreach my $name (qw(twitter_post amp des_twitter)) {
+		# デザインモジュールは、複数置くと「名前,番号」の別名でも記録される
+		my @names = sort { length($b) <=> length($a) } grep { $pd->{$_} && /^\Q$name\E(?:,\d+)?$/ } keys(%$pd);
+		foreach my $n (@names) {
+			# 外すときのイベント（ampは記事のテーブルに足したカラムを、デザインモジュールはCSSを消す）。
+			# 処理はブログの側にあるので、プラグインのフォルダが無くても動く
+			$self->call_event("UNINSTALL:$n");
+
+			if ($self->plugin_uninstall($pd, { name => $n })) {
+				$ROBJ->message("[plugin:%s] Uninstall failed", $n);
+				next;
+			}
+			$flag = 1;
+		}
+	}
+	if (!$flag) { return; }
+
+	$ROBJ->fwrite_hash($self->{blog_dir} . 'plugins.dat', $pd);
+	$self->set_event_info($self->{blog}, $pd);
+}
+
+#-------------------------------------------------------------------------------
+# ●見出しに、今の見出しのIDを識別子[#id]として書き足す（Ver3.53）
 #-------------------------------------------------------------------------------
 # 見出しは行を見て探す（引用とリストとコードフェンスの中は見ない）。
 # 書き足す前と後で変換結果がまったく同じになる時だけ書き足し、違えば元の原文を返す。
@@ -352,7 +420,7 @@ sub freeze_heading_ids_353 {
 	my $blank;
 	my @lines = split(/\n/, $text, -1);
 	foreach(@lines) {
-		# 引用は空行まで続く（> の無い行も引用の中）。
+		# 引用は空行まで続く（>の無い行も引用の中）。
 		# リストは、空行の後に字下げの無い行が来るまで続く（字下げの無い行も、空行の前なら項目の続き）。
 		if ($_ =~ /^\s*$/) {
 			undef $quote;
@@ -363,7 +431,7 @@ sub freeze_heading_ids_353 {
 			elsif ($blank && /^\S/) { undef $list; }
 			undef $blank;
 		}
-		# 引用の > とリストの記号を除く
+		# 引用の>とリストの記号を除く
 		my $rest = $_;
 		$rest =~ s/^(?: ? ? ?>\s?|\s*(?:[\*\+\-]|\d+\.) +)*\s*//;
 		if (defined $fence) {
@@ -374,7 +442,7 @@ sub freeze_heading_ids_353 {
 			$fence = $1;
 			next;
 		}
-		if ($quote || $list) { next; }	# 引用とリストの中の # は見出しにならない
+		if ($quote || $list) { next; }	# 引用とリストの中の#は見出しにならない
 		if ($_ !~ /^#+\s+(.*?)$/) { next; }
 		my $title = $1;
 		my $id = $ids[$n++];
@@ -395,7 +463,7 @@ sub freeze_heading_ids_353 {
 # ●画像の代替テキストや添付ファイルの名前を整える
 #-------------------------------------------------------------------------------
 # ファイル名と同じ代替テキストや名前を落とす。画像は代替テキストを書きやすいよう、末尾に : を付ける。
-# [image:S:folder/:x.png:x.png] → [image:S:folder/:x.png:]（image:L も同じ）
+# [image:S:folder/:x.png:x.png] → [image:S:folder/:x.png:]（image:Lも同じ）
 # [image:S:folder/:x.png]       → [image:S:folder/:x.png:]
 # [file:mp4:folder/:x.mp4:x.mp4] → [file:mp4:folder/:x.mp4]
 # コードフェンスとコードスパンの中は書き換えない。
@@ -424,396 +492,12 @@ sub normalize_file_alt {
 			$out .= $t;
 			if (@parts) {
 				$out .= shift(@parts);	# コードスパン
-				shift(@parts);		# split の中の \2 の分
+				shift(@parts);		# splitの中の\2の分
 			}
 		}
 		$_ = $out;
 	}
 	return join("\n", @lines);
 }
-
-################################################################################
-# ■Version2 to 3 移行ルーチン
-################################################################################
-#-------------------------------------------------------------------------------
-# ●adiary.conf.cgiの解析
-#-------------------------------------------------------------------------------
-sub parse_adiary_conf_cgi {
-	my $self = shift;
-	my $file = shift;
-	my $ROBJ = $self->{ROBJ};
-
-	my $lines = $ROBJ->fread_lines( $file );
-	if (!@$lines) { return ; }
-
-	if ($file !~ m|^(.*?/)[^/]*$|) { return ; }
-	my $dir = $1;
-
-	my %h;
-	my %c;
-	foreach(@$lines) {
-		if ($_ =~ /^#/) { next; }
-		if ($_ =~ /<#\$/) { next; }
-		$_ =~ s/\r\n//g;
-		$_ =~ s/"/'/g;
-
-		# <$constant(public_dir) = 'public/'>
-		if ($_ =~ /<\$constant\((\w+)\)\s*=\s*'([^']*)'\s*>/) {
-			$c{$1} = $2;
-			next;
-		}
-
-		# const処理
-		$_ =~ s/<\@(\w+)>/$c{$1}/g;
-
-		# lang
-		if ($_ =~ /<\$load_language_file\s*\(.*(euc-jp|utf8)\.txt/) {
-			$h{lang} = $1;
-			next;
-		}
-
-		#<$DB = loadpm('DB_pseudo', "<@data_dir>db/")>
-		#<$DB = loadpm('DB_cache', 'DB_mysql', 'database=adiary', 'adiary', 'test', 1.connection_pool, 'ujis')>
-		if ($_ =~ /<\$DB\s*=\s*loadpm\((.*)\)\s*>\s*$/) {
-			my $db = $1;
-			$db =~ s/^\s*'DB_cache'\s*,\s*//;
-			$db =~ s/,\s*\d+(?:\.\w+)?\s*//;
-			$db =~ s/^\s*'DB_pseudo'\s*,\s*'([^']*)'/'DB_pseudo', '$dir$1'/;
-			$db =~ s/'\s*,\s*'/', '/g;
-			$h{db} = $db;
-			next;
-		}
-
-		# <$Auth=loadpm("Auth", "<@data_dir>auth/")>
-		if ($_ =~ /<\$Auth\s*=\s*loadpm\(\s*'Auth'\s*,\s*'([^']*)'\s*\)\s*>/) {
-			$h{auth_dir} = $dir . $1;
-			next;
-		}
-
-		# <$v.setting_dir = "<@data_dir>setting/">
-		if ($_ =~ /<\$v.setting_dir\s*=\s*'([^']*)'\s*>/) {
-			$h{setting_dir} = $dir . $1;
-			next;
-		}
-
-		# <$v.usertag_dir = "<@data_dir>parser_tag/">
-		if ($_ =~ /<\$v.usertag_dir\s*=\s*'([^']*)'\s*>/) {
-			$h{usertag_dir} = $dir . $1;
-			next;
-		}
-
-		# <$v.image_dir = "<@public_dir>image/">
-		if ($_ =~ /<\$v.image_dir\s*=\s*'([^']*)'\s*>/) {
-			$h{image_dir} = $dir . $1;
-			next;
-		}
-	}
-
-	my $lines = $ROBJ->fread_lines( $dir . 'uploader.conf.cgi' );
-	foreach(@$lines) {
-		$_ =~ s/"/'/g;
-		# <$v.image_dir = "public/image/">
-		if ($_ =~ /<\$v.image_dir\s*=\s*'([^']*)'\s*>/) {
-			$h{image_dir} = $dir . $1;
-			next;
-		}
-
-		# <$v.thumbnail_dir = '.thumbnail/'>
-		if ($_ =~ /<\$v.(?:upload_|)thumbnail_dir\s*=\s*'([^']*)'\s*>/) {
-			$h{thumbnail_dir} = $1;
-			next;
-		}
-	}
-	return \%h;
-}
-
-#-------------------------------------------------------------------------------
-# ●adiary.conf.cgiの解析
-#-------------------------------------------------------------------------------
-sub v2convert {
-	my $self = shift;
-	my $h    = shift;
-	my $ROBJ = $self->{ROBJ};
-	my $auth = $ROBJ->{Auth};
-
-	# sub routine -------------------------------------------------
-	my $from  = $h->{lang};
-	my $to    = $ROBJ->{SystemCode};
-	my $jcode = $ROBJ->load_codepm();
-	sub conv_code {
-		foreach(@_) {
-			$jcode->from_to(\$_, $from, $to);
-		}
-	}
-	sub conv_hash {
-		my $h = shift;
-		foreach(keys(%$h)) {
-			&conv_code( $h->{$_} );
-		}
-	}
-
-	#-------------------------------------------------------------
-	# ユーザーの移行
-	#-------------------------------------------------------------
-	if ($h->{conv_users}) {
-		my $lines = $ROBJ->fread_lines($h->{auth_dir} . '#userdb.txt.cgi');
-		&conv_code(@$lines);
-
-		foreach(@$lines) {
-			chomp($_);
-			my ($uid, $cpass, $isadmin, $name) = split(/\t/, $_);
-			my $r = $auth->user_add({
-				id => $uid,
-				crypted_pass => $cpass,
-				name => $name,
-				isadmin => $isadmin,
-				disable => ($cpass eq '*')
-			});
-			$ROBJ->notice("Add user : %s (ret=%d)", $uid, $r);
-		}
-	}
-
-	#-------------------------------------------------------------
-	# 旧DBへの接続
-	#-------------------------------------------------------------
-	my $DBv2;
-	{
-		my $db_load = $h->{db};
-		my @opt;
-		$db_load =~ s/(?:'(.*?)'|([^\s,]+))\s*(?:,|$)/
-			push(@opt, "$1$2")
-		/eg;
-
-		# MySQLの文字コード指定
-		if ($opt[0] =~ /DB_mysql/ && $opt[4]) {
-			$opt[4] = { Charset => $opt[4] };
-		}
-
-		# $opt[4]以降を無視
-		while($opt[4] ne '') { pop(@opt); }
-
-		if ($opt[0] eq 'DB_pseudo') { $opt[0] = 'DB_text'; }
-		$DBv2 = $ROBJ->loadpm(@opt);
-
-		$ROBJ->notice("Connect $opt[0]: " . ($DBv2 ? 'Success' : 'Failed!'));
-		if (!$DBv2) {
-			return -1;
-		}
-	}
-
-	#-------------------------------------------------------------
-	# ブログの移行
-	#-------------------------------------------------------------
-	my %themes;
-	{
-		my $ary = $self->load_themes('satsuki2');
-		foreach(@$ary) {
-			$themes{$_->{name}} = 'satsuki2/';
-		}
-		my $ary = $self->load_themes('satsuki2-pop');
-		foreach(@$ary) {
-			$themes{$_->{name}} = 'satsuki2-pop/';
-		}
-	}
-
-	my $blogs = $DBv2->select('_daybooklist');
-	foreach(@$blogs) {
-		my $id = $_->{id};
-		if ($id eq '') { next; }
-		$ROBJ->notice("---");
-
-		# ブログ作成
-		my $r = $self->blog_create($id);
-		if ($r) { next; }	# すでに存在する
-
-		# デフォルトデザインのロード
-		$ROBJ->{Message_stop} = 1;
-		$ROBJ->call('_sub/load_default_design', $id);
-		$ROBJ->{Message_stop} = 0;
-
-		# 設定のコピー
-		my $s = $ROBJ->fread_hash($h->{setting_dir} . $id . '.dat');
-		&conv_hash($s);
-		$self->save_blogset({
-			blog_name       => $s->{blog_name},
-			description_txt => $s->{description},
-			change_hour_int => $s->{change_hour_int},
-			enable          => $s->{enable},
-			private         =>($s->{enable_force} eq '0' ? 1 : 0),
-			com_ok          => $s->{allow_com},
-			com_ok_force    => $s->{allow_com_force},
-			hcom_ok         => $s->{allow_hcom},
-			hcom_ok_force   => $s->{allow_hcom_force},
-			ping            => $s->{update_ping},
-			wiki            => $s->{wiki},
-			parser          =>($self->{parsers}->{$s->{parser}} ? $s->{parser} : undef),
-			allow_com_users =>($s->{allow_com_user} eq 'users' ? $s->{allow_com_users} : $s->{allow_com_user}),
-			defer_com       => $s->{defer_com},
-			com_email       => $s->{allow_comment_email},
-			com_url         => $s->{allow_comment_url},
-			admin_users     => $s->{admin_users},
-			editors         => $s->{edit_users},
-			edit_by_author_only => $s->{edit_self_only},
-		#	section_anchor      => $s->{section_anchor},
-		#	subsection_anchor   => $s->{subsection_anchor},
-			gaid            => $s->{gaid},
-			asid            => $s->{asid},
-			load_items      => $s->{disp_diaries_int},
-			separate_blog   => $s->{contents_separate},
-			# 投稿日時、投稿者の表示
-			'p:dea_art-info:tmdate' => $s->{disp_write_date},
-			'p:dea_art-info:author' => $s->{disp_writer},
-			# ソーシャルアイコン
-			'p:dea_social-buttons:hatena_btn'  => $s->{disp_hatena_bicon},
-			'p:dea_social-buttons:twitter_btn' => $s->{disp_twitter_icon}
-		}, $id);
-		$ROBJ->notice("Blog create : %s : %s", $id, $s->{blog_name});
-
-		# ブログの選択
-		$self->set_and_select_blog($id);
-
-		# 対応テーマがあるときはそれを選択
-		my $templ = $s->{template};	# ex)nature
-		my $theme = $s->{theme};	# ex)sky
-		if ($theme eq 'css') {
-			$templ = $s->{base_template};
-			$theme = $s->{base_theme};
-		}
-		$theme =~ s/^satsuki_\w+/satsuki2/;
-		$theme =~ s/^hatena2-.*$/hatena2/;
-		if ($templ eq 'nature') {
-			$theme = 'nature-' . $theme;
-		}
-		if ($themes{$theme}) {
-			$self->save_theme({
-				theme => $themes{$theme} . $theme
-			});
-		}
-
-		# ユーザー定義タグ
-		{
-			my $utag  = $h->{usertag_dir} . $id . '.txt';
-			my $lines = $ROBJ->fread_lines( $utag );
-			if ($lines && @$lines) {
-				&conv_code(@$lines);
-				$self->save_usertag( $lines );
-			}
-		}
-
-		# ブログの記事とコメントの移行
-		my $DB = $self->{DB};
-		{
-			my %com;
-			my $coms = $DBv2->select("${id}_comment", {sort => 'pkey'});
-			foreach(@$coms) {
-				&conv_hash($_);
-				my $apkey = $_->{diary_pkey};
-				my $a = $com{$apkey} ||= [];
-				$_->{text} =~ s/<br>/\n/g;
-				push(@$a, $_);
-			}
-
-			my %tb;
-			if ($h->{import_tb}) {
-				my $tbs = $DBv2->select("${id}_tb", {
-					sort => 'pkey',
-					flag => {internal => 0}
-				});
-				foreach(@$tbs) {
-					&conv_hash($_);
-					my $apkey = $_->{diary_pkey};
-					my $a = $tb{$apkey} ||= [];
-					push(@$a, $_);
-				}
-			}
-			my %opt;
-			$opt{save_pkey}     = 1;
-			$opt{save_com_pkey} = %tb ? 0 : 1;
-			$opt{tb_as_comment} = $h->{import_tb};
-			$opt{upnodes}       = [];
-
-			my $arts = $DBv2->select("${id}_diary", {sort => 'pkey'});
-			$DB->begin();
-			foreach(@$arts) {
-				my $pkey = $_->{pkey};
-				my $art = {
-					pkey 	=> $pkey,
-					enable  => $_->{enable},
-					year 	=> substr($_->{yyyymmdd}, 0, 4),
-					mon 	=> substr($_->{yyyymmdd}, 4, 2),
-					day 	=> substr($_->{yyyymmdd}, 6, 2),
-					tm 	=> $_->{tm},
-					tags 	=> $_->{category},
-					title 	=> $_->{title},
-					name 	=> $_->{name},
-					text 	=> $_->{_text},
-
-					com_ok 	=> $_->{allow_com},
-					hcom_ok	=> $_->{allow_hcom},
-
-					priority=> $_->{priority},
-					upnode 	=> $_->{upnode},
-					link_key=> $_->{link_key},
-
-					ip	=> $_->{ip},
-					host	=> $_->{host},
-					agent	=> $_->{agent}
-				};
-
-				my $parser = $_->{parser};
-				if ($self->{parsers}->{$parser}) {
-					$art->{parser} = $parser;
-				} else {
-					# パーサーなし
-					$art->{text} = $_->{text};
-				}
-
-				# 登録
-				&conv_hash($art);
-				$self->save_article($art, $com{$pkey}, $tb{$pkey}, \%opt);
-			}
-			# upnode対応処理
-			$self->import_build_tree($DB, $id, \%opt);
-
-			$DB->commit();
-			$ROBJ->notice("Import %d articles (find %d articles)", $opt{import_arts}, $opt{find_arts});
-
-			# イベント処理
-			if ($opt{import_arts}) {
-				$self->import_events( \%opt );
-			}
-		}
-
-		# 画像アルバムの移行
-		my $src_dir = $h->{image_dir} . $id . '/';
-		my $des_dir = $self->blogimg_dir();
-		my $thumb   = $h->{thumbnail_dir} || '.thumbnail/';
-
-		sub copy_dir {
-			my ($ROBJ, $src, $des) = @_;
-			$ROBJ->mkdir("$des");
-			my $files = $ROBJ->search_files( $src, {dir=>1, all=>1} );
-			my $c=0;
-			foreach(@$files) {
-				my $file = $src . $_;
-				&conv_code($_);
-				if (substr($file,-1) eq '/') {
-					if ($_ eq $thumb) { $_ = '.thumbnail/'; }
-					$c += &copy_dir($ROBJ, "$file", "$des$_");
-				} else {
-					$c += $ROBJ->_file_copy($file, "$des$_") ? 0 : 1;
-				}
-			}
-			return $c;
-		}
-		my $c = &copy_dir($ROBJ, $src_dir, $des_dir) >> 1;
-		if ($c) {
-			$ROBJ->notice("Copy %d images(files)", $c);
-		}
-	}
-	$self->set_and_select_blog_force('');
-	return 0;
-}
-
 
 1;

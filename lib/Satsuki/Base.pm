@@ -125,12 +125,17 @@ sub start_up {
 	}
 
 	# メインルーチンの実行
+	# ※Perlの側からredirect()などを呼ぶとdie("Break")で抜けてくるので、ここで受け止める。
+	#   受け止めないとfinish()が動かず、出力の後ろに500のエラーが付く
 	my $main = $self->{Main};
-	if (defined $main && $main->can('main')) {
-		$main->main();
-	} else {
-		$self->main();	# すぐ下のルーチン
-	}
+	eval {
+		if (defined $main && $main->can('main')) {
+			$main->main();
+		} else {
+			$self->main();	# すぐ下のルーチン
+		}
+	};
+	if ($@ && $@ !~ /^Break\b/) { die $@; }
 }
 
 #-------------------------------------------------------------------------------

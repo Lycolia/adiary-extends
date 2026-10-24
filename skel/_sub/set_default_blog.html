@@ -10,7 +10,7 @@
 <@> <$debug("old = <@old> / new = <@blogid>")>
 
 <@> デフォルトblogidの設定値が異なっていたら再構築
-<$ifexec(old ne blogid && !v.subdomain_mode, begin)>
+<$ifexec(old ne blogid, begin)>
 	<$bak = v.blogid>
 	<$ifexec(old ne '', begin)>
 		<$v.set_and_select_blog_force( old )>

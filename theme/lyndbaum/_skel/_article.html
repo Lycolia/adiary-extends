@@ -80,7 +80,7 @@
 		<@ifexec(x==3,      begin)><span class="write-date"><@t.year>/<@t.mon>/<@t.day></span><$end>
 		<@ifexec(x!=3 && x, begin)><span class="write-date"><@print_tmf('%Y/%m/%d %H:%M ', if(x==1, t.tm, t.update_tm))></span><$end>
 		<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
-		<@ifexec(ps.author, begin)><span class="author" title="<@t.id>"><@t.name></span><$end>
+		<@ifexec(ps.author, begin)><span class="author"><@t.name></span><$end>
 		<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
 	</div>
 <@>$ARTICLE_MIDDLE$------------------------------------------------------------
@@ -133,7 +133,7 @@
 <$coms = if(v.allow_edit, t.coms_all, t.coms)>
 <@ifexec(t.com_ok || coms, begin)>
 <$view = if(Query.c ne 'all', s.view_coms || 20)>
-<$secure_id  = v.make_secure_id( v.blogid . t.pkey )>
+<$secure_id  = v.make_comment_token( t.pkey )>
 <$secure_ary = string2ordary( secure_id )>
 <aside class="comment comments" id="com">
 	<details class="comment-switch" open>
@@ -155,14 +155,14 @@
 	<$cary = v.load_comments_current_blog(t, view)>
 	<$v.remove_newcom_flag(cary)>
 	<@forexec(c, cary, begin)>
-	<div class="comment-one<@if(!c.enable, if(c.hidden, ' comment-hidden', ' comment-disable'))>" id="c<@c.num>">
+	<div class="comment-one<@if(c.by_admin, ' comment-admin')><@if(!c.enable, if(c.hidden, ' comment-hidden', ' comment-disable'))>" id="c<@c.num>">
 		<div class="commentator">
 			<span class="canchor"><a href="#c<@c.num>"><@c.num></a>:</span>	<@\>
 			<@ifexec(v.allow_edit, begin)>	<@\>
 			<label><input class="pkey-ary" type="checkbox" name="pkey_ary" value="<@c.pkey>">	<@\>
 			<$end>
-			<span class="commentator author<@if(c.id, " login-user")>"<@if(c.id, " title=<@c.id>")>><@ifexec(c.email && v.allow_edit, begin, begin)><a href="mailto:<@c.email>"><@c.name></a><$else><@c.name><$end></span>
-			<@ifexec(c.url, begin)><span class="comment-url"><a href="<@c.url>" rel="nofollow">URL</a></span><$end>
+			<span class="commentator author<@if(c.id, " login-user")>"><@ifexec(c.email && v.allow_edit, begin, begin)><a href="mailto:<@c.email>"><@c.name></a><$else><@c.name><$end></span><@if(c.by_admin, ' <span class="comment-badge">管理者</span>')>
+			<@ifexec(c.url, begin)><span class="comment-url"><a href="<@c.url>" rel="nofollow ugc noopener noreferrer">URL</a></span><$end>
 			<span class="comment-date"><@print_tmf('%Y/%m/%d %H:%M:%S',c.tm)></span>
 			<@ifexec(!c.enable, begin)>
 			<@if(c.hidden, '<strong class="comment-hidden">（非公開コメント）', '<strong class="comment-disable">（非表示）')></strong>
@@ -193,13 +193,15 @@
 
 	<@ifexec(t.com_ok && v.allow_com, begin)>
 	<$ps = v.load_plgset('dec_comment-form')>
-	<form method="POST" action="<@permalink>" class="comment" id="comment-form" data-module-name="dec_comment-form" data-fix="1"
+	<form method="POST" action="<@permalink>#comment-form" class="comment" id="comment-form" data-module-name="dec_comment-form" data-fix="1"<@if(v.allow_edit, ' data-no-wait="1"')>
 	 data-secure="<$x=t.pkey & 255><@forexec(c, secure_ary, begin)><@c ^ x>,<$end>25">
 		<input type="hidden" name="action" value="comment_post">
 		<input type="hidden" name="a_pkey" value="<@t.pkey>" id="comment-form-apkey">
 		<input type="hidden" name="secure_id" value="" id="comment-form-sid">
+		<@ifexec(v.comment_form_msg, begin)><div class="messages"><@join("\n", v.comment_form_msg)></div><$end>
+		<div class="comment-website" aria-hidden="true"><input type="text" name="website" value="" tabindex="-1" autocomplete="off"></div>
 		<span class="caption-name">名前</span><span class="separater">:</span>
-		<@ifexec(Auth.ok, begin, begin)><span class="comment-author"><@Auth.name></span><$else><input type="text" name="name" class="w160 comment-author" value="<@esc(Form.name)>" required><$end>
+		<@ifexec(Auth.ok, begin, begin)><span class="comment-author"><@Auth.name></span><@if(v.blog_admin, ' <span class="comment-badge">管理者</span>')><$else><input type="text" name="name" class="w160 comment-author" value="<@esc(Form.name)>" required><$end>
 		<@if(t.hcom_ok, '&emsp;<label><input type="checkbox" name="hidden" value="1">非公開</label>')>
 		&emsp;<button type="submit" id="post-comment">投稿</button><span class="help" data-help="返信は「>>n」\n空白、タブ有効。タグ無効。\n押せない時は少しお待ちください。">?</span><br>
 		<textarea class="comment-txt w600" name="comment_txt" rows="3" required><@esc(Form.comment_txt)></textarea>

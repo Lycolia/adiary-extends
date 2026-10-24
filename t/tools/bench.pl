@@ -3,18 +3,18 @@ use strict;
 #-------------------------------------------------------------------------------
 # 公開ページの応答時間を計る
 #-------------------------------------------------------------------------------
-# 動いている開発サーバーへ curl で繰り返しアクセスし、ページに埋め込まれた
-# サーバー側の処理時間（TotalTime、DBTime）と、curl で見た応答時間を集計する。
-# 変更の前後で比べるときは、前の結果を --save で残し、後で --compare に渡す。
+# 動いている開発サーバーへcurlで繰り返しアクセスし、ページに埋め込まれた
+# サーバー側の処理時間（TotalTime、DBTime）と、curlで見た応答時間を集計する。
+# 変更の前後で比べるときは、前の結果を--saveで残し、後で--compareに渡す。
 #
 # 使い方:
 #   perl t/tools/bench.pl                          既定のページを計る
-#   perl t/tools/bench.pl -n 100                   1ページあたりの回数（既定 50）
+#   perl t/tools/bench.pl -n 100                   1ページあたりの回数（既定50）
 #   perl t/tools/bench.pl --save=before.json       結果を保存する
 #   perl t/tools/bench.pl --compare=before.json    保存した結果と比べる
 #   perl t/tools/bench.pl --url=/0805 --url=/      計るページを指定する
 #
-# 接続先は AGENT.md の開発環境（--base、--curl-config で変えられる）。
+# 接続先はAGENT.mdの開発環境（--base、--curl-configで変えられる）。
 # ページの順番による偏りを避けるため、1周ごとに全ページを1回ずつ回す。
 # 最初の数周（--warmup）は、スケルトンのコンパイルなどが入るので集計しない。
 #
@@ -119,7 +119,7 @@ sub fetch {
 
 	$body =~ s/\n(\d+) ([\d.]+)\z// or die "$url: curl の出力を読めません\n";
 	my %r = (status => $1, http => $2 * 1000);
-	# ページの末尾の JSON（"DBTime": 3.1, "TotalTime": 6.3）
+	# ページの末尾のJSON（"DBTime": 3.1, "TotalTime": 6.3）
 	if ($body =~ /"TotalTime":\s*([\d.]+)/) { $r{total} = $1; }
 	if ($body =~ /"DBTime":\s*([\d.]+)/)    { $r{db}    = $1; }
 	return \%r;

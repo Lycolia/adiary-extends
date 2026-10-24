@@ -61,7 +61,7 @@ sub save_usercss {
 	my ($self, $css_txt) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $auth = $ROBJ->{Auth};
-	if (! $self->{allow_edit}) { $ROBJ->message('Operation not permitted'); return 5; }
+	if (! $self->{blog_admin}) { $ROBJ->message('Operation not permitted'); return 5; }
 
 	if ($css_txt =~ /^\s*$/s) {
 		return $self->delete_dynamic_css( '_usercss' );
@@ -869,7 +869,7 @@ sub plugin_upload_images {
 		my $img = $self->load_image_magick();
 		if (!$img) { next; }
 		eval {
-			$img->Read( "$dir$file" );
+			$self->read_image( $img, "$dir$file" );
 			$img = $img->[0];
 			$ret->{"${_}_w"} = $img->Get('width');
 			$ret->{"${_}_h"} = $img->Get('height');
@@ -1024,8 +1024,8 @@ sub save_design {
 		mart_f => join("\n", @mart_f),
 		between=> join("\n", @between),
 		save   => join("\n", keys(%save))
-	});	# ※reinstall_design_plugins() と対応させること！
-		# 　項目追加時は version の数値を増加させる
+	});	# ※reinstall_design_plugins()と対応させること！
+		# 　項目追加時はversionの数値を増加させる
 
 	# イベント
 	$self->call_event('EDIT_DESIGN');
@@ -1036,7 +1036,7 @@ sub save_design {
 #-------------------------------------------------------------------------------
 # ●デザインのスケルトン生成
 #-------------------------------------------------------------------------------
-# $tpl を指定すると、そのテンプレートの _skel を元にする
+# $tplを指定すると、そのテンプレートの_skelを元にする
 #
 sub generate_design_skeleton {
 	my $self = shift;
@@ -1819,134 +1819,6 @@ sub update_design_info {
 	my $h = $self->load_design_info();
 	$self->update_hash( $h, @_ );
 	return $self->save_design_info($h);
-}
-
-################################################################################
-# ■スマホ画面の設定
-################################################################################
-# in adiary_2.pm
-#	generate_spmenu
-#	load_spmenu_info
-#	parse_html_for_spmenu
-#-------------------------------------------------------------------------------
-# ●スマホメニュー要素ロード
-#-------------------------------------------------------------------------------
-sub load_spmenu_items {
-	my $self = shift;
-	my $check= shift;	# 存在確認のみ
-	my $set = $self->{blog};
-	if (!$set) { return; }
-
-	my @ary;
-	my %names;
-	foreach(keys(%$set)) {
-		if ($_ !~ /^p:([\w\,]+):html$/) { next; }
-		my $name = $1;
-		my $pi = $self->load_plugin_info($name);
-		if (! $pi->{sphone_menu}) { next; }
-
-		my $h = $self->parse_html_for_spmenu( $set->{$_} );
-
-		if (!$h->{html}) { next; }
-		# save
-		if ($check) { return 1; }
-		my $h = {
-			title=> $h->{title},
-			html => $h->{html},
-			name => $name,
-			pi   => $pi
-		};
-		push(@ary, $h);
-		$names{$name}=$h;
-	}
-	if (!@ary) { return; }
-
-	my $iary = $self->load_spmenu_info();
-	my @iary = grep { $names{ $_->{name}} } @$iary;
-	foreach(@iary) {
-		my $title = $_->{title};
-		$_ = $names{ $_->{name} };
-		$_->{title} = $title;
-		$_->{on}    = 1;
-	}
-
-	my %n = map { $_->{name} => 1 } @iary;
-	@ary = grep { ! $n{ $_->{name} }} @ary;
-	@ary = sort { $a->{name} cmp $b->{name} } @ary;
-
-	push(@iary, @ary);
-	return \@iary;
-}
-
-#-------------------------------------------------------------------------------
-# ●スマホメニュー要素のセーブ
-#-------------------------------------------------------------------------------
-sub save_spmenu_items {
-	my $self = shift;
-	my $form = shift;
-	my $ROBJ = $self->{ROBJ};
-
-	my $ary = $form->{mod_ary} || [];
-	my $info='';
-	foreach(@$ary) {
-		my $title = $form->{$_} || $_;
-		$ROBJ->trim($title);
-		$ROBJ->tag_escape($title);
-		$info .= "$_=$title\n";
-	}
-	chomp($info);
-	$self->update_cur_blogset('spmenu_info',  $info);
-
-	# タイトル保存
-	my $title = $form->{spmenu_title};
-	$ROBJ->trim($title);
-	$ROBJ->tag_escape($title);
-	$self->update_cur_blogset('spmenu_title', $title);
-
-	return $self->generate_spmenu();
-}
-
-#-------------------------------------------------------------------------------
-# ●スマホメニュー要素のセーブ
-#-------------------------------------------------------------------------------
-sub save_spmenu_all_items {
-	my $self = shift;
-	my $blog = $self->{blog};
-
-	my $ary  = $self->load_spmenu_items();
-	my $info = '';
-	foreach(@$ary) {
-		my $title = $_->{title} || $_->{pi}->{title};
-		$info .= "$_->{name}=$title\n";
-	}
-	chomp($info);
-	$self->update_cur_blogset('spmenu_info_all', $info);
-
-	return $info;
-}
-
-#-------------------------------------------------------------------------------
-# ●スマホメニューの項目が消えていないか確認
-#-------------------------------------------------------------------------------
-sub check_spmenu_items {
-	my $self = shift;
-	my $blog = $self->{blog};
-
-	my $ary = $self->load_spmenu_info();
-	my $f;
-	my $info='';
-	foreach(@$ary) {
-		my $n = $_->{name};
-		if (!$blog->{"p:$n:html"}) {
-			$f=1;
-			next;
-		}
-		$info .= "$n=$_->{title}\n";
-	}
-	if ($f) {	# 消えているモジュールがある
-		chomp($info);
-		$self->update_cur_blogset('spmenu_info', $info);
-	}
 }
 
 1;

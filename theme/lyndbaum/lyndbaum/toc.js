@@ -1,6 +1,6 @@
 // 記事の目次（[*toc]）より下までスクロールしたら、本文の枠の右上に「目次」のボタンを出し、押すと目次を開く
-//   画面の幅によらず同じ動き。ボタンは本文の枠（.article-main）の中で追従する（lyndbaum.css の .toc-float）
-//   目次の中身は、本文の目次を写して使う。JavaScript が無いときは出さない
+//   画面の幅によらず同じ動き。ボタンは本文の枠（.article-main）の中で追従する（lyndbaum.cssの.toc-float）
+//   目次の中身は、本文の目次を写して使う。JavaScriptが無いときは出さない
 //   読み込むのは記事のページだけ（theme/lyndbaum/_skel/_article.html）
 'use strict';
 (function () {

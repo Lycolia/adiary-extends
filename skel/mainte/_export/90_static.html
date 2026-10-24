@@ -23,8 +23,8 @@
 		<@ifexec(!s.theme_custom, begin)>
 		<li><label><input type="checkbox" name="static:custom_css" value="1" checked>テーマカスタムCSSを使用する</label></li>
 		<$end>
-		<@ifexec(v.blog.gaid, begin)>
-		<li><label><input type="checkbox" name="static:gaid" value="1">Google Analyticsを埋め込む</label></li>
+		<@ifexec(v.blog.ga4id, begin)>
+		<li><label><input type="checkbox" name="static:ga4id" value="1">Google Analyticsを埋め込む</label></li>
 		<$end>
 	</ul>
 

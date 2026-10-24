@@ -52,9 +52,6 @@
 #-------------------------------------------------------------------------------
 <$v = new>
 
-# ○Version2からの移行設定（絶対パスでも可）
-#<$v.v2conf = "../adiary2/adiary.conf.cgi">
-
 # ●タグ制限を無効にする（トラストモード）
 #・個人や「完全に信頼できる人たち」のみで使用する場合は設定しても良い。
 #・IDを所有してない人間に対してのセキュリティは変わりません。
@@ -63,14 +60,6 @@
 #<$v.trust_mode = 1>
 # 管理者権限を持つユーザーのみ trust_mode にする（上は有効にしないこと）
 <$v.admin_trust_mode = 1>
-
-# ●サブドメインモードに設定し、ドメイン部を指定
-#<$v.subdomain_mode   = 'blog.abk.nu'>
-# サブドメインモード時、cookie の扱いを各ドメイン（ブログ）ごとに限定
-#<$v.subdomain_secure = 1>
-
-# セキュリティIDの有効期限
-<$Secure_time = 6hour>
 
 # アップロードファイルの最大サイズ（１回あたりの合計）
 <$v.uplaod_files_max = 64M>
@@ -108,7 +97,7 @@
 <$Auth.table = '_users'>
 
 # パスワード最低文字数
-#<$auth.pass_min = 4>
+#<$Auth.pass_min = 4>
 # セッション保持時間（秒） 14 days
 #<$Auth.expires = 14day>
 
@@ -240,9 +229,6 @@
 # 静的HTMLエクスポートの許可（全ユーザー）
 #<$v.static_export  = true>
 
-# Sphinx連携機能など特殊export機能の許可（管理者のみ）
-#<$v.special_export = true>
-
 ################################################################################
 # ■画像アルバムの設定
 ################################################################################
@@ -264,7 +250,7 @@
 # 拡張子は「中間拡張子」も含めすべて許可されてる必要があります。
 
 # 許可する画像の拡張子
-<$v.album_image_ext = flagq(jpg, jpeg, gif, png, ico, tif, tiff, apng, webp)>
+<$v.album_image_ext = flagq(jpg, jpeg, gif, png, apng, webp, avif)>
 
 # 追加で許可する画像以外の拡張子
 #<$v.album_allow_ext = flagq(dat, msi)>
