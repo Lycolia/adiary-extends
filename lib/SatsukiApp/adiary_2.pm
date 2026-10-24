@@ -184,7 +184,6 @@ sub edit_article {
 	# データチェックなど
 	#-----------------------------------------------------------------------
 	my $ping    = $form->{ping}    ? 1:0;
-	my $tw_ping = $form->{tw_ping} ? 1:0;
 	$form->{id}   = $auth->{id};
 	$form->{name} = $auth->{name};
 	$self->delete_ip_host_agent($form);

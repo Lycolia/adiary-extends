@@ -51,14 +51,6 @@ $(function(){
 		this.load_script('https://www.googletagmanager.com/gtag/js?id=' + data.GA4_ID);
 	}
 
-	// Google Analytics - UA (2023/07 obsolute)
-	if (data.GA_ID) {
-		var ga=function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-		ga('create', data.GA_ID, 'auto');
-		ga('send', 'pageview');
-		this.load_script('https://www.google-analytics.com/analytics.js');
-	}
-
 	// load message
 	this.load_msg('[data-secure].adiary-msgs');
 

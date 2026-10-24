@@ -345,6 +345,9 @@ sub sys_update_409 {
 		$self->update_blogset($blog, 'rev_cycle', int($blog->{rev_cycle}) * 60);
 	}
 
+	# 削除したプラグインを、入れたままのブログから外す
+	$self->do_all_blogs('uninstall_removed_plugins_409');
+
 	# デフォルトのブログ設定値
 	my $file = $self->{my_default_setting_file};
 	if (!-e $file) { return; }
@@ -352,6 +355,28 @@ sub sys_update_409 {
 	if ($def->{rev_cycle} eq '') { return; }
 	$def->{rev_cycle} = int($def->{rev_cycle}) * 60;
 	$ROBJ->fwrite_hash($file, $def);
+}
+
+# プラグインの管理画面での保存（save_use_plugins）は、plugin/に今あるプラグインしか見ないので、
+# フォルダを消したプラグインは外せない。ブログに写したファイルとイベントが残り、動き続けてしまう。
+sub uninstall_removed_plugins_409 {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $pd   = $self->load_plugins_dat();
+
+	my $flag;
+	foreach my $name (qw(twitter_post)) {	# Twitter API v1.1が使えなくなったため削除
+		if (!$pd->{$name}) { next; }
+		if ($self->plugin_uninstall($pd, { name => $name })) {
+			$ROBJ->message("[plugin:%s] Uninstall failed", $name);
+			next;
+		}
+		$flag = 1;
+	}
+	if (!$flag) { return; }
+
+	$ROBJ->fwrite_hash($self->{blog_dir} . 'plugins.dat', $pd);
+	$self->set_event_info($self->{blog}, $pd);
 }
 
 #-------------------------------------------------------------------------------
