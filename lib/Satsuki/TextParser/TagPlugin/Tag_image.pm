@@ -105,7 +105,7 @@ sub image {
 			last;
 		}
 	}
-	if ($caption) {
+	if (defined $caption) {		# 1番目（0）の引数がキャプションのこともある
 		my $cap = substr(join(':', splice(@$ary,$caption)),1);
 		$caption = "<figcaption>$cap</figcaption>";
 	}
