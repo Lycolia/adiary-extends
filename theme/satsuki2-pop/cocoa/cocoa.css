@@ -259,12 +259,12 @@ a img {
 /* ◆ フォントサイズ基本設定
 --------------------------------------------------------------------------------------------------*/
 .xx-large                   { font-size: 200%; }
-.x-large,   .huge           { font-size: 150%; }
+.x-large                    { font-size: 150%; }
 .large                      { font-size: 130%; }
 .medium,    .nomalsize      { font-size: 100%; }
 .small                      { font-size: 90%; }
-.x-small,   .tiny           { font-size: 80%; }
-.xx-small,  .scriptsize     { font-size: 50%; }
+.x-small                    { font-size: 80%; }
+.xx-small                   { font-size: 50%; }
 
 /*  ◆ フォントファミリー基本設定
 --------------------------------------------------------------------------------------------------*/

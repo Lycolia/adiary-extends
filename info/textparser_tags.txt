@@ -16,25 +16,6 @@
 load textparser_site_tags.txt
 
 #------------------------------------------------------------------------------
-# http プラグイン
-#------------------------------------------------------------------------------
-# [http://], [ftp://], [mailto:],
-# plugin http
-
-# サムネイル機能を使う場合は image プラグインが必要です
-http:image       = サムネイル（HeartRails Capture）, image, 1, http://capture.heartrails.com/200x150?http://$1
-http:image#small = サムネイル（HeartRails Capture）, image, 1, http://capture.heartrails.com/120x100?http://$1
-http:image#large = サムネイル（HeartRails Capture）, image, 1, http://capture.heartrails.com/400x300?http://$1
-http:image#link  = サムネイル（HeartRails Capture）, image, 1, http://$1
-http:image#ext   = 1
-
-https:image       = サムネイル（HeartRails Capture）, image, 1, https://capture.heartrails.com/200x150?https://$1
-https:image#small = サムネイル（HeartRails Capture）, image, 1, https://capture.heartrails.com/120x100?https://$1
-https:image#large = サムネイル（HeartRails Capture）, image, 1, https://capture.heartrails.com/400x300?https://$1
-https:image#link  = サムネイル（HeartRails Capture）, image, 1, https://$1
-https:image#ext   = 1
-
-#------------------------------------------------------------------------------
 # adiary用プラグイン, adiary設定
 #------------------------------------------------------------------------------
 # plugin adiary
@@ -64,15 +45,13 @@ qt = >title
 #------------------------------------------------------------------------------
 # Google
 #------------------------------------------------------------------------------
-google       = Google検索,         UTF-8, https://www.google.co.jp/search?q=
-google:ja    = Google検索(ja),     UTF-8, https://www.google.co.jp/search?lr=lang_ja&q=
+google       = Google検索,         UTF-8, https://www.google.co.jp/search?udm=14&q=
 google:image = Googleイメージ検索, UTF-8, https://www.google.co.jp/search?tbm=isch&q=
 google:video = Google動画検索,     UTF-8, https://www.google.co.jp/search?tbm=vid&q=
 google:news  = Googleニュース検索, UTF-8, https://www.google.co.jp/search?tbm=nws&q=
 google:transit = Googleトランジット, UTF-8, 2, https://www.google.com/maps?saddr=$1&daddr=$2
 
 g   = >google
-g:ja= >google:ja
 gi  = >google:image
 gv  = >google:video
 gn  = >google:news
@@ -258,10 +237,6 @@ sp  = >for-sp
 #------------------------------------------------------------------------------
 color = テキスト色, ASCII, 2, <span style="color:#1;">#2</span>
 
-name   = <span class="tan">#1たん</span>
-name+  = <span class="tan">#1たん<img class="icon" alt="heart" src="${pubdist}icon/heart.gif"></span>
-name++ = <span class="tan">#1たん<img class="icon" alt="heart" src="${pubdist}icon/heart.gif">ハァハァ</span>
-
 #------------------------------------------------------------------------------
 # 麻雀記法
 #------------------------------------------------------------------------------
@@ -277,12 +252,6 @@ large    = html:span.large
 small    = html:span.small
 x-small  = html:span.x-small
 xx-small = html:span.xx-small
-
-# Ver2/TeX互換設定
-Huge  = html:span.xx-large
-huge  = html:span.x-large
-tiny  = html:span.x-small
-scriptsize = html:span.xx-small
 
 #------------------------------------------------------------------------------
 # マクロ設定（空行で一区切り） / #0 : 引数と置換
