@@ -348,6 +348,8 @@ sub read_query_form {
 	# 特殊Queryの処理
 	foreach(qw(_sphone _theme)) {
 		if (!$q->{$_}) { next; }
+		# テーマ指定は、デザイン編集のテーマのプレビュー用。ブログの管理者のみ
+		if ($_ eq '_theme' && !$self->{blog_admin}) { delete $q->{$_}; next; }
 		my $v = $q->{$_};
 		$v =~ s|[^\w\-/]||g;
 
