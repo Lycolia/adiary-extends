@@ -122,10 +122,6 @@ hatena:f:id = >hatena:f
 graph       = はてなグラフ
 
 keyword         = はてなキーワード,     EUC-JP, http://d.hatena.ne.jp/keyword/
-search:keyword  = はてなキーワード検索, EUC-JP, http://search.hatena.ne.jp/keyword?word=
-search:question = はてな質問検索,       EUC-JP, http://search.hatena.ne.jp/questsearch?word=
-search:asin     = はてなASIN,           EUC-JP, http://search.hatena.ne.jp/asinsearch?word=
-search:web      = はてなウェブ検索,     EUC-JP, http://search.hatena.ne.jp/websearch?word=
 
 hatena:id   = はてなダイアリー, EUC-JP, 1, http://d.hatena.ne.jp/$1/
 hatena:id#2 = はてなダイアリー, EUC-JP, 2, http://d.hatena.ne.jp/$1/$2
@@ -133,10 +129,6 @@ hatena:id#3 = はてなダイアリー, EUC-JP, 3, http://d.hatena.ne.jp/$1/$2/$
 hatena:d         = >hatena:id
 hatena:d:id      = >hatena:id
 hatena:d:keyword = >keyword
-
-# alias
-search:k  = >search:keyword
-search:q  = >search:question
 
 #------------------------------------------------------------------------------
 # TeX記法
