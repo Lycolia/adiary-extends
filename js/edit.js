@@ -222,7 +222,7 @@ adiary.load_contents_list($upsel);
 	const $ogp    = $('#ogp-input');
 	const imgdir  = $('#image-dir').text();		// 画像ディレクトリ（相対）
 	const img_url = adiary.Basepath + imgdir;
-	const img_ext = /\.(?:jpe?g|png|gif|webp|apng|bmp|tiff?|ico)$/i;
+	const img_ext = /\.(?:jpe?g|png|gif|webp|apng|avif)$/i;
 
 	// [image:S:folder/:file:caption] 記法と、画像ディレクトリ内を指すURLを出現順に拾う
 	const dir_re = imgdir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

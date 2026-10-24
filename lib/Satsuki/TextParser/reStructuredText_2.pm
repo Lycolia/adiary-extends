@@ -941,8 +941,9 @@ sub get_image_size {
 	if (! $cache->{$file}) {
 		eval {
 			require Image::Magick;
+			require Satsuki::ImageFormat;
 			my $im = Image::Magick->new(@_);
-			$im->Read( $file );
+			Satsuki::ImageFormat::read( $im, $file );
 			my ($x,$y) = $im->Get('width', 'height');
 			$cache->{$file} = [ $x, $y ];
 		};

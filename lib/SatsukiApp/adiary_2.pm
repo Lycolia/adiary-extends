@@ -840,7 +840,7 @@ sub get_main_image_size {
 	$file =~ s|^/+||g;
 	$file =~ s|\.+/||g;
 
-	$im->Read( $self->blogimg_dir() . $file );
+	$self->read_image( $im, $self->blogimg_dir() . $file );
 	my ($w, $h) = $im->Get('width', 'height');
 
 	$art->{main_image_w} = $w;

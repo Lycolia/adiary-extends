@@ -1506,7 +1506,7 @@ sub import_img {
 
 				my $img = $self->load_image_magick();
 				eval {
-					$img->Read( $file );
+					$self->read_image( $img, $file );
 					$img->Set( quality => ($self->{album_jpeg_quality} || 80) );
 					$img->Write( $thumb_file );
 				};

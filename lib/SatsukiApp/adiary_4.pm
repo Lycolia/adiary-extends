@@ -869,7 +869,7 @@ sub plugin_upload_images {
 		my $img = $self->load_image_magick();
 		if (!$img) { next; }
 		eval {
-			$img->Read( "$dir$file" );
+			$self->read_image( $img, "$dir$file" );
 			$img = $img->[0];
 			$ret->{"${_}_w"} = $img->Get('width');
 			$ret->{"${_}_h"} = $img->Get('height');
