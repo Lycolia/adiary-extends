@@ -14,8 +14,6 @@
 <meta property="og:image" content="<@img>">
 <meta property="og:site_name" content="<@s.blog_name>">
 <meta property="og:locale" content="<@Locale2>">
-<@if(s.fb_admins, #'<meta property="fb:admins" content="<@s.fb_admins>">\n')>
-<@if(s.fb_app_id, #'<meta property="fb:app_id" content="<@s.fb_app_id>">\n')>
 <!-- Twitter Card -->
 <meta name="twitter:card" content="<@if(argv#4 || s.site_image, 'summary_large_image', 'summary')>">
 <meta name="twitter:url" content="<@ServerURL><@argv#1>">
