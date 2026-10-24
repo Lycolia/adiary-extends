@@ -415,8 +415,12 @@ sub reinstall_design_plugins {
 	# uninstall
 	$self->reset_design({no_event => 1});
 
-	# dem_footer を無効にする
-	$h->{main_b_ary} = [ grep {$_ ne 'dem_footer'} @{$h->{main_b_ary}} ];
+	# 削除したモジュールを取り除く（別名の「名前,番号」も）
+	my $removed = qr/^(?:dem_footer|des_twitter)(?:,\d+)?$/;
+	foreach(keys(%$h)) {
+		if (ref($h->{$_}) ne 'ARRAY') { next; }
+		$h->{$_} = [ grep { $_ !~ $removed } @{$h->{$_}} ];
+	}
 
 	return $self->save_design($h);
 }

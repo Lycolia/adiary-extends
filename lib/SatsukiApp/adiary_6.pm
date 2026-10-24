@@ -366,18 +366,22 @@ sub uninstall_removed_plugins_409 {
 	my $flag;
 	# twitter_post : Twitter API v1.1が使えなくなったため削除
 	# amp        : Googleの検索でAMPが有利でなくなり、手入れもされていないため削除
-	foreach my $name (qw(twitter_post amp)) {
-		if (!$pd->{$name}) { next; }
+	# des_twitter: Xのタイムラインの埋め込みが、ログインしていない人に表示されなくなったため削除
+	#              （デザインからは、デザインの作り直しで取り除く。reinstall_design_plugins）
+	foreach my $name (qw(twitter_post amp des_twitter)) {
+		# デザインモジュールは、複数置くと「名前,番号」の別名でも記録される
+		my @names = sort { length($b) <=> length($a) } grep { $pd->{$_} && /^\Q$name\E(?:,\d+)?$/ } keys(%$pd);
+		foreach my $n (@names) {
+			# 外すときのイベント（ampは記事のテーブルに足したカラムを、デザインモジュールはCSSを消す）。
+			# 処理はブログの側にあるので、プラグインのフォルダが無くても動く
+			$self->call_event("UNINSTALL:$n");
 
-		# 外すときのイベント（ampは記事のテーブルに足したカラムを消す）。
-		# 処理はブログの側に写してあるので、プラグインのフォルダが無くても動く
-		$self->call_event("UNINSTALL:$name");
-
-		if ($self->plugin_uninstall($pd, { name => $name })) {
-			$ROBJ->message("[plugin:%s] Uninstall failed", $name);
-			next;
+			if ($self->plugin_uninstall($pd, { name => $n })) {
+				$ROBJ->message("[plugin:%s] Uninstall failed", $n);
+				next;
+			}
+			$flag = 1;
 		}
-		$flag = 1;
 	}
 	if (!$flag) { return; }
 
