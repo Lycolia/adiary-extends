@@ -30,14 +30,6 @@ $SysEvt{COMMENT_STATE_CHANGE} = [qw(
 $SysEvt{ARTCOM_STATE_CHANGE} = [qw(
 	generate_rss
 )];
-$SysEvt{'ARTCOM_STATE_CHANGE#after'} = [qw(
-	generate_spmenu
-)];
-$SysEvt{EDIT_DESIGN} = [qw(
-	save_spmenu_all_items
-	check_spmenu_items
-	generate_spmenu
-)];
 
 ################################################################################
 # ●コンストラクタ
