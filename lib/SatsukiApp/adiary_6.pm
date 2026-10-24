@@ -365,8 +365,15 @@ sub uninstall_removed_plugins_409 {
 	my $pd   = $self->load_plugins_dat();
 
 	my $flag;
-	foreach my $name (qw(twitter_post)) {	# Twitter API v1.1が使えなくなったため削除
+	# twitter_post : Twitter API v1.1が使えなくなったため削除
+	# amp        : Googleの検索でAMPが有利でなくなり、手入れもされていないため削除
+	foreach my $name (qw(twitter_post amp)) {
 		if (!$pd->{$name}) { next; }
+
+		# 外すときのイベント（ampは記事のテーブルに足したカラムを消す）。
+		# 処理はブログの側に写してあるので、プラグインのフォルダが無くても動く
+		$self->call_event("UNINSTALL:$name");
+
 		if ($self->plugin_uninstall($pd, { name => $name })) {
 			$ROBJ->message("[plugin:%s] Uninstall failed", $name);
 			next;

@@ -100,7 +100,7 @@ meter		value, min, max, low, height, optimum
 menu		type, label
 command		type, label, icon, disabled, checked, radiogroup, title
 
-### メディア ####################  poster, width, height for amp-video
+### メディア ####################
 audio		src, controls, type
 video		src, controls, type, poster, width, height
 source		src, type
@@ -125,13 +125,6 @@ bdi
 bdo
 wbr
 time	datetime, pubdate
-
-### AMP ######################
-amp-ad
-amp-analytics
-amp-experiment
-amp-pixel
-amp-sticky-ad
 
 ################################################################################
 # ■ module 記述子

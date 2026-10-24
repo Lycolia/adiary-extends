@@ -242,9 +242,6 @@ blockquote p:last-child {
 body:not(.sp) .for-sp {
 	display:	none;
 }
-body:not(.amp) .for-amp {
-	display:	none;
-}
 /* レスポンシブ対応テーマ */
 @media screen and (max-width: 640px) {
 	.responsive .for-pc {
