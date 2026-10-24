@@ -229,8 +229,6 @@ sub secure_http_host {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 
-	if ($self->{subdomain_mode}) { return; }
-
 	my $srv  = $ROBJ->{ServerURL};
 	my $save = $self->{sys}->{ServerURL};
 
@@ -273,28 +271,6 @@ sub blogid_and_pinfo {
 		# 自分のブログ
 		$self->{myself3} = ($authid eq $default) ? $myself : "$myself2$authid/";
 
-	} elsif ($self->{subdomain_mode}) {
-		#-------------------------------------------
-		# サブドメインモード
-		#-------------------------------------------
-		my $host_name = $ENV{SERVER_NAME};
-		$host_name =~ s/[^\w\.\-]//g;
-		my $domain = $self->{subdomain_mode};
-		if (! $self->{subdomain_secure}) {	# Cookieを全ドメインで共通化
-			$ROBJ->{CookieDomain} = $domain;
-		}
-		$self->{subdomain_proto} ||= 'http://';
-
-		if ((my $x = index($host_name, ".$domain")) > 0) {
-			$blogid = substr($host_name, 0, $x);
-		} else {
-			$blogid = shift(@pinfo);
-			$blogid =~ s/\W//g;
-			if ($blogid ne '') {
-				$ROBJ->redirect("//$blogid.$domain/" . join('/', @pinfo));
-			}
-		}
-		$self->{myself3} = "//$authid.$domain/";	# 自分のブログ
 	} else {
 		#-------------------------------------------
 		# マルチユーザーモード
@@ -562,10 +538,7 @@ sub set_and_select_blog {
 	$self->{blog_dir}    = $self->blog_dir();
 	$self->{blogpub_dir} = $self->blogpub_dir();
 	# myself(通常用,QUERY用)、myself2(PATH_INFO用) の設定
-	if ($self->{subdomain_mode}) {
-		$self->{myself}  = '/';
-		$self->{myself2} = '/';
-	} elsif ($blogid ne $self->{sys}->{default_blogid}) {
+	if ($blogid ne $self->{sys}->{default_blogid}) {
 		$self->{myself}  = $ROBJ->{myself2} . "$blogid/";
 		$self->{myself2} = $ROBJ->{myself2} . "$blogid/";
 	}
@@ -1731,10 +1704,6 @@ sub get_blog_path {
 	my ($self, $blogid) = @_;
 	my $ROBJ = $self->{ROBJ};
 	$blogid =~ s/[^\w\-]//g;
-	if ($self->{subdomain_mode}) {
-		my $url = $self->{subdomain_proto} . "$blogid\.$self->{subdomain_mode}";
-		return $ROBJ->{ServerURL} eq $url ? '/' : "$url/";
-	}
 	my $myself2 = $ROBJ->{myself2};
 	return ($blogid eq $self->{sys}->{default_blogid}) ? $myself2
 		: $myself2 . $blogid . '/';

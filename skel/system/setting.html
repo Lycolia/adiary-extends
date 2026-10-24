@@ -27,17 +27,12 @@
 	<tr>
 		<th>デフォルトブログ<span class="help" data-help="表示ブログIDが特に指定されてないときにデフォルトで表示するブログを指定します。">?</span></th>
 		<td<@err.c_default_blogid>>
-		<@ifexec(v.subdomain_mode, begin, begin)>
-			サブドメインモードでは設定できません。
-			<input type="hidden" name="default_blogid" value="">
-		<$else>
 		<select name="default_blogid">
 			<option value="">（指定しない）</option>
 			<@forexec(t, v.load_blog_list('id'), begin)>
 			<option value="<@t.id>"<@if(s.default_blogid eq t.id,' selected')>><@if(t.private, "【非公開】")><@t.id>: <@t.blog_name></option>
 			<$end>
 		</select>
-		<$end>
 		</td>
 	</tr>
 	<tr>

@@ -64,11 +64,6 @@
 # 管理者権限を持つユーザーのみ trust_mode にする（上は有効にしないこと）
 <$v.admin_trust_mode = 1>
 
-# ●サブドメインモードに設定し、ドメイン部を指定
-#<$v.subdomain_mode   = 'blog.abk.nu'>
-# サブドメインモード時、cookie の扱いを各ドメイン（ブログ）ごとに限定
-#<$v.subdomain_secure = 1>
-
 # アップロードファイルの最大サイズ（１回あたりの合計）
 <$v.uplaod_files_max = 64M>
 

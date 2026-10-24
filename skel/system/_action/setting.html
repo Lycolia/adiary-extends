@@ -68,7 +68,7 @@
 	html_cache_timeout:max = 3600
 
 <$end>
-<$id = if(v.subdomain_mode, '', Form.default_blogid)>
+<$id = Form.default_blogid>
 <$ifform_error( id ne '' && !v.find_blog(id), 'default_blogid', "指定のブログが見つかりません" )>
 <$ifbreak(form_error())>
 
