@@ -46,7 +46,8 @@ my @update_versions = (
 	{ ver => 3.50, plugin=>1, func => 'sys_update_350' },
 	{ ver => 3.52, func => 'sys_update_352' },
 	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' },
-	{ ver => 4.08, info=>1, func => 'sys_update_408' }
+	{ ver => 4.08, info=>1, func => 'sys_update_408' },
+	{ ver => 4.09, func => 'sys_update_409' }
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -327,6 +328,29 @@ sub sys_update_408 {
 		$r += 10*$DB->add_column("${_}_trash", {name=>'backlinks', type=>'text'});
 		if ($r) { $ROBJ->message("Blog '$_' database error($r)"); }
 	}
+}
+
+#-------------------------------------------------------------------------------
+# ●システムアップデート for Ver4.09
+#-------------------------------------------------------------------------------
+# 履歴を残す間隔（rev_cycle）の単位を時間から分に変える
+sub sys_update_409 {
+	my $self  = shift;
+	my $blogs = shift;
+	my $ROBJ  = $self->{ROBJ};
+	foreach(@$blogs) {
+		my $blog = $self->load_blogset($_);
+		if ($blog->{rev_cycle} eq '') { next; }
+		$self->update_blogset($blog, 'rev_cycle', int($blog->{rev_cycle}) * 60);
+	}
+
+	# デフォルトのブログ設定値
+	my $file = $self->{my_default_setting_file};
+	if (!-e $file) { return; }
+	my $def = $ROBJ->fread_hash($file);
+	if ($def->{rev_cycle} eq '') { return; }
+	$def->{rev_cycle} = int($def->{rev_cycle}) * 60;
+	$ROBJ->fwrite_hash($file, $def);
 }
 
 #-------------------------------------------------------------------------------

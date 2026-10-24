@@ -670,7 +670,7 @@ sub get_main_image_from_input {
 #-------------------------------------------------------------------------------
 # $old : 更新前の記事データ
 #
-# PukiWikiのバックアップと同様に、前回履歴に追加してから rev_cycle 時間以内なら
+# PukiWikiのバックアップと同様に、前回履歴に追加してから rev_cycle 分以内なら
 # 追加しない（連続した保存を1つの版にまとめる）。rev_max を超えた古い版は削除する。
 #
 sub save_revision {
@@ -680,14 +680,14 @@ sub save_revision {
 	if ($self->{require_update}) { return; }	# 履歴テーブル未作成
 
 	my $blog  = $self->load_blogset($blogid);
-	my $cycle = $blog->{rev_cycle} eq '' ?   3 : int($blog->{rev_cycle});
+	my $cycle = $blog->{rev_cycle} eq '' ? 180 : int($blog->{rev_cycle});
 	my $max   = $blog->{rev_max}   eq '' ? 120 : int($blog->{rev_max});
 	my $a_pkey= $old->{pkey};
 	my $now   = $ROBJ->{TM};
 
 	if ($cycle > 0) {
 		my $last = $DB->select_match_limit1("${blogid}_rev", 'a_pkey', $a_pkey, '*sort', '-tm', '*cols', ['tm']);
-		if ($last && $now - $last->{tm} < $cycle * 3600) { return; }
+		if ($last && $now - $last->{tm} < $cycle * 60) { return; }
 	}
 
 	$DB->insert("${blogid}_rev", {
