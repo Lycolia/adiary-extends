@@ -26,7 +26,6 @@ sub export {
 	my ($self, $logs, $option) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $aobj = $option->{aobj};
-	$option->{sphinx} = 1;
 
 	#-------------------------------------------------------------
 	# セッション開始
