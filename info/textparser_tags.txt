@@ -63,16 +63,6 @@ youtube = youtube,ASCII,1, <module name="youtube" vid="$1">
 qr = QRコード生成, image, 999, https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=40&data=$0
 
 #------------------------------------------------------------------------------
-# Amazon プラグイン
-#------------------------------------------------------------------------------
-# [amazon:], [asin:]
-# plugin amazon
-amazon  = Amazon検索
-asin    = Amazon
-am      = >amazon
-isbn    = >asin
-
-#------------------------------------------------------------------------------
 # 色々
 #------------------------------------------------------------------------------
 wikipedia = Wikipedia, UTF-8, https://ja.wikipedia.org/wiki/

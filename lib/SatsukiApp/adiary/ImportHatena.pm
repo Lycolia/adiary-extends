@@ -298,7 +298,7 @@ sub convert_hatena_to_adiary {
 			if ($style_conv) {
 				# 正規表現用の調整
 				$x = " $x";
-				$x =~ s/([^\w:\[])((isbn|asin|jan|ean|question|idea|graph|map):[\w:]+)/$1\[$2\]/ig;
+				$x =~ s/([^\w:\[])((jan|ean|question|idea|graph|map):[\w:]+)/$1\[$2\]/ig;
 				# x:id:? → [hatena:x:id:?]
 				$x =~ s/([^\w:\[])(\w:)(id|t|keyword):([\w:]+)/$1\[hatena:$2$3:$4\]/g;
 				$x =~ s/\[(\w:)(id|t|keyword):(.+?)\]/[hatena:$1$2:$3]/g;

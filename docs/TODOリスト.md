@@ -100,8 +100,6 @@ lyndbaum（`~/develop/perl/lyndbaum`）にある機能のうち、adiary-extends
   - adiary側を採用するため対応しない
 - adiaryからのマイグレーション
   - 不要
-- AmazonアフィリエイトIDの削除
-  - PA-APIは使っておらず、アフィリエイトIDを付けたURLを組み立てるだけだったので、残す（2026-10-24。`docs/仕様/機能一覧.md`の「Amazonの記法」）
 - サイドバーのキャッシュなどの速度改善
   - adiaryは既に早いので対応不要
 - 空行を挟んだリストをCommonMarkのリスト単位にする（`- a`、`- b`、空行、`- c`で全項目を`<p>`にする）
