@@ -111,13 +111,11 @@ table.plugins button {
 }
 #com div.comment-text {
 	white-space:		pre-wrap;
-/*	font-family:		monospace;	*/
 }
 
 /* 管理者の印 */
 .comment-badge {
 	border:			1px solid;
-	border-radius:		3px;
 	padding:		0 0.3em;
 	font-size:		80%;
 	font-weight:		normal;
@@ -2304,15 +2302,15 @@ pre[class*="language-"].line-numbers > code {
 
 }
 
-	.line-numbers-rows > span {
-		display: block;
-		counter-increment: linenumber;
-	}
+.line-numbers-rows > span {
+	display: block;
+	counter-increment: linenumber;
+}
 
-		.line-numbers-rows > span:before {
-			content: counter(linenumber);
-			color: #999;
-			display: block;
-			padding-right: 0.8em;
-			text-align: right;
-		}
+.line-numbers-rows > span:before {
+	content: counter(linenumber);
+	color: #999;
+	display: block;
+	padding-right: 0.8em;
+	text-align: right;
+}
