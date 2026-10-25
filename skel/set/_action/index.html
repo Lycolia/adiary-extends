@@ -16,7 +16,6 @@
 	description_txt:filter1_opt = <@v.trust_mode>
 
 	markdown = flag
-	rst      = flag
 	private = flag
 	ping = flag
 
@@ -41,11 +40,8 @@
 <$ifset(h2.iconfile, h.iconfile, v.plugin_image_dir(h2.iconfile))>
 
 <$ifset( h.markdown,   h.parser, 'markdown')>
-<$ifset( h.rst     ,   h.parser, 'rst')>
 <$ifset(!h.markdown && v.blog.parser eq 'markdown', h.parser, 'default')>
-<$ifset(!h.rst      && v.blog.parser eq 'rst'     , h.parser, 'default')>
 <$delete(h.markdown)>
-<$delete(h.rst)>
 
 
 <@> 設定保存

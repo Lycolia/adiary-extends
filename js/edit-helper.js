@@ -109,54 +109,6 @@ Helpers.push({
 	}
 });
 //------------------------------------------------------------------------------
-// reStructuredText
-//------------------------------------------------------------------------------
-Helpers.push({
-	regexp:	/^(?:re?st)/i,
-	escape:	false,
-	url:	'https://docutils.sphinx-users.jp/docutils/docs/ref/rst/restructuredtext.html',
-	head:	{ func: 'block',	start: '==============================', end: '==============================', blank: true },
-	strong:	{ func: 'inline',	tag: ' **$0** ' },
-	link:	{ func: 'inline',	tag: '`$1<$0>`__', arg_format: '$1 ' },
-	anno:	{ func: 'inline',	tag: '(($0))'	},
-	list:	{ func: 'block',	tag: '- $0',	blank: true },
-	quote:	{ func: 'block',	tag: "\t$0",	blank: true },
-	color:	null,
-	fsize:	null,
-
-	toc:	{ func: 'insert',	tag: "\n\n.. contents::\n\n" },
-	google:	null,
-	wiki:	null,
-	cont:	null,
-	code:	{ func: 'block',	tag: "\t$0", start: ".. code::\n", end: '', blank: true },
-	math:	{ func: 'block',	tag: "\t$0", start: ".. math::\n", end: '', blank: true },
-	math_i:	{ func: 'inline',	tag: ':math:`$0`' },
-	album:	{ func: 'album' },
-	image:	{
-		original:	'.. image:: files/%d%f',
-		thumbnail:	".. image:: files/%d%f\n	:class: thumbnail",
-		file:		'`%f <files/%d%f>`__',
-		chain:		"\n\n",
-		blank:		true,
-		exif:		false
-	},
-	figure:	{
-		each:		true,		// each image in each figure
-		original:	'.. figure:: files/%d%f',
-		thumbnail:	".. figure:: files/%d%f\n	:class: thumbnail",
-		start:		'',
-		end:		'$1$2',
-		arg1_format:	"\n	:align: $1",
-		arg2_format:	"\n\n	$1\n",
-		class_map:	{
-			'center':	'center',
-			'float-l':	'left',
-			'float-r':	'right'
-		},
-		exif:		false
-	}
-});
-//------------------------------------------------------------------------------
 // HTML
 //------------------------------------------------------------------------------
 Helpers.push({
