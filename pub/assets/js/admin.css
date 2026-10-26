@@ -557,10 +557,11 @@ article#edit > div.body {
 	margin-left:		0;
 }
 /* 横に広げると右の列に重なるので、大きさは縦だけ変えられるようにする */
+/* 高さは rows="24" ではなく画面に合わせて決め、中身に合わせては伸ばさない */
 #edit #editarea {
 	resize:			vertical;
-	field-sizing:		content;
-	min-height:		max(16rem, calc(100vh - var(--admin-bar-height) - 30rem));
+	height:			max(16rem, calc(100vh - var(--admin-bar-height) - 30rem));
+}
 }
 /* 下書きを開く：1行にまとめる */
 #draft-notice {
