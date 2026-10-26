@@ -62,7 +62,7 @@
 <header id="admin-bar">
 	<a class="admin-bar-blog" href="<@v.myself>"><@if(s.blog_name ne '', s.blog_name, 'adiary')></a>
 	<@ifexec(Auth.ok && v.allow_edit, begin)>
-	<a class="admin-bar-edit" href="<@v.myself>?edit">＋新規</a>
+	<a class="admin-bar-edit" href="<@v.myself>?edit">書く</a>
 	<$end>
 	<@ifexec(Auth.ok, begin)>
 	<span class="admin-bar-links">
