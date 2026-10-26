@@ -1,5 +1,5 @@
 <@7>
-<@local(logs,t,x,opt,ret,s,loads,url,page_offset,tag_links)>
+<@local(logs,t,x,opt,ret,s,loads,url,page_offset)>
 <$ifredirect(!v.blog, v.myself)>
 
 <@> ログインしていない
@@ -39,13 +39,6 @@
 <$ifset(page_offset<0, page_offset, 0)>
 
 <$url = "<@v.myself>?_=<@v.skeleton>&amp;loads=<@loads>&amp;sort=<@ret.sort>&amp;rev=<@ret.rev>&amp;q=" . encode_uricom(x = Query.q) . "&amp;">
-
-<$tag_links = begin>
-	<@local(tag)>
-	<@forexec(tag, split(',', argv#0), begin)> <@\>
-		<a href="<@v.myself>?_=<@v.skeleton>&amp;q=<@tag>"><@tag></a> 
-	<$end>
-<$end>
 
 <!--=========================================================================-->
 <@> 階層ツリー
@@ -103,44 +96,30 @@
 	<$end>
 
 
-<$date = ''>
-<$ifset(ret.sort eq 'tm',        date, '投稿日時')>
-<$ifset(ret.sort eq 'update_tm', date, '更新日時')>
-
 <@ifexec(v.allow_edit, begin)>
 	<form action="<@url>page=<@page>" method="POST" class="js-check-form" data-target="#artlist-table .pkey-ary">
 	<input type="hidden" name="action" value="articles_edit">
 <$end>
 	<table id="artlist-table" class="list-table">
 	<thead><tr>
-		<@ifexec(v.allow_edit, begin)>
 		<th><input type="checkbox" name="all_check" class="js-checked" data-target="#artlist-table .pkey-ary"></th>
-		<th>公開</th>
-		<$end>
-		<th><@if(date, date, '日付')></th>
-		<th>種類</th>
 		<th>タイトル</th>
-		<th>タグ</th>
-		<th>投稿者</th>
+		<th>状態</th>
+		<th>公開日</th>
+		<th>更新日</th>
 		<th>コメント</th>
+		<th>投稿者</th>
 	</tr></thead>
 	<tbody class="small">
 	<@forexec(t, logs, begin)>
 	<tr>
-		<@ifexec(v.allow_edit, begin)>
 		<td class="c"><input type="checkbox" name="pkey_ary" value="<@t.pkey>" class="pkey-ary" id="art-<@t.pkey>"></td>
-		<td class="c"><label for="art-<@t.pkey>"><@if(t.enable, '公')></label></td>
-		<$end>
-		<@ifexec(date, begin, begin)>
-		<td class="c"><label for="art-<@t.pkey>"><@print_tmf('%Y/%m/%d %H:%M', t.(ret.sort))></label></td>
-		<$else>
-		<td class="c" nowrap><label for="art-<@t.pkey>"><@v.format_ymd(t.yyyymmdd)></label></td>
-		<$end>
-		<td class="c"><label for="art-<@t.pkey>"><@t.ctype></label></td>
-		<td class="list-wide"><a href="<@v.myself2><@t.elink_key>"<@if(v.allow_edit, #' title="<@t.pkey>"')>><@t.title></a></td>
-		<td class="c list-wrap"><label for="art-<@t.pkey>"><@if(t.tags ne '', exec(tag_links, t.tags))></label></td>
+		<td class="list-wide"><a href="<@v.myself2><@t.elink_key>" title="<@t.pkey>"><@t.title></a></td>
+		<td class="c"><label for="art-<@t.pkey>"><@if(t.enable, '公開', '非公開')></label></td>
+		<td class="c"><label for="art-<@t.pkey>"><@v.format_ymd(t.yyyymmdd)></label></td>
+		<td class="c"><label for="art-<@t.pkey>"><@print_tmf('%Y-%m-%d', t.update_tm)></label></td>
+		<td class="r"><@t.coms_all></td>
 		<td><@t.name></td>
-		<td class="r"><@if(v.allow_edit, t.coms_all, t.coms)></td>
 	</tr>
 	<$end>
 	</tbody>

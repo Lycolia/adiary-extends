@@ -1051,6 +1051,11 @@ div.popup-help {
 		width:			auto;
 		padding:		0.2rem 0;
 	}
+	/* チェックボックスは左に置き、タイトルなどと同じ行に並べる */
+	.body table.list-table td:first-child {
+		float:			left;
+		padding-top:		0.2rem;
+	}
 	#admin-side {
 		position:		static;
 	}
