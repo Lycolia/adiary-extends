@@ -469,7 +469,8 @@ button:disabled:hover {
 	border-color:		#dcdcde;
 	cursor:			default;
 }
-#edit-helper button {
+#edit-helper button,
+#edit-tools button {
 	padding:		0.15em 0.5em;
 	min-height:		0;
 }
@@ -543,15 +544,34 @@ article#edit > div.body {
 	padding:		0.3em 0.5em;
 	margin-bottom:		0.4rem;
 }
-/* 記法の補助は、本文が長くても押せるように上に止める */
-#edit-helper {
+/* 記法の補助（左）と、記法の選択、アップロード、履歴（右）。本文が長くても押せるように上に止める */
+#edit-toolbar {
 	position:		sticky;
 	top:			var(--admin-bar-height);
 	z-index:		5;
+	display:		flex;
+	flex-wrap:		wrap;
+	align-items:		center;
+	justify-content:	space-between;
+	gap:			0.25rem 1rem;
 	padding:		0.2rem 0;
 	background-color:	var(--admin-bg);
 }
+#edit-tools {
+	display:		flex;
+	flex-wrap:		wrap;
+	align-items:		center;
+	gap:			0.5rem;
+}
+#edit-tools .element {
+	margin-right:		0;
+}
+#edit-tools button + button {
+	margin-left:		0;
+}
+/* 横に広げると右の列に重なるので、大きさは縦だけ変えられるようにする */
 #edit #editarea {
+	resize:			vertical;
 	field-sizing:		content;
 	min-height:		max(16rem, calc(100vh - var(--admin-bar-height) - 15rem));
 }
@@ -576,16 +596,6 @@ article#edit > div.body {
 }
 #draft-notice #select-draft {
 	max-width:		32rem;
-}
-#edit-under-body {
-	display:		flex;
-	flex-wrap:		wrap;
-	align-items:		center;
-	gap:			0.5rem;
-	margin-top:		0.5rem;
-}
-#edit-under-body button + button {
-	margin-left:		0;
 }
 
 /* 右の列の枠 */

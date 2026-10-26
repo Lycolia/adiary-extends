@@ -114,6 +114,8 @@
 <div class="edit-main">
 	<div id="edit-title"><input class="w100p no-enter-submit" type="text" name="title" value="<@art.title>" placeholder="タイトル" aria-label="タイトル"></div>
 
+	<@> 記法の補助と、記法の選択、アップロード、履歴。本文が長くても押せるように上に止める
+	<div id="edit-toolbar">
 	<div id="edit-helper">
 	<button class="helper" type="button" data-type="head"   data-msg="見出しを作ります">見出し</button>
 	<button class="helper" type="button" data-type="strong" data-msg="太字にしたい文字列を入力">太字</button>
@@ -167,10 +169,7 @@
 	<a href="<@v.myself>?etc/allow_tags&amp;n=article" target="_blank">HTMLタグ</a>
 	<$end>
 	</div>
-
-	<textarea name="body_txt" id="editarea" cols="60" rows="24" class="edit-article"><@tag_escape_amp( txt = art._text )></textarea>
-
-	<div id="edit-under-body">
+	<div id="edit-tools">
 	<span class="element" id="select-parser-span">
 <@>		<span class="edit-caption">入力記法</span>
 		<select name="parser" id="select-parser">
@@ -183,6 +182,10 @@
 	<button type="button" id="edit-revision" data-title="更新履歴">履歴</button>
 	<$end>
 	</div>
+	</div>
+
+	<textarea name="body_txt" id="editarea" cols="60" rows="24" class="edit-article"><@tag_escape_amp( txt = art._text )></textarea>
+
 </div>
 
 <aside class="edit-side">
