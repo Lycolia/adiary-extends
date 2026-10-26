@@ -229,6 +229,9 @@ article { margin: 0; }
 div.art-info { display: flex; flex-wrap: wrap; gap: 0 1em; margin: 0; padding: 0; border: 0; text-align: left; }
 div.art-info > div { display: flex; flex-wrap: wrap; gap: 0 1em; }
 div.art-info br { display: none; }
+/* 編集のリンク（編集できる人がログインしているとき）は右端に置く。リンクはタグと同じ、後ろの div の中にある */
+div.art-info > div:last-child { flex: auto; }
+div.art-info .edit-article { margin-left: auto; }
 span.tags .tag { margin-right: .5em; }
 
 div.body-footer { margin: 0; }
