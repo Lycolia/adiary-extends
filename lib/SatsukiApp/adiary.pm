@@ -8,9 +8,9 @@ use Satsuki::AutoLoader;
 use Fcntl;
 #-------------------------------------------------------------------------------
 # データ管理上数値しか解釈できないので文字列にしてはならない
-our $VERSION    = 4.14;
+our $VERSION    = 4.15;
 our $OUTVERSION = "$VERSION";
-our $DATA_VERSION = 4.14;
+our $DATA_VERSION = 4.15;
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -123,6 +123,9 @@ sub main {
 
 	# ServerURLのセキィリティを確保
 	$self->secure_http_host();
+
+	# 外部HTTPリクエストのUser-Agent
+	$ROBJ->{HttpAgent} = "adiary extends v$VERSION" . ($sys->{ServerURL} ? " ($sys->{ServerURL})" : '');
 
 	# pinfoとブログの選択。テーマ選択
 	$self->select_blog_and_pinfo();

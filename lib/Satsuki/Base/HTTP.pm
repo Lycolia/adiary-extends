@@ -26,7 +26,7 @@ sub new {
 	$self->{redirect}   = 5;	# リダイレクト処理を行う回数
 	$self->{use_sni}    = 1;	# use SNI
 
-	$self->{http_agent} = "Simple HTTP agent $VERSION";
+	$self->{http_agent} = $ROBJ->{HttpAgent} || "Simple HTTP agent $VERSION";
 	# $self->{log_file} = 'http.log';	# (DEBUG) connection log
 
 	return $self;
