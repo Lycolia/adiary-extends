@@ -845,10 +845,6 @@ div.popup-help {
 #admin-side button {
 	margin:			0.5em 0.25em 0 0;
 }
-/* ログイン情報は上のバーと重なるので出さない */
-#admin-side #side-login-information {
-	display:		none;
-}
 
 /*--------------------------------------------------------------------
 ■画像アルバム（body.album）
