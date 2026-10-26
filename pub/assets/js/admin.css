@@ -618,6 +618,163 @@ div.popup-help {
 }
 
 /*--------------------------------------------------------------------
+■画像アルバム（body.album）
+--------------------------------------------------------------------*/
+/* 操作のバー */
+#album-header {
+	display:		flex;
+	flex-wrap:		wrap;
+	align-items:		center;
+	justify-content:	space-between;
+	gap:			0.5rem 1rem;
+}
+#album-header div.view-option {
+	float:			none;
+}
+#album-header .option-item + .option-item {
+	margin-left:		0.5em;
+}
+#album-toolbar {
+	margin:			0.5rem -1rem 0;
+	padding:		0.5rem 1rem;
+	background-color:	#f6f7f7;
+	border-top:		1px solid var(--admin-border-light);
+	border-bottom:		1px solid var(--admin-border-light);
+}
+#album-toolbar form {
+	display:		flex;
+	flex-wrap:		wrap;
+	align-items:		center;
+	gap:			0.5rem;
+}
+#album-toolbar button + button {
+	margin-left:		0;
+}
+#album-toolbar ul#paste-detail {
+	flex-basis:		100%;
+	display:		flex;
+	flex-wrap:		wrap;
+	gap:			0.25rem 1.5rem;
+	list-style:		none;
+	margin:			0;
+	padding:		0;
+}
+
+/* ファイルの一覧 */
+#album-folder-view {
+	margin:			0;
+	padding:		0.5rem 0;
+}
+
+/* 一覧の下（選択中のファイル、アップロード） */
+#album-footer {
+	margin:			0 -1rem;
+	padding:		0 1rem 0.5rem;
+	border-top:		1px solid var(--admin-border-light);
+	font-size:		13px;
+}
+#album-footer h4 {
+	margin:			0.5rem 0 0.25rem;
+	font-size:		13px;
+}
+#album-footer ul#selected-files {
+	margin:			0;
+	padding-left:		1.5em;
+}
+#album-upload form {
+	display:		flex;
+	flex-wrap:		wrap;
+	align-items:		center;
+	gap:			0.5rem;
+}
+#album-upload #file-btn-div {
+	margin:			0;
+}
+
+/* フォルダのツリー */
+#admin-side .side-folder-tree .treebox {
+	padding:		0.25rem;
+	border:			none;
+}
+#admin-side .side-folder-tree ul.dynatree-container {
+	min-height:		0;
+	border:			none;
+}
+
+/* 広い画面では、アルバムを画面の高さに収め、ツリーとファイルの一覧だけをスクロールする。
+   ファイルが増えても、操作のバーが下に行かないようにする */
+@media screen and (min-width: 783px) {
+	body.album #admin-main {
+		height:			calc(100vh - var(--admin-bar-height));
+		box-sizing:		border-box;
+		grid-template-rows:	minmax(0, 1fr);
+		grid-auto-rows:		auto;
+	}
+	body.album #admin-main > .main,
+	body.album #admin-side {
+		min-height:		0;
+		height:			100%;
+		display:		flex;
+		flex-direction:		column;
+	}
+	body.album #admin-side {
+		position:		static;
+	}
+	body.album #album,
+	body.album #admin-side .side-folder-tree {
+		flex:			1;
+		min-height:		0;
+		margin:			0;
+		display:		flex;
+		flex-direction:		column;
+	}
+	body.album #album > .body,
+	body.album #admin-side .side-folder-tree .hatena-modulebody {
+		flex:			1;
+		min-height:		0;
+		display:		flex;
+		flex-direction:		column;
+	}
+	body.album #album > .body {
+		padding-bottom:		0;
+	}
+	body.album #album-folder-view,
+	body.album #album-folder-tree {
+		flex:			1;
+		min-height:		0;
+		overflow:		auto;
+	}
+	body.album #album-footer {
+		flex:			none;
+		max-height:		40%;
+		overflow-y:		auto;
+	}
+}
+/* 狭い画面では、フォルダのツリーを上に置き、ツリーとファイルの一覧の高さを抑える */
+@media screen and (max-width: 782px) {
+	body.album #admin-main:has(> #admin-side) {
+		display:		flex;
+		flex-direction:		column;
+		align-items:		stretch;
+		gap:			1rem;
+	}
+	body.album #admin-side {
+		order:			-1;
+	}
+	body.album #admin-side .side-folder-tree {
+		margin:			0;
+	}
+	body.album #album-folder-tree {
+		max-height:		30vh;
+		overflow:		auto;
+	}
+	body.album #album-folder-view {
+		max-height:		60vh;
+		overflow-y:		auto;
+	}
+}
+
+/*--------------------------------------------------------------------
 ■狭い画面
 --------------------------------------------------------------------*/
 @media screen and (max-width: 782px) {
