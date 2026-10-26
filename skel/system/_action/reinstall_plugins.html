@@ -1,11 +1,12 @@
 <@20>
 <$ifbreak(! Auth.isadmin)>
 
-<$action_return = v.rebuild_all_blogs()>
+<$v.stop_plugin_install_msg = 1>
+<$action_return = v.reinstall_plugins()>
 
 POST成功時の処理
 <$ifexec(action_return eq '0', begin)>
-	<$message('すべてのブログの記事を再構築しました')>
+	<$message('プラグインを再インストールしました')>
 	<$url = v.myself .'?'. v.query0>
 	<$jump('_sub/reload_message', url)>
 <$end>

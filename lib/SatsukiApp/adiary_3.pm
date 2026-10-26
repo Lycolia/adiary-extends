@@ -889,46 +889,23 @@ sub load_album_allow_ext {
 sub save_blogset {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
-	my $auth = $ROBJ->{Auth};
-	my ($new_set, $blogid, $opt) = @_;
+	my $new_set = shift;
 
 	# 権限確認
-	my $blog;
-	if ($blogid eq '') {
-		if (! $self->{blog_admin}) { $ROBJ->message('Operation not permitted'); return 10; }
-		$blogid = $self->{blogid};
-		$blog   = $self->{blog};
-	} else {
-		# 他のブログ or デフォルト設定
-		if (! $auth->{isadmin}) { $ROBJ->message('Operation not permitted'); return 11; }
-		$blog = $self->load_blogset( $blogid );
-		if (! $blog) { $ROBJ->message("Blog '%s' not found", $blogid); return 12; }
-	}
+	if (! $self->{blog_admin}) { $ROBJ->message('Operation not permitted'); return 10; }
+	my $blogid = $self->{blogid};
+	my $blog   = $self->{blog};
 
-	if ($blogid ne '*') {
-		# 通常のブログ設定保存
-		$self->update_blogset($blogid, $new_set);
+	$self->update_blogset($blogid, $new_set);
 
-		# プライベートモードチェック
-		$self->save_private_mode( $blogid );
+	# プライベートモードチェック
+	$self->save_private_mode( $blogid );
 
-		# ブログ一覧情報に保存
-		$self->update_bloginfo($blogid, {
-			private   => $blog->{private},
-			blog_name => $blog->{blog_name}
-		});
-	} else {
-		# デフォルトのブログ設定値保存
-		# 新規設定値をマージ
-		$ROBJ->into($blog, $new_set);	# %$blog <- %$new_set
-
-		# 固定値
-		$blog->{arts} = 0;
-		$blog->{coms} = 0;
-
-		# ファイルに保存
-		$ROBJ->fwrite_hash($self->{my_default_setting_file}, $blog);
-	}
+	# ブログ一覧情報に保存
+	$self->update_bloginfo($blogid, {
+		private   => $blog->{private},
+		blog_name => $blog->{blog_name}
+	});
 
 	return 0;
 }

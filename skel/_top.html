@@ -21,8 +21,8 @@
 	<p>ログインは右上です。</p>
 	<p>このページを書き換えたい時は "skel/_top.html" を "skel.local/_top.html" にコピーして編集してください。</p>
 
-	<@ifexec(Auth.isadmin && v.sys.default_blogid eq '', begin)>
-	<p class="adiary-hint">※このページの代わりに、特定のブログを<a href="<@v.myself>?system/setting">標準で表示させる設定（デフォルトブログ）</a>があります。</p>
+	<@ifexec(Auth.isadmin && !v.exists_blog(), begin)>
+	<p><a href="<@v.myself>?etc/myblog_create">ブログを作成する</a>と、このページの代わりにブログが表示されます。</p>
 	<$end>
 
 	<@> 初回起動時
@@ -33,10 +33,6 @@
 
 	</div>
 </article>
-
-<@><!--=====================================================================-->
-<@>ブログ一覧の呼び出し
-<@call('blogs')>
 
 <@><!--=====================================================================-->
 <@> sidebarのカスタマイズ

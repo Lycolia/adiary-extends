@@ -1,18 +1,10 @@
 <@7>
-<@local(query)>
-<$ifset(Query.blogid eq '*', query, '&amp;blogid=*')>
 <@>
-<@call("_sub/menu_tree", query)>
+<@call("_sub/menu_tree")>
 
 <@>/////////////////////////////////////////////////////////////////////////////
 <@> 権限チェック
 <@>/////////////////////////////////////////////////////////////////////////////
 <$ifsuperjump_clear(! Auth.ok, '_sub/error_message_403', 'ログインしていません')>
-<@ifexec(query, begin, begin)>
-	<$ifsuperjump_clear(! Auth.isadmin, '_sub/error_message_403', '権限がありません')>
-	<@call('_sub/message', "初期設定を編集します。この設定は新規ブログのデフォルトになります。")>
-	<$set = v.load_blogset('*')>
-<$else>
-	<$ifsuperjump_clear(! v.blog_admin, '_sub/error_message_403', 'ブログが存在しないか権限がありません')>
-	<$set = v.blog>
-<$end>
+<$ifsuperjump_clear(! v.blog_admin, '_sub/error_message_403', 'ブログが存在しないか権限がありません')>
+<$set = v.blog>

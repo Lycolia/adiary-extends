@@ -1,11 +1,11 @@
 <@20>
 <$ifbreak(! Auth.isadmin)>
 
-<$action_return = v.reinstall_all_plugins()>
+<$action_return = v.remake_theme_custom_css()>
 
 POST成功時の処理
 <$ifexec(action_return eq '0', begin)>
-	<$message('すべてのブログのプラグインを再インストールしました')>
+	<$message('カスタムCSSを再生成しました')>
 	<$url = v.myself .'?'. v.query0>
 	<$jump('_sub/reload_message', url)>
 <$end>

@@ -26,7 +26,7 @@
 <$replace_dest(h.edit_users,  '\s*,\s*', ', ')>
 
 
-<$action_return = v.save_blogset(h, if(Query.blogid eq '*', '*'))>
+<$action_return = v.save_blogset(h)>
 
 POST成功時の処理
 <$ifexec(action_return eq '0', begin)>
@@ -34,7 +34,7 @@ POST成功時の処理
 	<$v.generate_rss()>
 
 	<$message("設定を保存しました")>
-	<$url = v.myself .'?'. v.query0 . if(Query.blogid eq '*', '&amp;blogid=*')>
+	<$url = v.myself .'?'. v.query0>
 	<$jump('_sub/reload_message', url)>
 <$end>
 

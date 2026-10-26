@@ -83,32 +83,24 @@ sub _ajax_self_change_pass {
 #-------------------------------------------------------------------------------
 # ●ブログを作る
 #-------------------------------------------------------------------------------
+# ブログは1つだけ。まだ無いときに、システム管理者だけが作れる
 sub blog_create {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
-	my $DB   = $self->{DB};
 	my $auth = $ROBJ->{Auth};
 	my $id   = shift;
-	my $opt  = shift;
-	my $copy_id = $opt->{copy_id};
 
 	if (! $auth->{ok}) { $ROBJ->message('Not login'); return 1; }
-	if ($self->{sys}->{blog_create_root_only} && ! $auth->{isadmin}) {
+	if (! $auth->{isadmin}) {
 		$ROBJ->message('Operation not permitted');
 		return 5;
 	}
-	if (! $auth->{isadmin}) {
-		$id = $auth->{id};
-		$copy_id = undef;
-	}
-	if ($copy_id && !$self->find_blog($copy_id)) {
-		$ROBJ->message("Can't find copy blog id '%s'", $copy_id);
-		return 20;
+	if ($self->exists_blog()) {
+		$ROBJ->message('Blog `%s` already existed', $self->{sys}->{default_blogid});
+		return 10;
 	}
 	# blogidの確認
-	if (! $auth->{isadmin}) {
-		$id = $auth->{id};
-	} elsif ($id =~ /[^a-z0-9_]/ || $id !~ /^[a-z]/) {
+	if ($id =~ /[^a-z0-9_]/ || $id !~ /^[a-z]/) {
 		$ROBJ->message("Can't allow character used");
 		return 9;
 	}
@@ -122,69 +114,14 @@ sub blog_create {
 	if ($r) {
 		$ROBJ->message('Blog create failed');
 		$self->drop_tables($id);
-	} else {
-		# ディレクトリの作成
-		$ROBJ->mkdir( "$self->{data_dir}blog/" );
-		if (!$copy_id) {
-			$ROBJ->mkdir( $self->blog_dir   ( $id ) );
-			$ROBJ->mkdir( $self->blogpub_dir( $id ) );
-		}
-		# キャッシュ除去
-		delete $self->{_cache_find_blog}->{$id};
+		return $r;
 	}
-
-	if ($r || !$copy_id) { return $r; }
-
-	# ブログデータのコピー
-	$ROBJ->dir_copy( $self->blog_dir   ( $copy_id ), $self->blog_dir   ( $id ) );
-	$ROBJ->dir_copy( $self->blogpub_dir( $copy_id ), $self->blogpub_dir( $id ) );
-
-	# データコピーはプラグインインストール後に
-	my $current = $self->{blogid};
-	my $blog    = $self->set_and_select_blog( $id );
-	if ($blog->{private}) {
-		my $postfix = $self->change_blogpub_dir_postfix( $id );
-		if ($postfix) {
-			$self->update_blogset($blog, 'blogpub_dir_postfix', $postfix);
-			$self->{blogpub_dir} = $self->blogpub_dir();
-		}
-	}
-	
-	# アルバム初期化
-	if ($opt->{clear_image}) {
-		my $imgdir = $self->blogimg_dir();
-		$ROBJ->dir_delete($imgdir);
-	}
-
-	# 再構築
-	$self->copy_tables($copy_id, $id);
-	$self->save_blogset($blog, $id);
-	$self->reinstall_plugins();
-	$self->rebuild_blog();
-
-	$self->set_and_select_blog_force( $current );
-	return $r;
-}
-
-#-------------------------------------------------------------------------------
-# ●ブログの削除
-#-------------------------------------------------------------------------------
-sub blog_drop {
-	my ($self) = @_;
-	my $ROBJ   = $self->{ROBJ};
-	my $blogid = $self->{blogid};
-	if (! $self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
-
-	my $r = $self->drop_tables($blogid);
-	if ($r) { $ROBJ->message('Blog delete failed'); return $r; }
-
-	# 内部変数の初期化
-	delete $self->{_cache_find_blog}->{$blogid};
-	$self->set_and_select_blog('');
-
-	# ユーザーディレクトリの消去
-	$ROBJ->dir_delete($self->blog_dir   ($blogid));
-	$ROBJ->dir_delete($self->blogpub_dir($blogid));
+	# ディレクトリの作成
+	$ROBJ->mkdir( "$self->{data_dir}blog/" );
+	$ROBJ->mkdir( $self->blog_dir   ( $id ) );
+	$ROBJ->mkdir( $self->blogpub_dir( $id ) );
+	# キャッシュ除去
+	delete $self->{_cache_find_blog}->{$id};
 
 	return 0;
 }
@@ -261,7 +198,7 @@ sub rebuild_blog {
 
 		# パース準備
 		$self->post_process_link_key( $_ );
-		$parser->{thisurl}  = $self->get_blog_path( $blogid ) . $_->{elink_key};
+		$parser->{thisurl}  = $self->{myself2} . $_->{elink_key};
 		$parser->{thispkey} = $_->{pkey};
 		my ($text, $text_s) = $parser->parse( $_->{_text} );
 		if ($text eq $text_s) { $text_s=""; }
@@ -499,81 +436,6 @@ sub remake_theme_custom_css {
 	my $ary = $self->css_rewrite($css, $col, $opt);
 	$ROBJ->fwrite_lines($file, $ary);
 	return 0;
-}
-
-################################################################################
-# ■全ブログに対する処理
-################################################################################
-#-------------------------------------------------------------------------------
-# 全ブログの再構築
-#-------------------------------------------------------------------------------
-sub rebuild_all_blogs {
-	my $self = shift;
-	return $self->do_all_blogs('rebuild_blog', @_);
-}
-
-#-------------------------------------------------------------------------------
-# 全ブログ付加情報の再構築
-#-------------------------------------------------------------------------------
-sub rebuild_all_blogs_info {
-	my $self = shift;
-	return $self->do_all_blogs('blog_info_rebuild');
-}
-
-#-------------------------------------------------------------------------------
-# 全ブログの全プラグインを再インストール
-#-------------------------------------------------------------------------------
-sub reinstall_all_plugins {
-	my $self = shift;
-
-	$self->{stop_plugin_install_msg} = 1;
-	my $r = $self->do_all_blogs('reinstall_plugins');
-	$self->{stop_plugin_install_msg} = 0;
-
-	return $r;
-}
-
-#-------------------------------------------------------------------------------
-# 全ブログのカスタムCSS再設定
-#-------------------------------------------------------------------------------
-sub remake_all_custom_css {
-	my $self = shift;
-	return $self->do_all_blogs('remake_theme_custom_css');
-}
-
-#-------------------------------------------------------------------------------
-# ●全ブログに対する処理
-#-------------------------------------------------------------------------------
-sub do_all_blogs {
-	my $self = shift;
-	my $func = shift;
-	my $ROBJ = $self->{ROBJ};
-	my $auth = $ROBJ->{Auth};
-	if (! $auth->{isadmin} ) { $ROBJ->message('Operation not permitted'); return 5; }
-
-	my $blogs = $self->load_all_blogid();
-	my $cur_blogid = $self->{blogid};
-	foreach(@$blogs) {
-		$self->set_and_select_blog($_);
-		if (ref($func)) {
-			&$func($self, @_);
-		} else {
-			$self->$func(@_);
-		}
-	}
-	$self->set_and_select_blog($cur_blogid);
-	return 0;
-}
-
-#-------------------------------------------------------------------------------
-# ●全ブログidのロード
-#-------------------------------------------------------------------------------
-sub load_all_blogid {
-	my $self = shift;
-	my $DB   = $self->{DB};
-	my $blogs = $DB->select_match($self->{bloglist_table}, '*cols', 'id');
-	$blogs = [ map { $_->{id} } @$blogs ];
-	return $blogs;
 }
 
 ################################################################################
@@ -831,7 +693,7 @@ sub drop_tables {
 	my ($self, $table) = @_;
 	my $DB = $self->{DB};
 
-	my $r = 0;	# blog_create の copy も変更するの忘れず
+	my $r = 0;
 	$r += $DB->drop_table("${table}_link");
 	$r += $DB->drop_table("${table}_trashcom");
 	$r += $DB->drop_table("${table}_trash");
@@ -845,24 +707,6 @@ sub drop_tables {
 	$self->delete_bloglist($table);
 
 	return $r;
-}
-
-#-------------------------------------------------------------------------------
-# ●ブログテーブルのコピー
-#-------------------------------------------------------------------------------
-sub copy_tables {
-	my ($self, $src, $des) = @_;
-	my $DB = $self->{DB};
-
-	my @tables = qw(_art _tag _tagart _com _rev _trash _trashcom);
-	$DB->begin();
-	foreach my $table (@tables) {
-		my $items = $DB->select("${src}$table");
-		foreach(@$items) {
-			$DB->insert("${des}$table", $_);
-		}
-	}
-	$DB->commit();
 }
 
 ################################################################################

@@ -11,7 +11,7 @@
 <@>自動ログインに失敗
 <$ifexec(!Auth.auto, begin)>
 	<@> ログイン中
-	<$ifredirect(Auth.ok, v.myself3)>
+	<$ifredirect(Auth.ok, myself)>
 	<@> 非ログイン中
 	<$message('登録済アカウントでログインしてください。')>
 	<$jump_clear('login')>

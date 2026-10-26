@@ -6,8 +6,7 @@
 	<$ifredirect(Auth.auto            , myself . '?user/add')>
 	<$ifredirect(Auth.isadmin && v.require_update, myself . '?menu')>
 
-	<$url = if( v.path_blogid, v.thisurl, v.myself3 )>
-	<$redirect( url )>
+	<$redirect( v.thisurl )>
 <$end>
 
 失敗時

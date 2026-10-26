@@ -10,7 +10,7 @@ use Fcntl;
 # データ管理上数値しか解釈できないので文字列にしてはならない
 our $VERSION    = 4.10;
 our $OUTVERSION = "$VERSION";
-our $DATA_VERSION = 4.09;
+our $DATA_VERSION = 4.10;
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -239,42 +239,10 @@ sub blogid_and_pinfo {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 
-	my $myself  = $ROBJ->{myself};
-	my $myself2 = $ROBJ->{myself2};
 	my @pinfo   = @{ $ROBJ->read_path_info() };	# PATH_INFO
 
-	# URLなど基本設定
-	my $authid  = $ROBJ->{Auth}->{id};
-	my $pinfoid = exists($pinfo[1]) ? $pinfo[0] : ''; # 'bloid/'のように'/'付のみ有効
-	my $blogid;
-	my $default = $self->{sys}->{default_blogid};
-	if ($pinfoid !~ /^[a-z][a-z0-9_]*$/) { $pinfoid=''; }	# blogid format check
-
-	if ($default) {
-		#-------------------------------------------
-		# デフォルトブログモード
-		#-------------------------------------------
-		if ($pinfoid ne $default && $self->find_blog($pinfoid) && $self->set_and_select_blog($pinfoid)) {
-			shift(@pinfo);
-			$blogid = $pinfoid;
-		} else {
-			$blogid = $default;
-		}
-		# 自分のブログ
-		$self->{myself3} = ($authid eq $default) ? $myself : "$myself2$authid/";
-
-	} else {
-		#-------------------------------------------
-		# マルチユーザーモード
-		#-------------------------------------------
-		shift(@pinfo);
-		$blogid = $pinfoid;
-		my $add_myself3;
-		if ($default ne $authid) { $add_myself3 = "$authid/"; }
-		$self->{myself3} = $myself2 . $add_myself3;	# 自分のブログ
-	}
-	# 未設定ならブログを選択 ※$blogidが未設定でも選択すること
-	if (!$self->{blog}) { $self->set_and_select_blog( $blogid ); }
+	# ブログは1つ（デフォルトブログ）だけ。ブログが無いときも選択して内部変数を初期化すること
+	$self->set_and_select_blog( $self->{sys}->{default_blogid} );
 
 	# テーマの設定
 	my $theme = $self->{blog}->{theme};
@@ -288,17 +256,6 @@ sub blogid_and_pinfo {
 	$self->link_key_encode( $pinfo );
 	$self->{e_pinfo} = $pinfo;
 	$self->{thisurl} = $pinfo eq '' ? $self->{myself} : ($self->{myself2} . $pinfo);
-
-	#-------------------------------------------------------------
-	# ブログの存在確認
-	#-------------------------------------------------------------
-	if ($authid && $self->find_blog($authid) ) {
-		$self->{exists_my_blog} = 1;
-	}
-	if ($blogid ne '') {	# ブログIDの指定あり
-		$self->{path_blogid} = $blogid;
-		$self->{others_blog} = ($blogid ne $authid) ? 1 : 0;
-	}
 }
 
 #-------------------------------------------------------------------------------
@@ -391,7 +348,7 @@ sub select_default_skeleton {
 	my $ROBJ = $self->{ROBJ};
 	if (!$ROBJ->{POST} && $blog->{album_mode}) {
 		$ROBJ->redirect( $self->{myself} . '?album/' );
-	} elsif ($mode eq '' && !$self->{path_blogid}) {
+	} elsif ($mode eq '' && !$self->exists_blog()) {
 		return $self->{top_skeleton};
 	} elsif ($mode ne '' && $mode !~ /^[1-9]\d+$/ || $mode eq '' && $self->{query} eq '' && $blog->{frontpage}) {
 		return ($self->{view_event} = $self->{article_skeleton});
@@ -440,7 +397,7 @@ sub output_html {
 # ■ブログの存在確認と設定ロード
 ################################################################################
 #-------------------------------------------------------------------------------
-# ●ブログの存在確認	※キュッシュ仕様を変更したら blog_create/blog_drop も変更すること!!
+# ●ブログの存在確認	※キュッシュ仕様を変更したら blog_create も変更すること!!
 #-------------------------------------------------------------------------------
 sub find_blog {
 	my $self = shift;
@@ -454,21 +411,27 @@ sub find_blog {
 }
 
 #-------------------------------------------------------------------------------
+# ●ブログ（デフォルトブログ）が作られているか
+#-------------------------------------------------------------------------------
+sub exists_blog {
+	my $self = shift;
+	my $blogid = $self->{sys}->{default_blogid};
+	return $blogid ne '' && $self->find_blog($blogid);
+}
+
+#-------------------------------------------------------------------------------
 # ●ブログの設定ロード
 #-------------------------------------------------------------------------------
 # ※書き換えは瞬時に反映され、$blog->{_update}=1 ならばプログラム終了時に保存される。
 sub load_blogset {
-	my ($self, $blogid) = @_;	# * = default
+	my ($self, $blogid) = @_;	# * = 新しいブログの既定値
 	my $ROBJ = $self->{ROBJ};
 	if ($self->{'_loaded_bset'}->{$blogid}) { return $self->{'_loaded_bset'}->{$blogid}; }
 	if ($blogid ne '*' && !$self->find_blog($blogid)) { return undef; }
 
 	my $file = $self->blog_dir($blogid) . 'setting.dat';
 	if ($blogid eq '*' || !-e $file) {
-		$file = $self->{my_default_setting_file};
-		if (!-e $file) {
-			$file = $self->{default_setting_file};
-		}
+		$file = $self->{default_setting_file};
 	}
 
 	# 設定のロード
@@ -530,12 +493,6 @@ sub set_and_select_blog {
 	$self->{blog}   = $blog;
 	$self->{blog_dir}    = $self->blog_dir();
 	$self->{blogpub_dir} = $self->blogpub_dir();
-	# myself(通常用,QUERY用)、myself2(PATH_INFO用) の設定
-	if ($blogid ne $self->{sys}->{default_blogid}) {
-		$self->{myself}  = $ROBJ->{myself2} . "$blogid/";
-		$self->{myself2} = $ROBJ->{myself2} . "$blogid/";
-	}
-
 	# ブログ個別スケルトンの登録（プラグイン等で生成される）
 	if (!$self->{stop_all_plugins}) {
 		$ROBJ->regist_skeleton($self->{blog_dir} . 'skel/', $self->{user_skeleton_level});
@@ -1099,7 +1056,7 @@ sub load_articles {
 	#-------------------------------------------------------------
 	# ●ページ送り処理
 	#-------------------------------------------------------------
-	my $path = $self->get_blog_path( $blogid );
+	my $path = $self->{myself2};
 
 	# 単一記事ページ送り
 	if ($opt->{pagemode} && exists $blog->{keylist} && $logs->[0]
@@ -1715,18 +1672,6 @@ sub blogimg_dir {
 }
 
 #-------------------------------------------------------------------------------
-# ●指定したblogidのURLを取得
-#-------------------------------------------------------------------------------
-sub get_blog_path {
-	my ($self, $blogid) = @_;
-	my $ROBJ = $self->{ROBJ};
-	$blogid =~ s/[^\w\-]//g;
-	my $myself2 = $ROBJ->{myself2};
-	return ($blogid eq $self->{sys}->{default_blogid}) ? $myself2
-		: $myself2 . $blogid . '/';
-}
-
-#-------------------------------------------------------------------------------
 # ●skeleton dirを取得
 #-------------------------------------------------------------------------------
 sub parse_skel {
@@ -1855,19 +1800,6 @@ sub split_equal {
 	my $k = substr($str, 0, $x);
 	my $v = substr($str, $x+1);
 	return ($k,$v);
-}
-
-#-------------------------------------------------------------------------------
-# ●blog一覧を表示ok？
-#-------------------------------------------------------------------------------
-sub allow_blogs {
-	my $self  = shift;
-	my $allow = $self->{sys}->{blogs_allow};
-	if ($allow eq '') { return 1; }		# OK
-
-	my $auth = $self->{ROBJ}->{Auth};
-	if ($allow eq 'users') { return $auth->{ok}; }
-	return $auth->{isadmin};	# $allow == 'admin'
 }
 
 #-------------------------------------------------------------------------------

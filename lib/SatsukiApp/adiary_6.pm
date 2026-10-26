@@ -46,7 +46,8 @@ my @update_versions = (
 	{ ver => 3.52, func => 'sys_update_352' },
 	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' },
 	{ ver => 4.08, info=>1, func => 'sys_update_408' },
-	{ ver => 4.09, plugin=>1, func => 'sys_update_409' }
+	{ ver => 4.09, plugin=>1, func => 'sys_update_409' },
+	{ ver => 4.10, plugin=>1 }	# 複数のブログの機能を消したので、デザインのスケルトンを作り直す
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -57,8 +58,11 @@ sub system_update {
 	my $auth = $ROBJ->{Auth};
 	if (!$auth->{isadmin}) { $ROBJ->message('Operation not permitted'); return 5; }
 
+	# デフォルトブログが未設定なら設定する（各バージョンの処理より先に）
+	$self->set_default_blog_410();
+
 	my $cur_blogid = $self->{blogid};
-	my $blogs = $self->load_all_blogid();
+	my $blogs = $cur_blogid ne '' ? [ $cur_blogid ] : [];
 
 	my %opt;
 	my $cur = $self->{sys}->{VERSION};
@@ -82,12 +86,13 @@ sub system_update {
 		}
 		$cur = $h->{ver};
 	}
-	$self->set_and_select_blog($cur_blogid);
+	$self->set_and_select_blog_force($cur_blogid);
+	if ($cur_blogid eq '') { %opt = (); }	# ブログが無ければ再構築などは不要
 
 	# 再構築
 	if ($opt{rebuild}) {
-		$ROBJ->message("Rebuild all blogs");
-		$self->rebuild_all_blogs();
+		$ROBJ->message("Rebuild blog");
+		$self->rebuild_blog();
 		$opt{info} = 0;
 
 	# 条件付き再構築（記事内容による）
@@ -101,9 +106,9 @@ sub system_update {
 			}
 			return 0;
 		};
-		$self->rebuild_all_blogs({ filter => $filter });
+		$self->rebuild_blog({ filter => $filter });
 		if ($cnt) {
-			$ROBJ->message("Rebuild '%d articles' of all blogs", $cnt);
+			$ROBJ->message("Rebuild '%d articles'", $cnt);
 		}
 		$opt{info} = 0;
 
@@ -111,17 +116,18 @@ sub system_update {
 	# プラグイン再インストール
 	if ($opt{plugin}) {
 		$ROBJ->message("Reinstall all plugins");
-		$self->reinstall_all_plugins();
+		local($self->{stop_plugin_install_msg}) = 1;
+		$self->reinstall_plugins();
 	}
 	# テーマカスタムCSS更新
 	if ($opt{theme}) {
 		$ROBJ->message("Remake all custom css");
-		$self->remake_all_custom_css();
+		$self->remake_theme_custom_css();
 	}
 	# ブログ付加情報の再構築
 	if ($opt{info}) {
-		$ROBJ->message("Reinstall all blogs infomation");
-		$self->rebuild_all_blogs_info();
+		$ROBJ->message("Rebuild blog infomation");
+		$self->blog_info_rebuild();
 	}
 
 	$self->update_sysdat('VERSION', $cur);
@@ -277,7 +283,7 @@ sub sys_update_352 {
 # ・見出しに、今の見出しのIDを識別子[#id]として書き足す（Markdownの記事）
 sub sys_update_353 {
 	my $self = shift;
-	$self->do_all_blogs('update_art_text_353');
+	$self->update_art_text_353();
 }
 sub update_art_text_353 {
 	my $self   = shift;
@@ -293,7 +299,7 @@ sub update_art_text_353 {
 		my $parser = $_->{parser} ne '' && $self->load_parser( $_->{parser} );
 		if (ref($parser) && $_->{parser} eq 'markdown') {
 			$self->post_process_link_key( $_ );
-			$parser->{thisurl}  = $self->get_blog_path( $blogid ) . $_->{elink_key};
+			$parser->{thisurl}  = $self->{myself2} . $_->{elink_key};
 			$parser->{thispkey} = $_->{pkey};
 			$text = $self->freeze_heading_ids_353( $parser, $text );
 		}
@@ -339,7 +345,6 @@ sub sys_update_409 {
 	my $self  = shift;
 	my $blogs = shift;
 	my $DB    = $self->{DB};
-	my $ROBJ  = $self->{ROBJ};
 	foreach(@$blogs) {
 		# 定義から外した後に作ったブログにはカラムが無く、エラーになるので出さない
 		my $noerr = $DB->set_noerror(1);
@@ -353,15 +358,7 @@ sub sys_update_409 {
 	}
 
 	# 削除したプラグインを、入れたままのブログから外す
-	$self->do_all_blogs('uninstall_removed_plugins_409');
-
-	# デフォルトのブログ設定値
-	my $file = $self->{my_default_setting_file};
-	if (!-e $file) { return; }
-	my $def = $ROBJ->fread_hash($file);
-	if ($def->{rev_cycle} eq '') { return; }
-	$def->{rev_cycle} = int($def->{rev_cycle}) * 60;
-	$ROBJ->fwrite_hash($file, $def);
+	$self->uninstall_removed_plugins_409();
 }
 
 # プラグインの管理画面での保存（save_use_plugins）は、plugin/に今あるプラグインしか見ないので、
@@ -395,6 +392,27 @@ sub uninstall_removed_plugins_409 {
 
 	$ROBJ->fwrite_hash($self->{blog_dir} . 'plugins.dat', $pd);
 	$self->set_event_info($self->{blog}, $pd);
+}
+
+#-------------------------------------------------------------------------------
+# ●デフォルトブログの設定（Ver4.10）
+#-------------------------------------------------------------------------------
+# ブログはデフォルトブログだけを表示するようにしたので、未設定ならブログIDの順で最初のブログにする
+sub set_default_blog_410 {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $DB   = $self->{DB};
+	if ($self->exists_blog()) { return; }
+
+	my $bak  = $DB->set_noerror(1);
+	my $list = $DB->select_match($self->{bloglist_table}, '*cols', 'id');
+	$DB->set_noerror($bak);
+	my ($blogid) = sort map { $_->{id} } @$list;
+	if ($blogid eq '') { return; }
+
+	$self->update_sysdat('default_blogid', $blogid);
+	$self->set_and_select_blog_force($blogid);
+	$ROBJ->message("Set default blog to '%s'", $blogid);
 }
 
 #-------------------------------------------------------------------------------

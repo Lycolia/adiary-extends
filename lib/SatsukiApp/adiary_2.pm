@@ -133,38 +133,6 @@ sub load_coms_list {
 	return wantarray ? ($logs,\%ret) : $logs;
 }
 
-#-------------------------------------------------------------------------------
-# ●ブログリストのロード
-#-------------------------------------------------------------------------------
-sub load_blog_list {
-	my ($self, $sort, $rev) = @_;
-	my $ROBJ = $self->{ROBJ};
-	my $DB   = $self->{DB};
-
-	# sortのチェック
-	my %a = ('id'=>1,'arts'=>1,'coms'=>1,'art_tm'=>1,'com_tm'=>1);
-	$sort =~ s/\W//g;
-	if (! $a{$sort}) { $sort='art_tm'; }
-	if ($sort eq '') { $sort='art_tm'; }
-
-	my %h;
-	$h{sort} = [$sort];
-	$h{sort_rev} = [0];
-	$h{no_error} = 1;
-	if ($sort ne 'id')     { $h{sort_rev}->[0] = 1; }
-	if ($sort ne 'art_tm') { $h{sort}->[1] = 'art_tm'; $h{sort_rev}->[1] = $rev;}
-	if ($rev) {
-		$h{sort_rev} = [ map { !$_ } @{$h{sort_rev}} ];
-	}
-	if (! $ROBJ->{Auth}->{isadmin}) { $h{flag} = {private => 0}; }
-
-	my $blogs = $DB->select($self->{bloglist_table}, \%h);
-	foreach(@$blogs) {
-		$_->{url} = $self->get_blog_path($_->{id});
-	}
-	return $blogs;
-}
-
 ################################################################################
 # ■編集・執筆関連
 ################################################################################
@@ -487,7 +455,7 @@ sub regist_article {
 		}
 
 		# パース準備
-		$parser->{thisurl}  = $self->get_blog_path( $blogid ) . $elink_key;
+		$parser->{thisurl}  = $self->{myself2} . $elink_key;
 		$parser->{thispkey} = $pkey;
 		# 識別子の無い見出しに新しい識別子を書き足す（見出しの文字を変えてもIDが変わらないように）
 		if ($parser->can('add_heading_ids')) {
@@ -1304,7 +1272,7 @@ sub update_backlinks {
 		sort_rev => [1, 1]
 	}) : [];
 
-	my $path = $self->get_blog_path( $blogid );
+	my $path = $self->{myself2};
 	foreach(@$srcs) {
 		$self->post_process_link_key( $_ );
 		$_->{html} = "<li><a href=\"$path$_->{elink_key}\">$_->{title}</a></li>\n";
@@ -1328,7 +1296,7 @@ sub update_backlinks {
 #		これ以外は、まだ無いブログ記事のlink_key（"0"+pkey）の形のものだけ残す
 sub extract_link_keys {
 	my ($self, $text, $exists) = @_;
-	my $path = $self->get_blog_path( $self->{blogid} );
+	my $path = $self->{myself2};
 	my @base = ($path);
 	if ($path =~ m|^/|) { unshift(@base, $self->{ROBJ}->{ServerURL} . $path); }
 

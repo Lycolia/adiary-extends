@@ -100,7 +100,6 @@
 
 	album_mode = flag
 	album_open_access = flag
-	album_blogs = flag
 
 <$end>
 <$ifset(h.tw_owner_id, h.tw_owner_id, '@' . h.tw_owner_id)>
@@ -121,7 +120,7 @@
 <$ifbreak(form_error())>
 <$ifset(h2.blog_image, h.blog_image, v.plugin_image_dir(h2.blog_image))>
 
-<$action_return = v.save_blogset(h, if(Query.blogid eq '*', '*'), flag('rss_update'))>
+<$action_return = v.save_blogset(h)>
 
 # RSS再生成
 <$v.generate_rss()>
@@ -130,7 +129,7 @@ POST成功時の処理
 <$ifexec(action_return eq '0', begin)>
 	<$v.call_event('BLOG_SETTING')>
 	<$message("設定を保存しました")>
-	<$url = v.myself .'?'. v.query0 . if(Query.blogid eq '*', '&amp;blogid=*')>
+	<$url = v.myself .'?'. v.query0>
 	<$jump('_sub/reload_message', url)>
 <$end>
 

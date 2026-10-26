@@ -9,9 +9,7 @@
 <$ifjump(!Auth.ok && ENV.REQUEST_METHOD ne 'POST', 'login')>
 
 <@> ブログが存在しない or 権限がない
-<$ifexec(! v.allow_edit, begin)>
-<$redirect( v.myself . '?blog_create' )>
-<$end>
+<$ifjump_clear(! v.allow_edit, '_sub/error_message_403', 'ブログが存在しないか権限がありません')>
 
 <@> 編集モードなら記事をロード
 <$ifexec(v.pinfo, begin, begin)>
@@ -48,9 +46,6 @@
 
 <@> エラーなら表示して終了
 <$ifjump_clear(@Message, '_sub/error_message', undef, 'ブラウザの戻るボタンで戻ってください')>
-
-<@> 他人のブログ？
-<#@call('_sub/others_blog_check')>
 
 <@> 他人の記事は編集できない？
 <$ifjump_clear(edit_pkey && !v.check_editor(art), '_sub/error_message', '他人の記事は編集できません。')>

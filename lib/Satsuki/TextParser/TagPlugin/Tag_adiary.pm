@@ -20,13 +20,11 @@ sub new {
 	$tags->{"adiary:this"}->{data} = \&adiary_this;
 	$tags->{"adiary:tm"}  ->{data} = \&adiary_tm;
 	$tags->{"adiary:key"} ->{data} = \&adiary_key;
-	$tags->{"adiary:id"}  ->{data} = \&adiary_key;
 	$tags->{"adiary:day"} ->{data} = \&adiary_day;
 	$tags->{"adiary:tag"} ->{data} = \&adiary_tag;
 	#---end
 
 	$tags->{"adiary:key"} ->{_key}  = 1;
-	$tags->{"adiary:id"}  ->{_id}   = 1;
 
 	return ;
 }
@@ -72,7 +70,7 @@ sub adiary_this {
 }
 
 #-------------------------------------------------------------------------------
-# ●adiary key/id 記法
+# ●adiary key 記法
 #-------------------------------------------------------------------------------
 sub adiary_key {
 	my ($pobj, $tag, $cmd, $ary) = @_;
@@ -85,22 +83,17 @@ sub adiary_key {
 		return &adiary_tm($pobj, $tag, $cmd, $ary);
 	}
 
-	# ID記法
 	my $url;
 	my $name;
 	my $blogid = $aobj->{blogid};
-	if ($tag->{_id}) {
-		$blogid = shift(@$ary);
-		$url    = $aobj->get_blog_path($blogid);
-		$name   = $blogid;
-	} elsif ($tag->{_this}) {
+	if ($tag->{_this}) {
 		$url = $pobj->{thisurl};
 	} else {
 		$url = $replace->{myself2};
 	}
 
 	my $title;
-	if ($tag->{_key} || $tag->{_id}) {
+	if ($tag->{_key}) {
 		# 記事 pkey/link_key 指定
 		my $link_key = shift(@$ary);
 		if ($link_key ne '') {
@@ -116,13 +109,10 @@ sub adiary_key {
 			#-------------------------
 			# 記事タイトルの自動抽出
 			#-------------------------
-			# セキュリティの関係で同一ブログ内のみ参照可
-			if ($blogid eq $aobj->{blogid}) {
-				my $DB = $aobj->{DB};
-				my $h = $DB->select_match_limit1("${blogid}_art", 'link_key', $link_key, '*cols', ['title']);
-				if ($h) {
-					$title = $h->{title};
-				}
+			my $DB = $aobj->{DB};
+			my $h = $DB->select_match_limit1("${blogid}_art", 'link_key', $link_key, '*cols', ['title']);
+			if ($h) {
+				$title = $h->{title};
 			}
 		}
 	}
