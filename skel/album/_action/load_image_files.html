@@ -1,7 +1,5 @@
 <@20>
-<$ifexec(! v.blog.album_open_access, begin)>
-	<$ifbreak(!v.allow_edit)>
-<$end>
+<$ifbreak(!v.allow_edit)>
 <$(action_return, data) = v.load_image_files( Form.folder )>
 
 <$ifset_status(action_return ne '0', 404)>

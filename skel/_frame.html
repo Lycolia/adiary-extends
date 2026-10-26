@@ -32,6 +32,10 @@
 <@ifexec(!v.system_mode && !v.stop_all_plugins && file_size(file), begin)>
 <link rel="stylesheet" href="<@Basepath><@file>?<@get_lastmodified(file)>" id="user-css">
 <$end>
+<@> 公開画面のフレームを使う管理画面（デザイン編集、表示テスト）
+<@ifexec(v.system_mode, begin)>
+<link rel="stylesheet" href="<@Basepath><@v.script_dir>admin-ui.css?<@get_lastmodified(v.script_dir . 'admin-ui.css')>">
+<$end>
 <@>
 <@forexec(t, v.load_jscss('css'), begin)>
 <link rel="stylesheet" href="<@t>">
@@ -52,6 +56,9 @@
 <script defer src="<@Basepath><@v.script_dir>asys.min.js?<@get_lastmodified(v.script_dir . 'asys.min.js')>"></script>
 <$end>
 <script defer src="<@Basepath><@v.script_dir>adiary.js?<@get_lastmodified(v.script_dir . 'adiary.js')>"></script>
+<@ifexec(v.system_mode, begin)>
+<script defer src="<@Basepath><@v.script_dir>admin.js?<@get_lastmodified(v.script_dir . 'admin.js')>"></script>
+<$end>
 <@forexec(t, v.load_jscss('jslib'), begin)>
 <script defer src="<@t>"></script>
 <$end>

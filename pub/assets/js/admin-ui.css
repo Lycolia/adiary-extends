@@ -1,0 +1,485 @@
+@charset "UTF-8";
+/*******************************************************************************
+  adiary 管理画面の部品のCSS
+	base.cssから、管理画面でだけ使う部品（記事の編集、画像アルバム、
+	デザイン編集、ツリーなど）を分けたもの。
+	管理画面のフレーム（_frame_admin）と、公開画面のフレーム（_frame）の
+	システムモード（デザイン編集、表示テスト）で読み込む。
+	管理画面の見た目（配置や色）は admin.css に書く。
+*******************************************************************************/
+/*--------------------------------------------------------------------
+●編集画面
+--------------------------------------------------------------------*/
+ul#edit-lockers {
+	margin-top:		2px;
+	margin-bottom:		2px;
+}
+#open-draft-buttons {
+	display:		inline-block;
+}
+/* 記事タグ */
+article.edit span.tag {
+	font-size:		9pt;
+	display:		inline-block;
+	background-color:	#ccc;
+	border-radius:		6px;
+	padding:		0px 4px;
+	margin-right:		6px;
+}
+/* タグ追加ダイアログ */
+#tag-select-form #input-new-tag {
+	width:			100%;
+	box-sizing:		border-box;
+}
+.ui-dialog ul#tag-candidates {
+	list-style:		none;
+	margin:			4px 0;
+	padding:		0;
+	max-height:		16em;
+	overflow-y:		auto;
+}
+#tag-candidates:empty {
+	display:		none;
+}
+#tag-candidates li {
+	display:		flex;
+	justify-content:	space-between;
+	padding:		2px 6px;
+	cursor:			pointer;
+	border-radius:		4px;
+}
+#tag-candidates li:hover {
+	background-color:	#e4e8f4;
+}
+#tag-candidates li.selected {
+	background-color:	#c8d4f8;
+}
+#tag-candidates li .qt {
+	color:			#888;
+	margin-left:		1em;
+}
+#tag-candidates li.new-tag {
+	color:			#36c;
+}
+#tag-select-details {
+	margin-top:		0.5em;
+}
+#tag-select-details summary {
+	cursor:			pointer;
+}
+/* サムネイル選択 */
+ul#thumbnail-picker {
+	list-style:		none;
+	display:		flex;
+	flex-wrap:		wrap;
+	gap:			6px;
+	margin:			4px 0;
+	padding:		0;
+}
+#thumbnail-picker li {
+	position:		relative;
+	width:			80px;
+	height:			60px;
+	margin:			0;
+	padding:		0;
+	border:			2px solid #ccc;
+	border-radius:		4px;
+	overflow:		hidden;
+	cursor:			pointer;
+	background-color:	#f4f4f4;
+}
+#thumbnail-picker li:hover {
+	border-color:		#93b3ff;
+}
+#thumbnail-picker li.selected {
+	border-color:		#36c;
+	box-shadow:		0 0 0 1px #36c;
+}
+#thumbnail-picker img {
+	width:			100%;
+	height:			100%;
+	object-fit:		cover;
+	display:		block;
+}
+#thumbnail-picker .label {
+	position:		absolute;
+	left:			0;
+	right:			0;
+	bottom:			0;
+	font-size:		9pt;
+	text-align:		center;
+	color:			#fff;
+	background-color:	rgba(0,0,0,0.55);
+}
+#thumbnail-direct summary {
+	cursor:			pointer;
+	font-size:		9pt;
+}
+/* 更新履歴ダイアログ */
+#revision-dialog .rev-wrap {
+	display:		flex;
+	gap:			8px;
+	height:			60vh;
+}
+.ui-dialog ul#revision-list {
+	list-style:		none;
+	margin:			0;
+	padding:		0;
+	width:			220px;
+	flex-shrink:		0;
+	overflow-y:		auto;
+	border:			1px solid #ccc;
+}
+#revision-list li {
+	padding:		4px 6px;
+	border-bottom:		1px solid #e4e4e4;
+	cursor:			pointer;
+	font-size:		9pt;
+}
+#revision-list li:hover {
+	background-color:	#e4e8f4;
+}
+#revision-list li.selected {
+	background-color:	#c8d4f8;
+}
+#revision-list li.rev-empty {
+	cursor:			default;
+	background-color:	transparent;
+}
+#revision-list .rev-len {
+	float:			right;
+	color:			#888;
+}
+#revision-list .rev-title {
+	color:			#555;
+	overflow:		hidden;
+	text-overflow:		ellipsis;
+	white-space:		nowrap;
+}
+#revision-view {
+	flex-grow:		1;
+	min-width:		0;
+	display:		flex;
+	flex-direction:		column;
+}
+#revision-view .rev-mode {
+	font-size:		9pt;
+	margin-bottom:		4px;
+}
+#revision-title {
+	font-weight:		bold;
+}
+#revision-title .rev-note {
+	font-weight:		normal;
+	font-size:		9pt;
+	color:			#888;
+}
+#revision-body,
+#conflict-body {
+	flex-grow:		1;
+	overflow:		auto;
+	margin:			4px 0 0 0;
+	padding:		4px;
+	border:			1px solid #ccc;
+	background-color:	#fff;
+	font-size:		9pt;
+	white-space:		pre-wrap;
+	word-break:		break-all;
+}
+#revision-body .rev-del,
+#conflict-body .rev-del {
+	display:		block;
+	background-color:	#fdd;
+}
+#revision-body .rev-add,
+#conflict-body .rev-add {
+	display:		block;
+	background-color:	#dfd;
+}
+#revision-body .rev-ctx,
+#conflict-body .rev-ctx {
+	display:		block;
+	color:			#666;
+}
+#revision-body .rev-skip,
+#conflict-body .rev-skip {
+	display:		block;
+	color:			#aaa;
+}
+#conflict-body {
+	max-height:		50vh;
+}
+#conflict-dialog p .rev-del {
+	background-color:	#fdd;
+}
+#conflict-dialog p .rev-add {
+	background-color:	#dfd;
+}
+.sp #revision-dialog .rev-wrap {
+	flex-direction:		column;
+}
+.sp .ui-dialog ul#revision-list {
+	width:			auto;
+	max-height:		30vh;
+}
+
+/*--------------------------------------------------------------------
+●画像アルバム
+--------------------------------------------------------------------*/
+ul.dynatree-container a {
+	font-weight:		normal;
+}
+.side-folder-tree ul.dynatree-container {
+	min-height:		300px;
+	margin-bottom:		2px;
+}
+#album-folder-view {
+	margin-top:		4px;
+	min-height:		260px;
+	margin-bottom:		8px;
+	clear:			both;
+}
+
+#album-folder-view a {
+	margin:			1px;
+	display:		inline-block;
+}
+
+/* サムネイル表示 */
+#album-folder-view img {
+	border:			3px solid transparent;
+	vertical-align:		middle;
+	max-width:		120px;
+	max-height:		120px;
+	/* for IE */
+	width:	auto;
+	height:	auto;
+}
+#album-folder-view img.selected {
+	border-color:		#f88;
+	background-color:	#f88;
+}
+/* ファイル名一覧 */
+#album-folder-view.name-view {
+	font-size:		14px;
+}
+#album-folder-view.name-view a {
+	display:		block;
+	width:			100%;
+	padding:		1px;
+	margin-top:		1px;
+}
+#album-folder-view.name-view span.fileline {
+	display:		block;
+}
+#album-folder-view.name-view span.fileline.selected {
+	background-color:	#fcc;
+}
+#album-folder-view.name-view span.filename {
+	width:			calc(100% - 230px);
+	display:		inline-block;
+	vertical-align:		middle;
+}
+#album-folder-view.name-view span.filedate {
+	width:			160px;
+	display:		inline-block;
+	vertical-align:		middle;
+}
+#album-folder-view.name-view span.filesize {
+	width:			64px;
+	display:		inline-block;
+	vertical-align:		middle;
+	text-align:		right;
+}
+#adiary-body #album-dnd-name-view {
+	color:			#000;
+	background-color:	#fff;
+	padding:		6px;
+	border-radius:		6px;
+}
+#album-dnd-name-view span {
+	display:		block;
+}
+/* ファイルなし */
+#album-folder-view div.file-not-found {
+	font-size:		12pt;
+	font-weight:		bold;
+	padding: 		1em 1em 0 1em;
+}
+
+/* アルバムタイトル */
+#album h2 * {
+	vertical-align:		middle;
+}
+#current-folder {
+	margin-left:		4px;
+}
+
+/* アルバムヘッダ */
+#album-header, #album-header select {
+	font-size:		11pt;
+}
+#album-header div {
+	display:		inline-block;
+}
+#album-header div.view-option {
+	float:			right;
+}
+
+/* アルバムメイン部 */
+#iframe-upload-form {
+	width:			100%;
+	border:			none;
+}
+#file-btn-div {
+	margin-bottom:		6px;
+}
+#upload-information-view {
+	font-size:		90%;
+	line-height:		130%;
+	margin-bottom:		1em;
+}
+#selected-files li:hover {
+	background-color:	#e8e8e8;
+	border-radius:		4px;
+	cursor:			pointer;
+}
+
+/*--------------------------------------------------------------------
+●デザイン編集
+--------------------------------------------------------------------*/
+.design-module-edit {
+	min-height:		18px;
+}
+.main div.design-module-edit {
+	width:			100%;
+}
+.design-module-edit {
+	position:		relative;
+}
+.design-module-edit.display {
+	background-color:	#fcc;
+}
+.design-module-edit:hover:not(.hoverstop) {
+	background-color:	#faa;
+}
+.module-edit-header {
+	position:		absolute;
+	top:			0;
+	right:			0;
+	padding:		0;
+	z-index:		10;
+	text-align:		right;
+
+	font-size:		1px;
+	line-height:		100%;
+}
+/* モジュール右上アイコン */
+.module-edit-header span.ui-icon {
+	margin-left:		1px;
+	border:			1px solid #333;
+	border-radius:		4px;
+	background-color:       #fff;
+}
+.module-edit-header span.ui-icon:hover {
+	background-color:       #eee;
+}
+#body .module-edit-header * {
+	vertical-align:		top;
+}
+.dem-module {
+	margin-top:		0.5em;
+	margin-bottom:		0.5em;
+}
+
+/*--------------------------------------------------------------------
+●システム画面UI
+--------------------------------------------------------------------*/
+/* import/export画面等 */
+.js-accordion h3 {
+	cursor:			pointer;
+}
+
+/* dynatree */
+ul.dynatree-container {
+	min-height:		20px;
+	line-height:		1.3;
+}
+
+#body ul.dynatree-container ul
+{
+	padding: 0 0 0 18px;
+	margin: 0;
+}
+#body ul.dynatree-container li
+{
+	margin: 0;
+	padding: 1px 0 0 0;
+}
+span.dynatree-node a {
+	padding:	1px;
+}
+span.dynatree-node a:focus {
+	outline:	none;	/* for GC */
+}
+span.dynatree-icon,
+ul.dynatree-container img {
+	margin-left:	0px;
+}
+
+#album-folder-tree ul.dynatree-container > li > ul {
+	padding-left:	3px;
+}
+
+/* サイドバーフォルダーツリー */
+.side-folder-tree ul {
+	line-height:		110%;
+}
+.side-folder-tree li * {
+	vertical-align:		middle;
+}
+
+/*--------------------------------------------------------------------
+●jQuery UI
+--------------------------------------------------------------------*/
+/* sortable */
+.dynatree-title,
+.ui-sortable-handle {
+	cursor:			grab;
+}
+.ui-sortable-handle.ui-sortable-helper {
+	cursor:			grabbing;
+}
+.ui-sortable-handle .no-drag {
+	cursor:			auto;
+}
+
+/*--------------------------------------------------------------------
+●その他
+--------------------------------------------------------------------*/
+/* 管理メニュー関連 */
+ul.menu {
+	margin-top:		1em;
+	margin-bottom:		1em;
+}
+
+/*--------------------------------------------------------------------
+●スマホ
+--------------------------------------------------------------------*/
+/* システムモードでは sidebar 非表示 */
+.system.sp #sidebar {
+	display:		none;
+}
+/* 画像アルバム */
+.sp #album-folder-tree > ul {
+	min-height:		60px;
+}
+#sp-album #album-folder-view {
+	min-height:		60px;
+}
+.sp #upload-information {
+	margin-top:		2em;
+}
+.ui-dialog #album-folder-tree ul {
+	margin:			0;
+}

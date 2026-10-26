@@ -8,9 +8,9 @@ use Satsuki::AutoLoader;
 use Fcntl;
 #-------------------------------------------------------------------------------
 # データ管理上数値しか解釈できないので文字列にしてはならない
-our $VERSION    = 4.11;
+our $VERSION    = 4.12;
 our $OUTVERSION = "$VERSION";
-our $DATA_VERSION = 4.11;
+our $DATA_VERSION = 4.12;
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -91,7 +91,8 @@ default_wiki_priority=> 100000,
 top_skeleton	=> '_top',
 main_skeleton	=> '_main',
 article_skeleton=> '_article',
-frame_skeleton	=> '_frame'
+frame_skeleton	=> '_frame',
+admin_frame_skeleton => '_frame_admin'
 	);
 	foreach(keys(%h)) {
 		$self->{$_} = $h{$_};
@@ -343,10 +344,7 @@ sub select_default_skeleton {
 	my $self = shift;
 	my $mode = shift || $self->{pinfo};
 	my $blog = $self->{blog};
-	my $ROBJ = $self->{ROBJ};
-	if (!$ROBJ->{POST} && $blog->{album_mode}) {
-		$ROBJ->redirect( $self->{myself} . '?album/' );
-	} elsif ($mode eq '' && !$self->exists_blog()) {
+	if ($mode eq '' && !$self->exists_blog()) {
 		return $self->{top_skeleton};
 	} elsif ($mode ne '' && $mode !~ /^[1-9]\d+$/ || $mode eq '' && $self->{query} eq '' && $blog->{frontpage}) {
 		return ($self->{view_event} = $self->{article_skeleton});
@@ -578,6 +576,11 @@ sub system_mode {
 		$self->load_theme( $self->{default_theme} );
 		$self->check_sphone_after_theme_change();
 		$self->{system_theme} = 1;
+
+		# 外フレームも管理画面用にする（フレームを使わない出力はそのまま）
+		if ($self->{frame_skeleton}) {
+			$self->{frame_skeleton} = $self->{admin_frame_skeleton};
+		}
 	}
 }
 

@@ -1,0 +1,663 @@
+@charset "UTF-8";
+/*******************************************************************************
+  adiary 管理画面のCSS
+	管理画面のフレーム（_frame_admin）の配置と色。公開画面のテーマの代わり。
+	上にバー、左にグローバルナビ、右に本文（WordPressと同じ並び）。
+	部品（記事の編集、画像アルバムなど）のCSSは admin-ui.css に書く。
+*******************************************************************************/
+/* [TAB=8] */
+:root {
+	--admin-bg:		#f0f0f1;
+	--admin-fg:		#1d2327;
+	--admin-card:		#fff;
+	--admin-border:		#c3c4c7;
+	--admin-border-light:	#dcdcde;
+	--admin-muted:		#646970;
+	--admin-link:		#2271b1;
+	--admin-link-hover:	#135e96;
+	--admin-accent:		#2271b1;
+	--admin-nav-bg:		#1d2327;
+	--admin-nav-sub-bg:	#2c3338;
+	--admin-nav-fg:		#f0f0f1;
+	--admin-nav-sub-fg:	#c3c4c7;
+	--admin-nav-hover:	#72aee6;
+	--admin-error:		#d63638;
+	--admin-warning:	#dba617;
+	--admin-success:	#00a32a;
+	--admin-focus-bg:	#fffbe5;
+	--admin-bar-height:	2.5rem;
+	--admin-nav-width:	12.5rem;
+}
+
+/*--------------------------------------------------------------------
+■全体
+--------------------------------------------------------------------*/
+html {
+	font-family:		"メイリオ", "Hiragino Sans", sans-serif;
+}
+body {
+	margin:			0;
+	padding:		0;
+	background-color:	var(--admin-bg);
+	color:			var(--admin-fg);
+	font-size:		14px;
+	line-height:		1.6;
+}
+a, a:link, a:visited {
+	color:			var(--admin-link);
+}
+a:hover, a:focus {
+	color:			var(--admin-link-hover);
+}
+h1, h2, h3, h4 {
+	line-height:		1.3;
+}
+em {
+	font-style:		normal;
+	text-decoration:	none;
+	color:			#b32d2e;
+}
+dt {
+	font-weight:		bold;
+}
+
+/* adiary.js がアイコン（ui-icon）の色を読む */
+#ui-icon-autoload {
+	background-color:	#2271b1;
+}
+
+/*--------------------------------------------------------------------
+■上のバー
+--------------------------------------------------------------------*/
+#admin-bar {
+	position:		sticky;
+	top:			0;
+	z-index:		990;
+	display:		flex;
+	align-items:		center;
+	gap:			1rem;
+	height:			var(--admin-bar-height);
+	padding:		0 1rem;
+	box-sizing:		border-box;
+	background-color:	var(--admin-nav-bg);
+	color:			var(--admin-nav-fg);
+	white-space:		nowrap;
+}
+#admin-bar a, #admin-bar a:link, #admin-bar a:visited {
+	color:			var(--admin-nav-fg);
+	text-decoration:	none;
+}
+#admin-bar a:hover, #admin-bar a:focus {
+	color:			var(--admin-nav-hover);
+}
+#admin-bar .admin-bar-blog {
+	font-weight:		bold;
+	overflow:		hidden;
+	text-overflow:		ellipsis;
+}
+#admin-bar .admin-bar-blog:after {
+	content:		" ↗";
+	font-weight:		normal;
+	font-size:		85%;
+	color:			var(--admin-nav-sub-fg);
+}
+#admin-bar .admin-bar-links {
+	display:		flex;
+	align-items:		center;
+	gap:			1rem;
+	margin-left:		auto;
+}
+#admin-bar .admin-bar-user {
+	color:			var(--admin-nav-sub-fg);
+}
+
+/*--------------------------------------------------------------------
+■枠（ナビと本文）
+--------------------------------------------------------------------*/
+#admin-frame {
+	display:		grid;
+	grid-template-columns:	var(--admin-nav-width) minmax(0, 1fr);
+	min-height:		calc(100vh - var(--admin-bar-height));
+}
+/* ログインしていないとき（ログイン画面など）はナビを出さない */
+body:not(.admin-logged-in) #admin-frame {
+	grid-template-columns:	minmax(0, 1fr);
+}
+
+/*--------------------------------------------------------------------
+■グローバルナビ
+--------------------------------------------------------------------*/
+#admin-nav {
+	background-color:	var(--admin-nav-bg);
+	color:			var(--admin-nav-fg);
+}
+#admin-nav > ul {
+	position:		sticky;
+	top:			var(--admin-bar-height);
+	max-height:		calc(100vh - var(--admin-bar-height));
+	overflow-y:		auto;
+}
+#admin-nav ul {
+	list-style:		none;
+	margin:			0;
+	padding:		0;
+}
+#admin-nav a, #admin-nav a:link, #admin-nav a:visited,
+#admin-nav .admin-nav-caption {
+	display:		block;
+	padding:		0.5rem 1rem;
+	color:			var(--admin-nav-fg);
+	text-decoration:	none;
+}
+#admin-nav a:hover, #admin-nav a:focus {
+	color:			var(--admin-nav-hover);
+	background-color:	var(--admin-nav-sub-bg);
+}
+#admin-nav li.current > a {
+	color:			#fff;
+	background-color:	var(--admin-accent);
+}
+#admin-nav .admin-nav-new {
+	display:		inline-block;
+	margin-left:		0.4em;
+	padding:		0 0.4em;
+	font-size:		80%;
+	line-height:		1.5;
+	color:			#fff;
+	background-color:	var(--admin-error);
+	border-radius:		0.75em;
+}
+/* 設定（子の項目） */
+#admin-nav .admin-nav-group.open > a.admin-nav-caption {
+	color:			#fff;
+	font-weight:		bold;
+	background-color:	var(--admin-accent);
+}
+#admin-nav .admin-nav-group:not(.open) > ul {
+	display:		none;
+}
+#admin-nav .admin-nav-group ul {
+	padding-bottom:		0.5rem;
+	background-color:	var(--admin-nav-sub-bg);
+}
+#admin-nav .admin-nav-group li a {
+	padding:		0.3rem 1rem 0.3rem 1.5rem;
+	color:			var(--admin-nav-sub-fg);
+	font-size:		95%;
+}
+#admin-nav .admin-nav-group li.current > a {
+	color:			#fff;
+	font-weight:		bold;
+	background-color:	transparent;
+	box-shadow:		inset 4px 0 0 var(--admin-accent);
+}
+
+/*--------------------------------------------------------------------
+■本文
+--------------------------------------------------------------------*/
+#admin-main {
+	padding:		1.25rem 1.5rem 2rem;
+	min-width:		0;
+}
+/* 画面専用のサイドの部品があるとき（画像アルバムのフォルダツリー）は、左に置く */
+#admin-main:has(> #admin-side) {
+	display:		grid;
+	grid-template-columns:	16rem minmax(0, 1fr);
+	grid-template-areas:	"side main" "debug debug";
+	gap:			0 1.25rem;
+	align-items:		start;
+}
+#admin-main > .main		{ grid-area: main; }
+#admin-main > #admin-side	{ grid-area: side; }
+#admin-main > :not(.main):not(#admin-side) { grid-area: debug; }
+
+/*--------------------------------------------------------------------
+■画面内のタブ（_sub/menu_tree）
+--------------------------------------------------------------------*/
+nav.admin-tabs {
+	margin:			0 0 1rem;
+}
+nav.admin-tabs:not(:has(li)),
+nav.admin-tabs ul:not(:has(li)) {
+	display:		none;
+}
+nav.admin-tabs ul.tabs {
+	display:		flex;
+	flex-wrap:		wrap;
+	gap:			0.25rem;
+	list-style:		none;
+	margin:			0;
+	padding:		0;
+	border-bottom:		1px solid var(--admin-border);
+}
+nav.admin-tabs ul.tabs + ul.tabs {
+	margin-top:		0.5rem;
+}
+nav.admin-tabs li {
+	margin:			0 0 -1px;
+}
+nav.admin-tabs li > a,
+nav.admin-tabs li > span {
+	display:		block;
+	padding:		0.35rem 0.9rem;
+	border:			1px solid var(--admin-border);
+	border-radius:		4px 4px 0 0;
+	background-color:	#dcdcde;
+	color:			#50575e;
+	text-decoration:	none;
+	font-weight:		bold;
+}
+nav.admin-tabs li > a:hover {
+	background-color:	#fff;
+	color:			var(--admin-link-hover);
+}
+nav.admin-tabs li.current > a,
+nav.admin-tabs li.current > span {
+	background-color:	var(--admin-bg);
+	border-bottom-color:	var(--admin-bg);
+	color:			var(--admin-fg);
+}
+/* 上の段（ディレクトリ）は小さく */
+nav.admin-tabs ul.tabs-dir li > a,
+nav.admin-tabs ul.tabs-dir li > span {
+	padding:		0.2rem 0.75rem;
+	font-weight:		normal;
+	font-size:		90%;
+}
+
+/*--------------------------------------------------------------------
+■箱（article.system）
+--------------------------------------------------------------------*/
+article.system {
+	margin:			0 0 1.25rem;
+	background-color:	var(--admin-card);
+	border:			1px solid var(--admin-border);
+	box-shadow:		0 1px 1px rgba(0,0,0,0.04);
+}
+article.system > h2 {
+	margin:			0;
+	padding:		0.6rem 1rem;
+	font-size:		1.15rem;
+	font-weight:		normal;
+	border-bottom:		1px solid var(--admin-border-light);
+}
+article.system > h2 a {
+	text-decoration:	none;
+}
+article.system div.body {
+	padding:		0.75rem 1rem 1rem;
+}
+article.system div.body h3 {
+	margin:			1.25rem -1rem 0.75rem;
+	padding:		0.4rem 1rem;
+	font-size:		1rem;
+	background-color:	#f6f7f7;
+	border-top:		1px solid var(--admin-border-light);
+	border-bottom:		1px solid var(--admin-border-light);
+}
+article.system div.body > h3:first-child {
+	margin-top:		-0.75rem;
+	border-top:		none;
+}
+article.system div.body h4 {
+	margin:			1rem 0 0.5rem;
+	font-size:		1rem;
+}
+article.system div.body p {
+	margin:			0.5em 0;
+}
+/* 下書きを開くなどのお知らせ */
+article.system.notice {
+	border-left:		4px solid var(--admin-accent);
+}
+
+/* 箱のない見出し（ページのタイトル） */
+.main > h2 {
+	margin:			0 0 1rem;
+	font-size:		1.4rem;
+	font-weight:		normal;
+}
+
+/*--------------------------------------------------------------------
+■表
+--------------------------------------------------------------------*/
+.body table,
+.ui-dialog table {
+	margin:			0.5em 0;
+	border-collapse:	collapse;
+	empty-cells:		show;
+	font-size:		inherit;
+}
+.body table td,
+.body table th,
+.ui-dialog table td,
+.ui-dialog table th {
+	padding:		0.35em 0.6em;
+	border-bottom:		1px solid var(--admin-border-light);
+	vertical-align:		middle;
+	text-align:		left;
+}
+.body table th,
+.ui-dialog table th {
+	font-weight:		bold;
+	background-color:	#f6f7f7;
+	border-bottom-color:	var(--admin-border);
+}
+.body table tbody tr:hover > td {
+	background-color:	#f6f7f7;
+}
+/* 設定画面の表（左が項目名） */
+table.blog-setting th {
+	white-space:		nowrap;
+}
+table.blog-setting td.c,
+.body table td.c {
+	text-align:		center;
+}
+.body table td.r,
+.body table th.r {
+	text-align:		right;
+}
+
+/*--------------------------------------------------------------------
+■フォーム
+--------------------------------------------------------------------*/
+input[type="text"],
+input[type="date"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+	font:			inherit;
+	color:			inherit;
+	padding:		0.2em 0.4em;
+	border:			1px solid #8c8f94;
+	border-radius:		4px;
+	background-color:	#fff;
+}
+select {
+	padding-right:		0.2em;
+}
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+select:focus,
+textarea:focus {
+	outline:		none;
+	border-color:		var(--admin-accent);
+	box-shadow:		0 0 0 1px var(--admin-accent);
+}
+input[readonly],
+select[readonly],
+textarea[readonly] {
+	background-color:	#f0f0f1;
+}
+/* 入力エラー */
+th.error, td.error {
+	background-color:	#fcf0f1;
+}
+input.error, textarea.error,
+th.error input, td.error input {
+	border-color:		var(--admin-error);
+	background-color:	#fcf0f1;
+}
+
+textarea#editarea {
+	font-size:		15px;
+	line-height:		1.6;
+}
+textarea.edit-article {
+	width:			100%;
+	box-sizing:		border-box;
+	margin:			0;
+}
+article .treebox,
+article:not(.edit) #editarea {
+	margin-top:		1em;
+	margin-bottom:		1em;
+}
+
+ul.checkbox {
+	list-style:		none;
+	padding-left:		0;
+}
+ul.checkbox ul.checkbox {
+	padding-left:		1.5em;
+}
+
+/* ボタン */
+button {
+	padding:		0.3em 0.9em;
+	min-height:		2em;
+	line-height:		1.4;
+	font-size:		inherit;
+	color:			var(--admin-link);
+	background-color:	#f6f7f7;
+	border:			1px solid var(--admin-link);
+	border-radius:		3px;
+}
+button:hover {
+	color:			var(--admin-link-hover);
+	background-color:	#f0f0f1;
+	border-color:		var(--admin-link-hover);
+}
+button[type="submit"] {
+	color:			#fff;
+	background-color:	var(--admin-accent);
+}
+button[type="submit"]:hover {
+	color:			#fff;
+	background-color:	var(--admin-link-hover);
+}
+button:disabled,
+button:disabled:hover {
+	color:			#a7aaad;
+	background-color:	#f6f7f7;
+	border-color:		#dcdcde;
+	cursor:			default;
+}
+#edit-helper button {
+	padding:		0.15em 0.5em;
+	min-height:		0;
+}
+button + button {
+	margin-left:		0.5em;
+}
+
+/*--------------------------------------------------------------------
+■記事の編集画面
+--------------------------------------------------------------------*/
+span.edit-caption {
+	font-weight:		bold;
+	margin-right:		0.3em;
+}
+article.edit span.element {
+	margin-right:		1em;
+}
+article.edit span.tag {
+	color:			var(--admin-fg);
+	background-color:	#dcdcde;
+}
+article.edit form.delete {
+	margin-top:		1.5em;
+}
+
+/*--------------------------------------------------------------------
+■メッセージ
+--------------------------------------------------------------------*/
+.warning, strong.warning, p.warning {
+	color:			#b32d2e;
+}
+.error, p.error, div.messages div.error {
+	color:			var(--admin-error);
+}
+strong.notice, .notice > strong {
+	color:			#996800;
+}
+.good {
+	color:			var(--admin-success);
+}
+div.messages {
+	margin:			0 0 1rem;
+	padding:		0.5rem 1rem;
+	background-color:	var(--admin-card);
+	border:			1px solid var(--admin-border);
+	border-left:		4px solid var(--admin-accent);
+}
+div.messages:empty {
+	display:		none;
+}
+
+/*--------------------------------------------------------------------
+■ポップアップヘルプ
+--------------------------------------------------------------------*/
+.help, .btn-help:after {
+	color:			var(--admin-link);
+}
+div.popup-help {
+	min-width:		100px;
+	max-width:		360px;
+	padding:		0.5em 0.9em;
+	font-size:		13px;
+	color:			var(--admin-fg);
+	background-color:	#fff;
+	border:			1px solid var(--admin-border);
+	border-radius:		4px;
+	box-shadow:		0 3px 8px rgba(0,0,0,0.2);
+}
+#popup-com {
+	background-color:	#fff;
+	border:			1px solid var(--admin-border);
+}
+
+/*--------------------------------------------------------------------
+■ダイアログ（jQuery UI）
+--------------------------------------------------------------------*/
+.ui-dialog {
+	background-color:	var(--admin-card);
+	border:			1px solid var(--admin-border);
+	border-radius:		4px;
+	box-shadow:		0 5px 20px rgba(0,0,0,0.3);
+	font-size:		14px;
+	line-height:		1.5;
+}
+.ui-dialog .ui-widget-header {
+	background-color:	#f6f7f7;
+	border:			none;
+	border-bottom:		1px solid var(--admin-border-light);
+	border-radius:		4px 4px 0 0;
+	font-weight:		bold;
+}
+.ui-dialog span.ui-dialog-title {
+	padding-bottom:		2px;
+}
+
+/*--------------------------------------------------------------------
+■ツリー、プログレスバー
+--------------------------------------------------------------------*/
+.treebox {
+	padding:		0.5em;
+	background-color:	#fff;
+	border:			1px solid var(--admin-border-light);
+	border-radius:		4px;
+}
+.ui-progressbar {
+	margin:			0.5em 0;
+	max-width:		400px;
+	border-color:		var(--admin-border);
+	background-color:	#fff;
+}
+.ui-progressbar .label {
+	font-weight:		bold;
+}
+.ui-progressbar,
+.ui-progressbar .label:before {
+	height:			20px;
+	vertical-align:		middle;
+}
+.ui-progressbar-value {
+	background-color:	#72aee6;
+}
+
+/*--------------------------------------------------------------------
+■画面専用のサイドの部品（#admin-side）
+--------------------------------------------------------------------*/
+#admin-side {
+	position:		sticky;
+	top:			calc(var(--admin-bar-height) + 1.25rem);
+	font-size:		13px;
+}
+#admin-side .hatena-module {
+	margin:			0 0 1rem;
+	background-color:	var(--admin-card);
+	border:			1px solid var(--admin-border);
+}
+#admin-side .hatena-moduletitle {
+	padding:		0.4rem 0.75rem;
+	font-weight:		bold;
+	border-bottom:		1px solid var(--admin-border-light);
+}
+#admin-side .hatena-modulebody {
+	padding:		0.5rem 0.75rem;
+}
+#admin-side button {
+	margin:			0.5em 0.25em 0 0;
+}
+/* ログイン情報は上のバーと重なるので出さない */
+#admin-side #side-login-information {
+	display:		none;
+}
+
+/*--------------------------------------------------------------------
+■狭い画面
+--------------------------------------------------------------------*/
+@media screen and (max-width: 782px) {
+	#admin-frame,
+	body.admin-logged-in #admin-frame {
+		display:		block;
+	}
+	/* ナビは本文の上に横に並べる */
+	#admin-nav > ul {
+		position:		static;
+		max-height:		none;
+		display:		flex;
+		flex-wrap:		wrap;
+	}
+	#admin-nav a, #admin-nav a:link, #admin-nav a:visited {
+		padding:		0.4rem 0.7rem;
+	}
+	/* 「設定」はほかの項目と同じに並べ、開いているときは子の項目を次の行に出す */
+	#admin-nav .admin-nav-group {
+		display:		contents;
+	}
+	#admin-nav .admin-nav-group > ul {
+		flex-basis:		100%;
+		display:		flex;
+		flex-wrap:		wrap;
+		padding:		0;
+	}
+	#admin-nav .admin-nav-group li a {
+		padding:		0.3rem 0.6rem;
+	}
+	#admin-main {
+		padding:		1rem 0.75rem 2rem;
+	}
+	#admin-main:has(> #admin-side) {
+		display:		block;
+	}
+	#admin-side {
+		position:		static;
+	}
+	#admin-bar .admin-bar-user {
+		display:		none;
+	}
+}

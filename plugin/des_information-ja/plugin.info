@@ -1,6 +1,6 @@
 ######################################################################
 title=ブログの基本情報
-version=1.02
+version=1.03
 #					(C)2013 nabe@abk
 ######################################################################
 author=nabe@abk
@@ -19,7 +19,6 @@ module_id=side-information
 <div class="hatena-modulebody">
 <ul class="hatena-section">
 <li class="description">このブログの説明</li>
-<li class="art-list"><a href="#?art_list" rel="nofollow">記事一覧</a></li>
 </ul>
 </div>
 </div>

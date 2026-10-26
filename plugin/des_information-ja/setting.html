@@ -43,24 +43,10 @@
 <div id="current-elements">
 <@if(ps.elements || ps.title, ps.elements, begin_string)>
 description
-artlist-link
 <$end></div>
 
 <div data-module-name="description" title="ブログの説明">
 ※<a href="<@v.myself>?set/" target="_blank">ここで設定</a>
-</div>
-
-<div data-module-name="artlist-link" title="記事一覧へのリンク">
-<a href="<@v.myself>?artlist" target="_blank">記事一覧</a>
-</div>
-
-<div data-module-name="comlist-link" title="コメント一覧へのリンク">
-<a href="<@v.myself>?comlist" target="_blank">コメント一覧</a>
-</div>
-
-<div data-module-name="artcomlist-link" title="記事・コメント一覧へのリンク">
-<a href="<@v.myself>?artlist" target="_blank">記事一覧</a> / 
-<a href="<@v.myself>?comlist" target="_blank">コメント一覧</a>
 </div>
 
 <div data-module-name="bcounter" title="はてなブックマークカウンタ" data-alt="はてな<br>ブックマーク<br>カウンタ" data-default="de">
