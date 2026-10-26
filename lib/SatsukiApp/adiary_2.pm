@@ -1424,6 +1424,9 @@ sub contents_next_prev_link {
 #-------------------------------------------------------------------------------
 # ●RSSを生成
 #-------------------------------------------------------------------------------
+# XML 1.0で使えない制御文字（タブ、改行以外）。UTF-8のバイト列のまま取り除く
+my $XML_INVALID = qr/[\x00-\x08\x0B\x0C\x0E-\x1F]/;
+
 sub generate_rss {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
@@ -1440,10 +1443,12 @@ sub generate_rss {
 	my $file = $self->{blogpub_dir} . "rss.xml";
 	if ($blog->{rss_items_int}) {
 		my $rss = $ROBJ->call( $self->{rss_skeleton}, {
+			file  => 'rss.xml',
 			no_comment => $blog->{rss_no_comment},
 			items => $blog->{rss_items_int}
 		});
 		$jcode->from_to($rss, $ROBJ->{SystemCode}, 'UTF-8');
+		$rss =~ s/$XML_INVALID//g;
 
 		# ファイルに書き込み
 		$ret = $ROBJ->fwrite_lines($file, $rss);
@@ -1458,12 +1463,14 @@ sub generate_rss {
 	my $file2 = $self->{blogpub_dir} . "rss2.xml";
 	if ( $blog->{rss2_tag} ne '' ) {
 		my $rss = $ROBJ->call( $self->{rss_skeleton}, {
+			file  => 'rss2.xml',
 			no_comment => $blog->{rss2_no_comment},
 			tag   => $blog->{rss2_tag},
 			title => $blog->{rss2_title},
 			items => $blog->{rss_items_int}
 		});
 		$jcode->from_to($rss, $ROBJ->{SystemCode}, 'UTF-8');
+		$rss =~ s/$XML_INVALID//g;
 		$ROBJ->fwrite_lines($file2, $rss);
 		push(@files, 'rss2.xml');
 	} else {
@@ -1519,6 +1526,10 @@ sub load_arts_for_rss {
 
 		# link_keyの加工
 		$self->post_process_link_key( $_ );
+
+		# ページ内リンク（#見出し）は、リーダーが記事のページの外で開くので、記事のURLを付ける
+		my $url = $ROBJ->{ServerURL} . $self->{myself2} . $_->{elink_key};
+		$_->{description} =~ s/(\shref=")#/$1$url#/g;
 
 		# & のエスケープ
 		$ROBJ->tag_escape_for_xml($_->{title}, $_->{name}, $_->{tags});

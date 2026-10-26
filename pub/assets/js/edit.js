@@ -25,7 +25,7 @@ adiary.load_tags_list($tagsel, function(data){
 	};
 	r_func(data, '');
 });
-adiary.load_contents_list($upsel);
+const contents_loaded = adiary.load_contents_list($upsel);
 
 //##############################################################################
 // ■下書きを開く
@@ -499,6 +499,57 @@ function render_diff(diff, $body) {
 }
 
 //##############################################################################
+// ■保存していない変更があるまま離れるときの確認
+//##############################################################################
+// タブを閉じる、再読み込み、リンク、戻るなどで離れるときに確かめる（Lyndbaumの admin-unsaved.js と同じ）。
+// 開いたときの中身を覚えておき、離れるときに今の中身と比べる（書き換えても元に戻せば確かめない。
+// タグやアイキャッチ画像など、JavaScript で変えた欄も比べる）。album から貼り付けて開いたときは、
+// 貼り付けた本文（edit-helper.js が後で入れる）が変更になる。
+// 記事の保存と削除で送るときは確かめない。確かめる文言はブラウザが決める（ページからは変えられない）
+let submitting = false;
+{
+	const form = $('form[name="edit"]')[0];
+	// コンテンツ一覧を読み込んだ後に決まる欄（親を選び、コンテンツkeyを補う）
+	const late = { upnode: true, link_key_txt: true };
+
+	// 名前のある欄の値を並べたもの。編集ロックで無効にした欄も比べる。
+	// ファイルの欄と、ブラウザに覚えさせる設定（js-save）は比べない
+	function snapshot(is_late) {
+		const pairs = [];
+		$(form.elements).each(function(){
+			if (!this.name || !late[this.name] !== !is_late) return;
+			if (/^(?:submit|button|reset|file)$/.test(this.type) || $(this).hasClass('js-save')) return;
+			if ((this.type === 'checkbox' || this.type === 'radio') && !this.checked) return;
+			pairs.push([ this.name, $(this).val() ]);
+		});
+		return JSON.stringify(pairs);
+	}
+	const initial = snapshot();
+	let initial_late;
+	contents_loaded.always(function(){ initial_late = snapshot(true) });
+
+	function changed() {
+		return snapshot() !== initial
+		    || (initial_late !== undefined && snapshot(true) !== initial_late);
+	}
+
+	// 送るのを取りやめたとき（競合の確認、削除の確認で「キャンセル」など）は、確かめる対象のまま。
+	// 確認の後に jQuery で送るとき（js-check-form）も受けるため、jQuery で window に付ける
+	$(window).on('submit', function(evt){
+		if (!evt.isDefaultPrevented() && $(evt.target).closest('#edit').length) submitting = true;
+	});
+	// 送った後に「戻る」で戻ってきたとき（bfcache）は、また確かめる
+	window.addEventListener('pageshow', function(evt){
+		if (evt.persisted) submitting = false;
+	});
+	window.addEventListener('beforeunload', function(evt){
+		if (submitting || !changed()) return;
+		evt.preventDefault();
+		evt.returnValue = '';
+	});
+}
+
+//##############################################################################
 // ■保存の競合の確認（ほかの画面で先に保存されていないか）
 //##############################################################################
 // 保存する前に今の記事の要約を取り寄せ、この画面を開いたときの要約と比べる。
@@ -523,6 +574,7 @@ function render_diff(diff, $body) {
 		}
 		if (submitter && submitter.name)	// 押したボタン（下書き保存など）を送る
 			$('<input>').attr({ type: 'hidden', name: submitter.name, value: submitter.value }).appendTo(form);
+		submitting = true;	// form.submit() は submit イベントが起きない
 		form.submit();
 	}
 

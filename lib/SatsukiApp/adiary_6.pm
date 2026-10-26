@@ -55,7 +55,8 @@ my @update_versions = (
 	{ ver => 4.13, plugin=>1, rebuild_cond=>[	# テーマのスケルトンのJSに更新日時を付けた
 		'\[(?:video|audio|file:(?:mp4|m4v|webm|ogv|wav|wave|ogg|oga|mp3|aac|m4a)):',	# 動画と音声に preload="none" を付けた
 		'\[image:'								# 画像に width と height を書くようにした
-	]}
+	]},
+	{ ver => 4.14, info=>1 }	# RSSをRSS 2.0の仕様に合わせた。ブログ付加情報の再構築で書き出し直す
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
