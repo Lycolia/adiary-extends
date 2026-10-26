@@ -122,7 +122,7 @@
 		<th>タイトル</th>
 		<th>タグ</th>
 		<th>投稿者</th>
-		<th>コメ<br>ント</th>
+		<th>コメント</th>
 	</tr></thead>
 	<tbody class="small">
 	<@forexec(t, logs, begin)>
@@ -137,8 +137,8 @@
 		<td class="c" nowrap><label for="art-<@t.pkey>"><@v.format_ymd(t.yyyymmdd)></label></td>
 		<$end>
 		<td class="c"><label for="art-<@t.pkey>"><@t.ctype></label></td>
-		<td><a href="<@v.myself2><@t.elink_key>"<@if(v.allow_edit, #' title="<@t.pkey>"')>><@t.title></a></td>
-		<td class="c"><label for="art-<@t.pkey>"><@if(t.tags ne '', exec(tag_links, t.tags))></label></td>
+		<td class="list-wide"><a href="<@v.myself2><@t.elink_key>"<@if(v.allow_edit, #' title="<@t.pkey>"')>><@t.title></a></td>
+		<td class="c list-wrap"><label for="art-<@t.pkey>"><@if(t.tags ne '', exec(tag_links, t.tags))></label></td>
 		<td><@t.name></td>
 		<td class="r"><@if(v.allow_edit, t.coms_all, t.coms)></td>
 	</tr>

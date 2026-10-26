@@ -355,6 +355,31 @@ article.system.notice {
 .body table tbody tr:hover > td {
 	background-color:	#f6f7f7;
 }
+/* 一覧の表（記事、コメント、ゴミ箱）。文字は折り返さず、タイトルなどの列（.list-wide）だけ折り返して残りの幅を使う。
+   タグの列（.list-wrap）は数が多いと長くなるので折り返す（Lyndbaumと同じ） */
+.body table.list-table {
+	width:			100%;
+}
+table.list-table th,
+table.list-table td {
+	white-space:		nowrap;
+}
+table.list-table td.list-wide {
+	width:			100%;
+	white-space:		normal;
+	overflow-wrap:		anywhere;
+}
+table.list-table td.list-wrap {
+	white-space:		normal;
+}
+/* タグは1つずつは折らない */
+table.list-table td.list-wrap a,
+table.list-table td.list-wrap span {
+	white-space:		nowrap;
+}
+table.list-table tbody tr:nth-child(even) {
+	background-color:	#f9f9f9;
+}
 /* 設定画面の表（左が項目名） */
 table.blog-setting th {
 	white-space:		nowrap;
@@ -1006,6 +1031,25 @@ div.popup-help {
 	}
 	#admin-main:has(> #admin-side) {
 		display:		block;
+	}
+	/* 一覧の表は、見出しの行を出さず、1件ずつまとめて並べる。タイトルなどの列は1行を使う（Lyndbaumと同じ） */
+	table.list-table thead {
+		display:		none;
+	}
+	table.list-table tr {
+		display:		block;
+		padding:		0.4rem 0;
+		border-bottom:		1px solid var(--admin-border-light);
+	}
+	.body table.list-table td {
+		display:		inline-block;
+		padding:		0 0.5rem 0 0;
+		border:			none;
+	}
+	.body table.list-table td.list-wide {
+		display:		block;
+		width:			auto;
+		padding:		0.2rem 0;
 	}
 	#admin-side {
 		position:		static;
