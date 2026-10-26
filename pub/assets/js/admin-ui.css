@@ -471,15 +471,6 @@ ul.menu {
 	display:		none;
 }
 /* 画像アルバム */
-.sp #album-folder-tree > ul {
-	min-height:		60px;
-}
-#sp-album #album-folder-view {
-	min-height:		60px;
-}
-.sp #upload-information {
-	margin-top:		2em;
-}
 .ui-dialog #album-folder-tree ul {
 	margin:			0;
 }

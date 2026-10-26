@@ -2194,10 +2194,11 @@ sub special_system_mode {
 	# フラグ設定
 	$self->{special_system_mode} = 1;
 
-	# 公開画面のテーマで表示するため、外フレームは公開画面のものを使う
+	# 公開画面のテーマで表示するため、外フレームは公開画面のものを使う。スマホ用の処理も戻す
 	if ($self->{frame_skeleton}) {
 		$self->{frame_skeleton} = '_frame';
 	}
+	$self->check_sphone_after_theme_change();
 }
 
 #-------------------------------------------------------------------------------

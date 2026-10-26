@@ -323,6 +323,22 @@ sub check_sphone_after_theme_change {
 }
 
 #-------------------------------------------------------------------------------
+# ●スマホ向け処理をやめる
+#-------------------------------------------------------------------------------
+sub stop_sphone {
+	my $self = shift;
+	if (!$self->{sphone}) { return; }
+	my $ROBJ = $self->{ROBJ};
+
+	$ROBJ->delete_skeleton($self->{sphone_skeleton_level});
+	# _init_sphone で読み込んだテーマのスマホ用CSS
+	$self->{cssfiles} = [ grep { $_ !~ m|/sphone\.css$| } @{ $self->{cssfiles} || [] } ];
+
+	$self->{sphone_ua} = $self->{sphone};
+	$self->{sphone}    = 0;
+}
+
+#-------------------------------------------------------------------------------
 # ●スケルトン選択（theme.htmlからも呼び出される）
 #-------------------------------------------------------------------------------
 sub select_skeleton {
@@ -574,12 +590,15 @@ sub system_mode {
 	# ※テーマの表示テストなど、公開画面の部品を見せるページは$keep_themeでテーマを残す
 	if (!$keep_theme) {
 		$self->load_theme( $self->{default_theme} );
-		$self->check_sphone_after_theme_change();
 		$self->{system_theme} = 1;
 
 		# 外フレームも管理画面用にする（フレームを使わない出力はそのまま）
+		# 管理画面は狭い画面にもCSSで合わせるので、スマホ用の処理（_sphone）は使わない
 		if ($self->{frame_skeleton}) {
 			$self->{frame_skeleton} = $self->{admin_frame_skeleton};
+			$self->stop_sphone();
+		} else {
+			$self->check_sphone_after_theme_change();
 		}
 	}
 }

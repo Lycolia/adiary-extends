@@ -50,7 +50,6 @@ $( function(){
 	var dnd_body = $('#body');
 
 	var isMac = /Mac/.test(navigator.platform);
-	var isSphone = $('#sp-alubm').length;
 
 	// フラグ管理
 	var key_event_stop;
@@ -735,13 +734,6 @@ function open_folder(node, isReloading) {
 	}
 	if (node.data.rename) return;	// リネーム中は何もしない
 
-	// フォルダ移動ボタン（スマホ表示）
-	{
-		var dir = node.data.key;
-		$('#album-move-folder').prop('disabled',
-			dir == '/' || dir == '.trashbox/'
-		);
-	}
 	ajax_submit({
   		data: {	folder: node.data.key },
 		action: 'load_image_files',
@@ -1492,18 +1484,6 @@ function encode_link(str){
 //##############################################################################
 // スマホ用のDnDエミュレーション
 view.dndEmulation();
-////////////////////////////////////////////////////////////////////////////////
-// ●フォルダの移動
-////////////////////////////////////////////////////////////////////////////////
-$('#album-move-folder').click(function(){
-	folder_select_dialog(function(folder){
-		var node = tree.dynatree("getTree").getNodeByKey(folder);
-		if (!node) return false;
-
-		return move_folder(node, cur_node);
-	});
-});
-
 ////////////////////////////////////////////////////////////////////////////////
 // ●移動先フォルダ選択メニュー
 ////////////////////////////////////////////////////////////////////////////////
