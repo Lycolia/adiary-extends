@@ -1,0 +1,66 @@
+<@7>
+<@local(s,dir,skel,cur,setting,first)>
+<$s    = v.blog>
+<$skel = v.skeleton>
+<$dir  = v.skel_dir>
+<@>
+<@> 管理画面のグローバルナビ（_frame_admin から呼ばれる）
+<@> 今のページの項目には current を付ける。タグとページは set2/ の中にあるが、別の項目にする
+<@>
+<$cur = {}>
+<$cur.menu    = (skel eq 'menu')>
+<$cur.artlist = (skel eq 'artlist' || skel eq 'edit')>
+<$cur.page    = (skel eq 'set2/contents_edit')>
+<$cur.trash   = (skel eq 'trash')>
+<$cur.album   = (dir eq 'album/')>
+<$cur.comlist = (skel eq 'comlist')>
+<$cur.tag     = (skel eq 'set2/tag_edit')>
+<$cur.set      = (dir eq 'set/')>
+<$cur.set2     = (dir eq 'set2/' && !cur.page && !cur.tag)>
+<$cur.plugin   = (dir eq 'plugin/')>
+<$cur.design   = (0 == index(dir, 'design/'))>
+<$cur.mainte   = (dir eq 'mainte/')>
+<$cur.personal = (dir eq 'personal/')>
+<$cur.user     = (dir eq 'user/')>
+<$cur.system   = (dir eq 'system/')>
+<$setting = cur.set || cur.set2 || cur.plugin || cur.design || cur.mainte || cur.personal || cur.user || cur.system>
+<@>
+<@> 設定の子の項目は、設定の画面にいるときだけ開く。「設定」は出せる最初の項目へのリンクにする
+<$first = if(s && v.blog_admin, 'set/', if(s && v.allow_edit, 'set2/', if(!Auth.auto, 'personal/', 'user/')))>
+<@>
+<nav id="admin-nav" aria-label="管理画面のナビ">
+<ul>
+	<li<@if(cur.menu, ' class="current"')>><a href="<@v.myself>?menu">ダッシュボード</a></li>
+<@ifexec(s && v.allow_edit, begin)>
+	<li<@if(cur.artlist, ' class="current"')>><a href="<@v.myself>?artlist">記事</a></li>
+	<li<@if(cur.page,    ' class="current"')>><a href="<@v.myself>?set2/contents_edit">ページ</a></li>
+	<li<@if(cur.trash,   ' class="current"')>><a href="<@v.myself>?trash">ゴミ箱</a></li>
+	<li<@if(cur.album,   ' class="current"')>><a href="<@v.myself>?album/">メディア</a></li>
+	<li<@if(cur.comlist, ' class="current"')>><a href="<@v.myself>?comlist">コメント<@if(s.newcom_flag, ' <span class="admin-nav-new">新着</span>')></a></li>
+	<li<@if(cur.tag,     ' class="current"')>><a href="<@v.myself>?set2/tag_edit">タグ</a></li>
+<$end>
+	<li class="admin-nav-group<@if(setting, ' open')>">
+	<a class="admin-nav-caption" href="<@v.myself>?<@first>">設定</a>
+	<ul>
+	<@ifexec(s && v.blog_admin, begin)>
+		<li<@if(cur.set,      ' class="current"')>><a href="<@v.myself>?set/">基本設定</a></li>
+	<$end>
+	<@ifexec(s && v.allow_edit, begin)>
+		<li<@if(cur.set2,     ' class="current"')>><a href="<@v.myself>?set2/">その他の設定</a></li>
+	<$end>
+	<@ifexec(s && v.blog_admin, begin)>
+		<li<@if(cur.plugin,   ' class="current"')>><a href="<@v.myself>?plugin/">プラグイン設定</a></li>
+		<li<@if(cur.design,   ' class="current"')>><a href="<@v.myself>?design/">デザイン設定</a></li>
+		<li<@if(cur.mainte,   ' class="current"')>><a href="<@v.myself>?mainte/">ブログの管理</a></li>
+	<$end>
+	<@ifexec(!Auth.auto, begin)>
+		<li<@if(cur.personal, ' class="current"')>><a href="<@v.myself>?personal/">アカウント設定</a></li>
+	<$end>
+	<@ifexec(Auth.isadmin, begin)>
+		<li<@if(cur.user,     ' class="current"')>><a href="<@v.myself>?user/">【管理者】ユーザー管理</a></li>
+		<li<@if(cur.system,   ' class="current"')>><a href="<@v.myself>?system/">【管理者】システム管理</a></li>
+	<$end>
+	</ul>
+	</li>
+</ul>
+</nav>

@@ -1,5 +1,5 @@
 <@7>
-<@local(logs,t)>
+<@local(logs,t,x)>
 <$ifredirect(!v.blog, v.myself)>
 <$ifbreak(!v.allow_edit)>
 
@@ -33,7 +33,7 @@
 		<th>タイトル</th>
 		<th>タグ</th>
 		<th>投稿者</th>
-		<th>コメ<br>ント</th>
+		<th>コメント</th>
 	</tr></thead>
 	<tbody class="small">
 	<@forexec(t, logs, begin)>
@@ -42,8 +42,8 @@
 		<td class="c" nowrap><label for="trash-<@t.pkey>"><@print_tmf('%Y/%m/%d %H:%M', t.deleted_tm)></label></td>
 		<td class="c" nowrap><label for="trash-<@t.pkey>"><@v.format_ymd(t.yyyymmdd)></label></td>
 		<td class="c"><label for="trash-<@t.pkey>"><@t.ctype></label></td>
-		<td><label for="trash-<@t.pkey>" title="<@t.pkey>"><@t.title></label></td>
-		<td class="c"><label for="trash-<@t.pkey>"><@t.tags></label></td>
+		<td class="list-wide"><label for="trash-<@t.pkey>" title="<@t.pkey>"><@t.title></label></td>
+		<td class="c list-wrap"><label for="trash-<@t.pkey>"><@forexec(x, split(',', t.tags), begin)><span><@x></span> <$end></label></td>
 		<td><@t.name></td>
 		<td class="r"><@t.coms_all></td>
 	</tr>

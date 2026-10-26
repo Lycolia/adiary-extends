@@ -1,29 +1,7 @@
 <@7>
-<@local(s,ps)>
-<$s=v.blog>
 <@>-----------------------------------------------------------------------------
 <@> special sidebar module for アルバム
 <@>-----------------------------------------------------------------------------
-<@ifexec(Auth.ok && v.system_mode && !v.design_edit, begin)>
-<!--現在のブログ情報=====================================-->
-<div class="hatena-module" id="side-login-information">
-<div class="hatena-modulebody">
-<table><tbody>
-<tr>
-<td>UID</td><td<@if(Auth.isadmin, ' title="あなたは管理者です"')>><@Auth.id><@if(Auth.isadmin, '(*)')></td>	
-</tr>
-<@ifexec(v.blog, begin)>
-<tr>
-<td>Blog</td><td>『<a href="<@v.myself>"><@s.blog_name></a>』</td>
-</tr>
-<$end>
-</tbody></table>
-</div> <!-- hatena-modulebody -->
-</div> <!-- hatena-module -->
-<$end>
-
-
-
 <!--アルバムフォルダtree=======================================-->
 <div class="hatena-module system-module side-folder-tree">
 <div class="hatena-moduletitle">フォルダ一覧</div>

@@ -98,9 +98,11 @@
 </article>
 
 <!--記事の編集===============================================================-->
+<@> 左に本文、右に公開などの枠を置く（WordPressと同じ並び）。
+<@> 右の枠は記事のフォームの中にある。削除のフォームと投稿情報はフォームの外なので、CSSで本文の下に置く
 <article class="system edit" id="edit">
 <h2 ><@v.title></h2>
-<div class="body">
+<div class="body edit-layout">
 
 <form method="POST" name="edit" class="no-enter-submit">
 
@@ -109,28 +111,11 @@
 	<input type="hidden" name="edit_pkey_int" value="<@edit_pkey>" id="edit-pkey">
 	<input type="hidden" name="edit_digest" value="<@v.article_digest(edit_pkey)>" id="edit-digest">
 <$end>
-	<@ifexec(edit_pkey, begin)>
-	<div class="float-r">
-		<a href="<@v.myself2><@art.elink_key>">記事を開く</a>
-	</div>
-	<$end>
-	<div>
-	<span class="element" id="edit-yyyymmdd">
-	<span class="edit-caption">日付</span><input id="edit-date" type="date" name="ymd" class="w120" value="<@if(art_year, "<@art_year>-<@art_mon>-<@art_day>", "<@v.now.year>-<@v.now.mon>-<@v.now.day>")>" min="1980-01-01" max="2914-12-31" required>
-	</span>
+<div class="edit-main">
+	<div id="edit-title"><input class="w100p no-enter-submit" type="text" name="title" value="<@art.title>" placeholder="タイトル" aria-label="タイトル"></div>
 
-	<span class="element" id="edit-tags"><span class="edit-caption">タグ</span>
-	<span id="tags"><$tags = split(',', art.tags)>
-	<@forexec(t, tags, begin)>
-		<span class="tag"><@t><input type="hidden" name="tag_ary" value="<@t>"></span>
-	<$end></span>
-	<button type="button" id="edit-add-tag" data-title="タグを選択か入力">追加</button>
-	</span>
-	</div>
-	<br>
-
-	<div>
-	<span class="element" id="edit-title"><span class="edit-caption">タイトル</span><input class="w360 no-enter-submit" type="text" name="title" value="<@art.title>"></span>
+	<@> 記法の補助と、記法の選択、アップロード、履歴。本文が長くても押せるように上に止める
+	<div id="edit-toolbar">
 	<div id="edit-helper">
 	<button class="helper" type="button" data-type="head"   data-msg="見出しを作ります">見出し</button>
 	<button class="helper" type="button" data-type="strong" data-msg="太字にしたい文字列を入力">太字</button>
@@ -138,7 +123,7 @@
 	<button class="helper" type="button" data-type="list"   data-msg="箇条書きにしたい項目を１行ずつ入力">リスト</button>
 	<button class="helper" type="button" data-type="quote"  data-msg="引用したい文章を入力" data-sp-msg="引用元サイトがある場合、そのURLを入力してください" data-sp-val="http://" data-sp-match="^https?:\/\/.+">引用</button>
 	<button class="helper" type="button" data-type="anno"   data-msg="注釈にしたい文字列を入力">注釈</button>
-	<button class="helper" type="button" data-type="album"  data-url="<@v.myself>?album/">画像</button>
+	<button class="helper" type="button" data-type="album"  data-url="<@v.myself>?album/&amp;popup=1">画像</button>
 
 	<select id="other-helper" title="その他の機能を呼び出します。">
 		<option value="" selected>その他</option>
@@ -184,9 +169,7 @@
 	<a href="<@v.myself>?etc/allow_tags&amp;n=article" target="_blank">HTMLタグ</a>
 	<$end>
 	</div>
-
-	<textarea name="body_txt" id="editarea" cols="60" rows="16" class="edit-article"><@tag_escape_amp( txt = art._text )></textarea>
-
+	<div id="edit-tools">
 	<span class="element" id="select-parser-span">
 <@>		<span class="edit-caption">入力記法</span>
 		<select name="parser" id="select-parser">
@@ -194,16 +177,68 @@
 		<option value="<@t.key>"<@if(art.parser eq t.key, ' selected')>><@t.val></option>
 		<$end>
 	</select></span>
-
 	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'posts/%y/')>" data-title="ファイルを選択">Upload</button>
 	<@ifexec(edit_pkey, begin)>
 	<button type="button" id="edit-revision" data-title="更新履歴">履歴</button>
 	<$end>
-	<@ifexec(!edit_pkey || art.draft, begin)>
-	<button type="submit" name="draft" value="1" id="save-draft">下書き<@if(edit_pkey, '保存', '作成')></button>
-	<$end>
+	</div>
+	</div>
 
-	<!--=================================================================-->
+	<textarea name="body_txt" id="editarea" cols="60" rows="24" class="edit-article"><@tag_escape_amp( txt = art._text )></textarea>
+
+</div>
+
+<aside class="edit-side">
+	<!--アイキャッチ画像=====================================================-->
+	<@> 選んでいなければ本文の最初の画像、それも無ければブログの画像を使う（edit.js）
+	<section class="edit-box" id="edit-eyecatch">
+	<h3>アイキャッチ画像</h3>
+	<input type="hidden" name="ogp" id="ogp-input" value="<@art.main_image>">
+	<div id="eyecatch-preview" data-blog-image="<@Basepath><@if(s.blog_image, s.blog_image, #'<@v.pubdist_dir>default-logo.png')>"></div>
+	<p id="eyecatch-note"></p>
+	<p class="edit-buttons">
+	<button type="button" id="eyecatch-pick" data-url="<@v.myself>?album/&amp;popup=1&amp;eyecatch=1">アイキャッチ画像を設定</button>
+	<button type="button" id="eyecatch-remove">アイキャッチ画像を削除</button>
+	</p>
+	</section>
+
+	<!--タグ=================================================================-->
+	<section class="edit-box" id="edit-tags-box">
+	<h3>タグ</h3>
+	<span id="edit-tags">
+	<span id="tags"><$tags = split(',', art.tags)>
+	<@forexec(t, tags, begin)>
+		<span class="tag"><@t><input type="hidden" name="tag_ary" value="<@t>"></span>
+	<$end></span>
+	<button type="button" id="edit-add-tag" data-title="タグを選択か入力">追加</button>
+	</span>
+	</section>
+
+	<!--コンテンツページ=====================================================-->
+	<section class="edit-box" id="edit-content">
+	<h3>コンテンツページ</h3>
+	<ul class="checkbox">
+		<li><label><input type="checkbox" name="wiki" value="1" data-target="#content-block" class="js-switch"<@if(art.ctype || art.wiki, ' checked')>>コンテンツページにする</label>
+		<input type="hidden" name="priority" value="<@art.priority>">
+		<ul id="content-block" style="display: none">
+			<li>親 <select name="upnode" id="upnode-select" data-default="<@art.upnode>" data-this-pkey="<@edit_pkey>" data-url="<@Basepath><@v.blogpub_dir>contents.json?<@v.blog.json_tm>">
+				<option value="0">*トップ(root)</option>
+			</select></li>
+			<li>コンテンツkey<span class="help" data-help='"http://", "https://" や "/" ではじまるkeyを指定すると指定URLへのリンクになります。"FrontPage", "top", "index"のいずれかを指定するとブログトップの固定記事になります。'>?</span><input type="text" name="link_key_txt" id="link-key" class="w240" value="<@if(art.ctype, esc(art.link_key))>" data-suggest="<@s.suggest_link_key>"></li>
+		</ul>
+		</li>
+	</ul>
+	</section>
+
+	<!--公開=================================================================-->
+	<section class="edit-box" id="edit-publish">
+	<h3>公開</h3>
+	<@ifexec(edit_pkey, begin)>
+	<p class="edit-open-link"><a href="<@v.myself2><@art.elink_key>">記事を開く</a></p>
+	<$end>
+	<div id="edit-yyyymmdd">
+	<span class="edit-caption">日付</span><input id="edit-date" type="date" name="ymd" class="w120" value="<@if(art_year, "<@art_year>-<@art_mon>-<@art_day>", "<@v.now.year>-<@v.now.mon>-<@v.now.day>")>" min="1980-01-01" max="2914-12-31" required>
+	</div>
 	<ul class="checkbox">
 		<li><label>
 		<@ifexec(!art.enable || art.draft || !edit_pkey, begin, begin)>
@@ -229,27 +264,18 @@
 			<li><label><input type="checkbox" class="js-save" id="parser-debug" name="parser_debug" value="1"><em>[develop]</em> パーサーのデバッグ</label></li>
 		<$end>
 		</ul></li>
-		<li><label><input type="checkbox" name="wiki" value="1" data-target="#content-block" class="js-switch"<@if(art.ctype || art.wiki, ' checked')>>コンテンツページにする</label>
-		<input type="hidden" name="priority" value="<@art.priority>">
-		<ul id="content-block" style="display: none">
-			<li>親 <select name="upnode" id="upnode-select" data-default="<@art.upnode>" data-this-pkey="<@edit_pkey>" data-url="<@Basepath><@v.blogpub_dir>contents.json?<@v.blog.json_tm>">
-				<option value="0">*トップ(root)</option>
-			</select></li>
-			<li>コンテンツkey<span class="help" data-help='"http://", "https://" や "/" ではじまるkeyを指定すると指定URLへのリンクになります。"FrontPage", "top", "index"のいずれかを指定するとブログトップの固定記事になります。'>?</span><input type="text" name="link_key_txt" id="link-key" class="w240" value="<@if(art.ctype, esc(art.link_key))>" data-suggest="<@s.suggest_link_key>"></li>
-		</ul>
-		</li>
-		<li id="edit-thumbnail">
-			<span class="edit-caption">サムネ</span>
-			<ul id="thumbnail-picker"></ul>
-			<details id="thumbnail-direct">
-				<summary>直接指定</summary>
-				<input class="w360" type="text" name="ogp" id="ogp-input" value="<@art.main_image>" placeholder="[image:S:adiary/2025/01/:20241225_195853281.JPG:20241225_195853281.JPG]">
-			</details>
-		</li>
 	</ul>
-
+	<div class="edit-buttons">
+	<@ifexec(!edit_pkey || art.draft, begin)>
+	<button type="submit" name="draft" value="1" id="save-draft">下書き<@if(edit_pkey, '保存', '作成')></button>
+	<$end>
 	<button type="submit" name="edit" id="save-last" value="1"><@save_btn_text></button>
+	</div>
+	</section>
+</aside>
 </form>
+
+<div class="edit-side-extra">
 <@ifexec(edit_pkey, begin)>
 	<ul class="checkbox">
 	<li><label><input type="checkbox" data-target="#post-detail" class="js-switch"> <@\>
@@ -273,6 +299,7 @@
 	<button type="submit" name="delete" id="del-submit" class="no-disable">この記事を削除する</button>
 </form>
 <$end>
+</div>
 </div> <!-- end of body -->
 </article>
 
@@ -282,10 +309,9 @@
 <span id="new-tag-cancel">キャンセル</span>
 <span id="new-tag-close">閉じる</span>
 <span id="new-tag-create">「%t」を新規タグとして追加</span>
-<span id="thumbnail-auto">自動</span>
-<span id="thumbnail-auto-help">記事の最初の画像</span>
-<span id="thumbnail-none">記事に画像がありません</span>
-<span id="thumbnail-direct-label">直接指定</span>
+<span id="eyecatch-note-chosen">選んだ画像を使います。</span>
+<span id="eyecatch-note-auto">選んでいないので、本文の最初の画像を使います。</span>
+<span id="eyecatch-note-blog">選んでいないので、ブログの画像を使います。</span>
 <span id="edit-confirm">他にこの記事を編集している人がいますが、編集を継続しますか？%u</span>
 <span id="msg-multiline">複数行を一度に処理できません。</span>
 <span id="msg-upload-error">アップロードに失敗しました。</span>

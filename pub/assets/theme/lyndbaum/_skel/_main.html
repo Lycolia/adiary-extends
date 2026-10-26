@@ -1,6 +1,6 @@
 <@>$HEADER$--------------------------------------------------------------------
 <@7>
-<@local(ret,logs,s,t,t2,coms,q,q2,url,permalink,x,page,page_offfset,ps,between,between_c,node)>
+<@local(ret,logs,s,t,t2,coms,q,url,permalink,x,page,page_offfset,ps,between,between_c,node)>
 <$s = v.blog>
 <$v.title = s.blog_name>
 
@@ -59,7 +59,6 @@
 <$q .= if(ret.q, '&amp;q=' . ret.q, '')>
 <$q .= if(Query.all, '&amp;all=1')>
 <$q .= if(ret.yyyymm, '&amp;d=' . ret.yyyymm, '')>
-<$q2 = encode_uricom(x = ret.q)>
 <h2>検索条件</h2>
 <div class="body">
 	<form method="GET" action="<@v.myself>" id="top-search-form">
@@ -80,7 +79,6 @@
 	<span class="tag"> <@\>
 		<a href="<@v.myself>?&amp;t=<@x>"><@if(t eq '', '(タグなし)',t)></a> <@\>
 		<$q  .= "&amp;t=<@x>"><input type="hidden" name="t" value="<@t>"> <@\>
-		<$q2 .= if(q2 ne '', ' ', '') . x> <@\>
 	</span><$end></span>
 	</div>
 	<$end>
@@ -145,9 +143,6 @@
 	<div class="hits">
 	<span class="hits">全<span><@ret.hits></span>件</span>
 	<span class="pages">(<@ret.page>/<@ret.pages>ページ)</span>
-	<@ifexec(ret.title_tag, begin)>
-	<span class="list-link"><a href="<@v.myself>?_=artlist&amp;q=<@tag_escape_amp(q2)>">一覧表示に切り替え</a></span>
-	<$end>
 	<label><input type="checkbox" class="js-switch" data-target="article.article div.body div.body-main" data-save checked>記事本文を表示</label>
 	</div>
 </div>

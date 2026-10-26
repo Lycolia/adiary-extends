@@ -31,15 +31,6 @@ HTML
 	$modules{description} = <<'HTML';
 	<li class="description"><@s.description_txt></li>
 HTML
-	$modules{'artlist-link'} = <<'HTML';
-	<li class="to-artlist"><a href="<@v.myself>?artlist">記事一覧</a></li>
-HTML
-	$modules{'comlist-link'} = <<'HTML';
-	<li class="to-comlist"><a href="<@v.myself>?comlist" rel="nofollow">コメント一覧</a></li>
-HTML
-	$modules{'artcomlist-link'} = <<'HTML';
-	<li class="to-artlist to-comlist"><a href="<@v.myself>?artlist" target="_blank">記事一覧</a> / <a href="<@v.myself>?comlist" target="_blank">コメント一覧</a></li>
-HTML
 	$modules{bcounter} = <<'HTML';
 	<li class="bcounter icons"><a class="bcounter" href="https://b.hatena.ne.jp/entrylist?url=<@ServerURL><@v.myself>"><img alt="はてブカウンタ" src="//b.hatena.ne.jp/bc/<#val>/<@ServerURL><@v.myself>" class="bcounter"></a></li>
 HTML
@@ -51,7 +42,7 @@ HTML
 	<@ifexec(s.rss_files, begin)>
 	<a href="<@Basepath><@v.blogpub_dir><@v.load_rss_files()#0>">
 	<$end>
-	<img alt="RSS" src="<@Basepath><@v.pubdist_dir>rss-icon.png">
+	<img alt="RSS" src="<@Basepath><@v.pubdist_dir>rss-icon.png" width="80" height="15">
 	<@if(s.rss_files, '</a>')></li>
 HTML
 	$modules{free_txt} = $modules{freebr_txt} =<<'HTML';
@@ -63,7 +54,6 @@ HTML
 HTML
 	my $ele = $set->{elements} ? $set->{elements} : <<'DEFAULT';
 description
-artlist-link
 DEFAULT
 	my @elements = split("\n", $ele);
 	unshift(@elements, '_header');

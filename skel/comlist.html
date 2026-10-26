@@ -1,6 +1,11 @@
 <@7>
-<@local(logs,t,c,x,opt,s,loads,url,page_offset)>
+<@local(logs,t,c,x,opt,ret,s,loads,url,base,sort_th,page_offset)>
 <$ifredirect(!v.blog, v.myself)>
+
+<@> ログインしていない
+<$ifjump(!Auth.ok, 'login')>
+<@> 権限がない
+<$ifjump_clear(! v.allow_edit, '_sub/error_message_403', 'ブログが存在しないか権限がありません')>
 
 <@> システムモード
 <$v.system_mode("コメント一覧")>
@@ -31,7 +36,17 @@
 <$page_offset  = page_max - 10>
 <$ifset(page_offset<0, page_offset, 0)>
 
-<$url = "<@v.myself>?<@v.skeleton>&amp;loads=<@loads>&amp;sort=<@ret.sort>&amp;rev=<@ret.rev>&amp;">
+<$base = "<@v.myself>?<@v.skeleton>&amp;loads=<@loads>&amp;">
+<$url  = "<@base>sort=<@ret.sort>&amp;rev=<@ret.rev>&amp;">
+
+<@> 見出しを押して並べ替える。argv : 並べ替えの項目, 見出し, 最初に押したときに降順にするか
+<@> 今の並べ替えの項目なら、押すと昇順と降順を入れ替える
+<$sort_th = begin>
+	<@local(key,rev)>
+	<$key = argv#0>
+	<$rev = if(ret.sort eq key, if(ret.rev, 0, 1), argv#2)>
+	<a href="<@base>sort=<@key>&amp;rev=<@rev>"<@if(ret.sort eq key, ' class="sorted"')>><@argv#1><@if(ret.sort eq key, if(ret.rev, ' ▼', ' ▲'))></a> <@\>
+<$end>
 
 <@>-----------------------------------------------
 <@> 新着コメントを消す
@@ -59,20 +74,8 @@
 			<option value="200"<@if(loads==200,' selected')>>200件</option>
 		</select>
 		</div>
-		<div class="element">
-			<select name="sort"><$x = ret.sort>
-				<@ifexec(v.allow_edit, begin)>
-				<option value="enable"<@if(x eq 'enable', ' selected')>>公開、非公開</option>
-				<$end>
-				<option value="tm"<@if(x eq 'tm', ' selected')>>投稿日時</option>
-				<option value="name"<@if(x eq 'name', ' selected')>>名前</option>
-				<option value="a_yyyymmdd"<@if(x eq 'a_yyyymmdd', ' selected')>>投稿記事の日付</option>
-			</select>
-			<select name="rev">
-				<option value="0"<@if(!ret.rev, ' selected')>>昇順</option>
-				<option value="1"<@if( ret.rev, ' selected')>>降順</option>
-			</select>
-		</div>
+		<input type="hidden" name="sort" value="<@ret.sort>">
+		<input type="hidden" name="rev"  value="<@ret.rev>">
 		</form>
 	</div>
 
@@ -97,11 +100,11 @@
 	<thead><tr>
 		<@ifexec(v.allow_edit, begin)>
 		<th><input type="checkbox" name="all_check" class="js-checked" data-target="#comlist-table .pkey-ary"></th>
-		<th>公開</th>
+		<th class="sort"><@exec(sort_th, 'enable',     '公開',   1)></th>
 		<$end>
-		<th>投稿先</th>
-		<th>投稿者</th>
-		<th>投稿日</th>
+		<th class="sort"><@exec(sort_th, 'a_yyyymmdd', '投稿先', 1)></th>
+		<th class="sort"><@exec(sort_th, 'name',       '投稿者', 0)></th>
+		<th class="sort"><@exec(sort_th, 'tm',         '投稿日', 1)></th>
 		<th>内容</th>
 	</tr></thead>
 	<tbody class="small">
@@ -114,7 +117,7 @@
 		<td><a href="<@v.myself2><@t.a_elink_key>" title="<@v.format_ymd(t.a_yyyymmdd)> <@t.a_title>"><@v.string_clip(t.a_title,10)></a></td>
 		<td><a href="<@v.myself2><@t.a_elink_key>#c<@t.num>"<@if(v.allow_edit, #' class="js-popup-com" data-target="<@t.pkey>"')>><@t.name></a></td>
 		<td class="c"><label for="com-<@t.pkey>"><@print_tmf('%Y/%m/%d %H:%M', t.tm)></label></td>
-		<td><label for="com-<@t.pkey>"><@v.string_clip(t.text_nobr,20)></label></td>
+		<td class="list-wide"><label for="com-<@t.pkey>"><@v.string_clip(t.text_nobr,20)></label></td>
 	</tr>
 	<$end>
 	</tbody>

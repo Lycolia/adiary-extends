@@ -50,7 +50,6 @@ $( function(){
 	var dnd_body = $('#body');
 
 	var isMac = /Mac/.test(navigator.platform);
-	var isSphone = $('#sp-alubm').length;
 
 	// フラグ管理
 	var key_event_stop;
@@ -98,6 +97,11 @@ var set = {
 			data.fix   = true;
 			data.icon  = 'trashbox.png';
 		}
+
+		// 開くフォルダの指定（?album/&folder=xxx/。記事作成画面のアイキャッチ画像から）
+		var open_key = !isReloading && new URLSearchParams(location.search).get('folder');
+		var open_node = open_key && tree.dynatree("getTree").getNodeByKey(open_key);
+		if (open_node) open_node.activateSilently();
 
 		// 選択中のノード
 		var sel = tree.dynatree("getActiveNode");
@@ -609,6 +613,7 @@ function update_selected_files() {
 	}
 	var bool = (imgs.length == 0);
 	$('#paste-form [data-select]').prop('disabled', bool);
+	$('#set-eyecatch').prop('disabled', !(imgs.length == 1 && $(imgs[0]).data('isimg')));
 }
 
 //------------------------------------------------------------------------------
@@ -735,13 +740,6 @@ function open_folder(node, isReloading) {
 	}
 	if (node.data.rename) return;	// リネーム中は何もしない
 
-	// フォルダ移動ボタン（スマホ表示）
-	{
-		var dir = node.data.key;
-		$('#album-move-folder').prop('disabled',
-			dir == '/' || dir == '.trashbox/'
-		);
-	}
 	ajax_submit({
   		data: {	folder: node.data.key },
 		action: 'load_image_files',
@@ -1145,6 +1143,19 @@ function paste_button(evt) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// ●アイキャッチ画像に設定（記事作成画面から開いたとき）
+////////////////////////////////////////////////////////////////////////////////
+$('#set-eyecatch').click(function(){
+	var sel = view.find('.selected');
+	if (sel.length != 1 || !window.opener || !window.opener.set_eyecatch) return false;
+
+	var name = sel.first().data('title').toString();	// 数字のみのファイル名対策
+	window.opener.set_eyecatch(cur_folder_rel + name);
+	window.close();
+	return false;
+});
+
+////////////////////////////////////////////////////////////////////////////////
 // ●その他の操作（セレクトボックス or 独立ボタン）
 ////////////////////////////////////////////////////////////////////////////////
 $('#remake-thumbnail').click( remake_thumbnail );
@@ -1492,18 +1503,6 @@ function encode_link(str){
 //##############################################################################
 // スマホ用のDnDエミュレーション
 view.dndEmulation();
-////////////////////////////////////////////////////////////////////////////////
-// ●フォルダの移動
-////////////////////////////////////////////////////////////////////////////////
-$('#album-move-folder').click(function(){
-	folder_select_dialog(function(folder){
-		var node = tree.dynatree("getTree").getNodeByKey(folder);
-		if (!node) return false;
-
-		return move_folder(node, cur_node);
-	});
-});
-
 ////////////////////////////////////////////////////////////////////////////////
 // ●移動先フォルダ選択メニュー
 ////////////////////////////////////////////////////////////////////////////////

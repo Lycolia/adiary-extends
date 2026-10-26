@@ -23,7 +23,7 @@ sub load_arts_list {
 	my $rev  = $opt->{rev};
 
 	# sortのチェック
-	my %a = ('enable'=>1,'yyyymmdd'=>1,'ctype'=>1,'name'=>1,'tm'=>1,'update_tm'=>1,'coms'=>1,'coms_all'=>1);
+	my %a = ('enable'=>1,'yyyymmdd'=>1,'ctype'=>1,'name'=>1,'tm'=>1,'update_tm'=>1,'coms'=>1,'coms_all'=>1,'title'=>1);
 	$sort =~ s/\W//g;
 	if (!$a{$sort} || $sort eq '') { $sort='yyyymmdd'; }
 	$rev = ($rev eq '' || $rev) ? 1 : 0;
@@ -2193,6 +2193,12 @@ sub special_system_mode {
 
 	# フラグ設定
 	$self->{special_system_mode} = 1;
+
+	# 公開画面のテーマで表示するため、外フレームは公開画面のものを使う。スマホ用の処理も戻す
+	if ($self->{frame_skeleton}) {
+		$self->{frame_skeleton} = '_frame';
+	}
+	$self->check_sphone_after_theme_change();
 }
 
 #-------------------------------------------------------------------------------

@@ -213,15 +213,19 @@ adiary.load_contents_list($upsel);
 }
 
 //##############################################################################
-// ■サムネイル（OGP画像）の選択
+// ■アイキャッチ画像（OGP画像）
 //##############################################################################
-// name="ogp" の入力欄が実体。空なら記事の最初の画像（サーバー側で自動選択）
+// name="ogp" の欄が実体（main_image）。空なら記事の最初の画像（サーバー側で自動選択）、
+// それも無ければブログの画像を使う。画像は画像アルバムを別のウィンドウで開いて選ぶ（album.js が set_eyecatch() を呼ぶ）
 {
-	const $picker = $('#thumbnail-picker');
-	const $ogp    = $('#ogp-input');
-	const imgdir  = $('#image-dir').text();		// 画像ディレクトリ（相対）
-	const img_url = adiary.Basepath + imgdir;
-	const img_ext = /\.(?:jpe?g|png|gif|webp|apng|avif)$/i;
+	const $preview = $('#eyecatch-preview');
+	const $note    = $('#eyecatch-note');
+	const $pick    = $('#eyecatch-pick');
+	const $remove  = $('#eyecatch-remove');
+	const $ogp     = $('#ogp-input');
+	const imgdir   = $('#image-dir').text();		// 画像ディレクトリ（相対）
+	const img_url  = adiary.Basepath + imgdir;
+	const img_ext  = /\.(?:jpe?g|png|gif|webp|apng|avif)$/i;
 
 	// [image:S:folder/:file:caption] 記法と、画像ディレクトリ内を指すURLを出現順に拾う
 	const dir_re = imgdir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -240,59 +244,68 @@ adiary.load_contents_list($upsel);
 		return list;
 	}
 
-	// 入力欄の値を画像パスに正規化（記法で入力された場合にも対応）
+	// 欄の値を画像パスにする。保存した値の末尾の「?幅,高さ」と、記法で書いた古い値に対応する
 	function current_value() {
-		const val = $ogp.val().trim();
+		const val = $ogp.val().trim().replace(/\?\d+,\d+$/, '');
 		if (val.indexOf(':') < 0) return val;
 		return find_images(val)[0] || val;
 	}
 
+	function enc(path) {
+		return path.split('/').map(encodeURIComponent).join('/');
+	}
 	function thumb_url(path) {
 		const x = path.lastIndexOf('/');
-		const enc = function(s){ return s.split('/').map(encodeURIComponent).join('/') };
 		return img_url + enc(path.substr(0, x+1) + '.thumbnail/' + path.substr(x+1) + '.jpg');
 	}
-	function full_url(path) {
-		return img_url + path.split('/').map(encodeURIComponent).join('/');
+	function make_img(path) {
+		const $img = $('<img>').attr({ src: thumb_url(path), alt: '' });
+		$img.one('error', function(){ $img.attr('src', img_url + enc(path)) });
+		return $img;
 	}
 
-	function make_item(path, label, value, selected) {
-		const $li = $('<li>').attr('data-value', value).attr('title', label || path);
-		if (selected) $li.addClass('selected');
-		if (path) {
-			const $img = $('<img>').attr({ src: thumb_url(path), alt: '', loading: 'lazy' });
-			$img.one('error', function(){ $img.attr('src', full_url(path)) });
-			$li.append($img);
-		}
-		if (label) $li.append( $('<span>').addClass('label').text(label) );
-		return $li;
-	}
-
-	let images = [];
+	let first_image = '';
 	function render() {
 		const cur = current_value();
-		$picker.empty();
-
-		// 自動（記事の最初の画像）
-		const auto_label = $('#thumbnail-auto').text();
-		const $auto = make_item(images[0], auto_label, '', cur == '');
-		$auto.attr('title', auto_label + ' : ' + (images.length ? $('#thumbnail-auto-help').text() : $('#thumbnail-none').text()));
-		$picker.append($auto);
-
-		images.forEach(function(path){
-			$picker.append( make_item(path, '', path, cur == path) );
-		});
-		// 記事にない画像が指定されている
-		if (cur != '' && images.indexOf(cur) < 0) {
-			$picker.append( make_item(cur.indexOf(':') < 0 ? cur : '', $('#thumbnail-direct-label').text(), cur, true) );
+		$preview.empty();
+		if (cur != '') {
+			// 選んだ画像は、押すと選び直せる
+			const $btn = $('<button>').attr({ type: 'button', title: '画像を変更' }).addClass('eyecatch-change');
+			$btn.append( make_img(cur) );
+			$preview.append($btn);
+			$note.text( $('#eyecatch-note-chosen').text() );
+		} else if (first_image) {
+			$preview.append( make_img(first_image) );
+			$note.text( $('#eyecatch-note-auto').text() );
+		} else {
+			$preview.append( $('<img>').attr({ src: $preview.data('blog-image'), alt: '' }) );
+			$note.text( $('#eyecatch-note-blog').text() );
 		}
+		$pick  .toggle(cur == '');
+		$remove.toggle(cur != '');
 	}
 
-	$picker.on('click', 'li', function(evt){
-		$ogp.val( $(evt.currentTarget).attr('data-value') );
+	// 画像アルバムを開く。選んである画像があれば、そのフォルダを開く
+	function open_album() {
+		const cur = current_value();
+		let url   = $pick.data('url');
+		const x   = cur.lastIndexOf('/');
+		if (x >= 0) url += '&folder=' + encodeURIComponent(cur.substr(0, x+1));
+		const win = window.open(url, 'album', 'location=yes, menubar=no, resizable=yes, scrollbars=yes');
+		win.focus();
+	}
+	$pick.on('click', open_album);
+	$preview.on('click', '.eyecatch-change', open_album);
+	$remove.on('click', function(){
+		$ogp.val('');
 		render();
 	});
-	$ogp.on('input', render);
+
+	// 画像アルバムから呼ばれる。path は画像ディレクトリからの相対パス
+	window.set_eyecatch = function(path) {
+		$ogp.val(path);
+		render();
+	};
 
 	// 記事本文の変更を反映（アルバムからの挿入等はinputイベントが来ないので定期確認）
 	let last_text;
@@ -300,20 +313,17 @@ adiary.load_contents_list($upsel);
 		const text = $edit.val();
 		if (text === last_text) return;
 		last_text = text;
-		const list = find_images(text);
-		if (list.join("\n") === images.join("\n")) return;
-		images = list;
+		const first = find_images(text)[0] || '';
+		if (first === first_image) return;
+		first_image = first;
 		render();
 	}
 	rescan();
+
+	// 保存した値が記事の最初の画像と同じなら、選んでいない（自動）扱いにする
+	if (first_image && current_value() == first_image) $ogp.val('');
 	render();
 	setInterval(rescan, 1500);
-
-	// 保存済みの値が記事の最初の画像と同じなら「自動」扱いにする
-	if (images.length && current_value() == images[0]) {
-		$ogp.val('');
-		render();
-	}
 }
 
 //##############################################################################

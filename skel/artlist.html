@@ -1,12 +1,14 @@
 <@7>
-<@local(logs,t,x,opt,ret,s,loads,url,page_offset,tag_links)>
+<@local(logs,t,x,opt,ret,s,loads,url,base,sort_th,page_offset)>
 <$ifredirect(!v.blog, v.myself)>
+
+<@> ログインしていない
+<$ifjump(!Auth.ok, 'login')>
+<@> 権限がない
+<$ifjump_clear(! v.allow_edit, '_sub/error_message_403', 'ブログが存在しないか権限がありません')>
 
 <@> システムモード
 <$v.system_mode("記事一覧")>
-
-<$no_robots=0>
-<$v.add_header(#'<meta name="robots" content="noindex">\n')>
 
 <$s = v.blog>
 
@@ -36,13 +38,16 @@
 <$page_offset  = page_max - 10>
 <$ifset(page_offset<0, page_offset, 0)>
 
-<$url = "<@v.myself>?_=<@v.skeleton>&amp;loads=<@loads>&amp;sort=<@ret.sort>&amp;rev=<@ret.rev>&amp;q=" . encode_uricom(x = Query.q) . "&amp;">
+<$base = "<@v.myself>?_=<@v.skeleton>&amp;loads=<@loads>&amp;q=" . encode_uricom(x = Query.q) . "&amp;">
+<$url  = "<@base>sort=<@ret.sort>&amp;rev=<@ret.rev>&amp;">
 
-<$tag_links = begin>
-	<@local(tag)>
-	<@forexec(tag, split(',', argv#0), begin)> <@\>
-		<a href="<@v.myself>?_=<@v.skeleton>&amp;q=<@tag>"><@tag></a> 
-	<$end>
+<@> 見出しを押して並べ替える。argv : 並べ替えの項目, 見出し, 最初に押したときに降順にするか
+<@> 今の並べ替えの項目なら、押すと昇順と降順を入れ替える
+<$sort_th = begin>
+	<@local(key,rev)>
+	<$key = argv#0>
+	<$rev = if(ret.sort eq key, if(ret.rev, 0, 1), argv#2)>
+	<a href="<@base>sort=<@key>&amp;rev=<@rev>"<@if(ret.sort eq key, ' class="sorted"')>><@argv#1><@if(ret.sort eq key, if(ret.rev, ' ▼', ' ▲'))></a> <@\>
 <$end>
 
 <!--=========================================================================-->
@@ -64,25 +69,8 @@
 			<option value="200"<@if(loads==200,' selected')>>200件</option>
 		</select>
 		</div>
-		<div class="element">
-			<select name="sort"><$x = ret.sort>
-				<@ifexec(v.allow_edit, begin)>
-				<option value="enable"<@if(x eq 'enable', ' selected')>>公開、非公開</option>
-				<$end>
-				<option value="yyyymmdd"<@if(x eq 'yyyymmdd', ' selected')>>日付</option>
-				<option value="ctype"<@if(x eq 'ctype', ' selected')>>種類</option>
-				<option value="name"<@if(x eq 'name', ' selected')>>投稿者</option>
-				<option value="<@if(v.allow_edit, 'coms_all', 'coms')>"<@if(x eq 'coms' || x eq 'coms_all', ' selected')>>コメント数</option>
-				<@ifexec(v.allow_edit, begin)>
-				<option value="tm"<@if(x eq 'tm', ' selected')>>投稿日時</option>
-				<option value="update_tm"<@if(x eq 'update_tm', ' selected')>>更新日時</option>
-				<$end>
-			</select>
-			<select name="rev">
-				<option value="0"<@if(!ret.rev, ' selected')>>昇順</option>
-				<option value="1"<@if( ret.rev, ' selected')>>降順</option>
-			</select>
-		</div>
+		<input type="hidden" name="sort" value="<@ret.sort>">
+		<input type="hidden" name="rev"  value="<@ret.rev>">
 		<div class="element">
 			<input type="search" class="w140" name="q" value="<@tag_escape(x = Query.q)>">
 			<button type="submit">検索</button>
@@ -101,44 +89,30 @@
 	<$end>
 
 
-<$date = ''>
-<$ifset(ret.sort eq 'tm',        date, '投稿日時')>
-<$ifset(ret.sort eq 'update_tm', date, '更新日時')>
-
 <@ifexec(v.allow_edit, begin)>
 	<form action="<@url>page=<@page>" method="POST" class="js-check-form" data-target="#artlist-table .pkey-ary">
 	<input type="hidden" name="action" value="articles_edit">
 <$end>
 	<table id="artlist-table" class="list-table">
 	<thead><tr>
-		<@ifexec(v.allow_edit, begin)>
 		<th><input type="checkbox" name="all_check" class="js-checked" data-target="#artlist-table .pkey-ary"></th>
-		<th>公開</th>
-		<$end>
-		<th><@if(date, date, '日付')></th>
-		<th>種類</th>
-		<th>タイトル</th>
-		<th>タグ</th>
-		<th>投稿者</th>
-		<th>コメ<br>ント</th>
+		<th class="sort"><@exec(sort_th, 'title',     'タイトル', 0)></th>
+		<th class="sort"><@exec(sort_th, 'enable',    '公開',     1)></th>
+		<th class="sort"><@exec(sort_th, 'yyyymmdd',  '公開日',   1)></th>
+		<th class="sort"><@exec(sort_th, 'update_tm', '更新日',   1)></th>
+		<th class="sort"><@exec(sort_th, 'coms_all',  'コメント', 1)></th>
+		<th class="sort"><@exec(sort_th, 'name',      '投稿者',   0)></th>
 	</tr></thead>
 	<tbody class="small">
 	<@forexec(t, logs, begin)>
 	<tr>
-		<@ifexec(v.allow_edit, begin)>
 		<td class="c"><input type="checkbox" name="pkey_ary" value="<@t.pkey>" class="pkey-ary" id="art-<@t.pkey>"></td>
+		<td class="list-wide"><a href="<@v.myself2><@t.elink_key>" title="<@t.pkey>"><@t.title></a></td>
 		<td class="c"><label for="art-<@t.pkey>"><@if(t.enable, '公')></label></td>
-		<$end>
-		<@ifexec(date, begin, begin)>
-		<td class="c"><label for="art-<@t.pkey>"><@print_tmf('%Y/%m/%d %H:%M', t.(ret.sort))></label></td>
-		<$else>
-		<td class="c" nowrap><label for="art-<@t.pkey>"><@v.format_ymd(t.yyyymmdd)></label></td>
-		<$end>
-		<td class="c"><label for="art-<@t.pkey>"><@t.ctype></label></td>
-		<td><a href="<@v.myself2><@t.elink_key>"<@if(v.allow_edit, #' title="<@t.pkey>"')>><@t.title></a></td>
-		<td class="c"><label for="art-<@t.pkey>"><@if(t.tags ne '', exec(tag_links, t.tags))></label></td>
+		<td class="c"><label for="art-<@t.pkey>"><@v.format_ymd(t.yyyymmdd)></label></td>
+		<td class="c"><label for="art-<@t.pkey>"><@print_tmf('%Y-%m-%d', t.update_tm)></label></td>
+		<td class="r"><@t.coms_all></td>
 		<td><@t.name></td>
-		<td class="r"><@if(v.allow_edit, t.coms_all, t.coms)></td>
 	</tr>
 	<$end>
 	</tbody>

@@ -1167,39 +1167,6 @@ form#import-form table {
 }
 
 /*--------------------------------------------------------------------
-●プログレスバー（import等）
---------------------------------------------------------------------*/
-.ui-progressbar {
-    position:               relative;
-    background-color:       #f08daa;
-    border-radius:          5px;
-    border-width:           0px;
-    box-shadow:             3px 3px 10px rgba(240, 140, 171, 0.6);
-    min-height:             18px;
-    margin:                 10px 8px 8px 0;
-    padding:                2 0;
-    max-width:              400px;
-}
-.ui-progressbar .label {
-    position:               absolute;
-    width:                  100%;
-    font-size:              14px;
-    text-align:             center;
-    font-weight:            bold;
-    color:                  white;
-}
-.ui-progressbar,
-.ui-progressbar .label:before {
-    height:                 20px;
-    vertical-align:         middle;
-}
-.ui-progressbar-value {
-    padding:                1px 0 0 1px;
-    background-color:       rgb(181,0,31);
-    background-color:       rgba(181,0,31,0.5);
-}
-
-/*--------------------------------------------------------------------
 ●jQuery UI, popup-info/dialog（テーマREADME/記事のタグヘルパー等）
 --------------------------------------------------------------------*/
 .ui-dialog {

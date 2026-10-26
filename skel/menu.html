@@ -2,7 +2,7 @@
 <$ifjump_clear(! Auth.ok, '_sub/error_message_403', 'ログインしていません')>
 
 <@> システムモード
-<$v.system_mode("管理メニュー")>
+<$v.system_mode("ダッシュボード")>
 
 <@ifexec(!v.sys.myself, begin)>
 	<$v.update_sysdat('myself',  myself)>
@@ -41,29 +41,19 @@
 	<$end>
 <$end>
 
-	<ul class="menu">
-	<@ifexec(v.blog_admin, begin)>
-		<li><a href="<@v.myself>?set/">基本設定</a></li>
+	<@ifexec(v.blog, begin)>
+	<table class="dashboard-info">
+	<tbody>
+	<tr><th>ブログ</th><td><a href="<@v.myself>"><@v.blog.blog_name></a></td></tr>
+	<tr><th>公開記事</th><td><@v.blog.arts || 0>件</td></tr>
+	<@ifexec(v.blog.darts, begin)>
+	<tr><th>非公開記事</th><td><@v.blog.darts>件</td></tr>
 	<$end>
-	<@ifexec(v.allow_edit, begin)>
-		<li><a href="<@v.myself>?set2/">その他の設定</a><span class="help" data-help="記事タグ、コンテンツツリー、記法タグ、ヘッダ設定">?</span></li>
+	<tr><th>コメント</th><td><@v.blog.coms || 0>件</td></tr>
+	</tbody>
+	</table>
 	<$end>
-	<@ifexec(v.blog_admin, begin)>
-		<li><a href="<@v.myself>?plugin/">プラグイン設定</a></li>
-		<li><a href="<@v.myself>?design/">デザイン設定</a><span class="help" data-help="テーマ選択、デザイン編集、ユーザーCSS">?</span></li>
-		<li><a href="<@v.myself>?mainte/">ブログの管理</a><span class="help" data-help="ブログの再構築、全記事の削除、インポート、エクスポート">?</span></li>
-	<$end>
-	<@ifexec(!Auth.auto, begin)>
-		<li><a href="<@v.myself>?personal/">アカウント設定</a><span class="help" data-help="ユーザー名の変更、パスワードの変更">?</span></li>
-	<$end>
-	</ul>
-
-	<@ifexec(Auth.isadmin, begin)>
-	<ul class="menu">
-		<li><a href="<@v.myself>?user/">【管理者】ユーザー管理</a></li>
-		<li><a href="<@v.myself>?system/">【管理者】システム管理</a><span class="help" data-help="システム設定、アップデート処理、システムチェック">?</span></li>
-	</ul>
-	<$end>
+	<p>ユーザー <@Auth.id><@if(Auth.isadmin, '（システム管理者）')></p>
 </div>
 </article>
 

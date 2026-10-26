@@ -48,9 +48,10 @@ my @update_versions = (
 	{ ver => 4.08, info=>1, func => 'sys_update_408' },
 	{ ver => 4.09, plugin=>1, func => 'sys_update_409' },
 	{ ver => 4.10, plugin=>1, theme=>1, rebuild=>1 },	# データの持ち方を変えた（migrate_410）。パスが変わるので全部作り直す
-	{ ver => 4.11, plugin=>1, theme=>1, rebuild_cond=>[	# js/、pub-dist/、theme/ を pub/assets/ の下に移した
+	{ ver => 4.11, plugin=>1, theme=>1, func => 'sys_update_411', system=>1, rebuild_cond=>[	# js/、pub-dist/、theme/ を pub/assets/ の下に移した
 		'\[(?:mj|icon|pubdist)[:\]]'				# pub-dist/ のパスを出す記法
-	]}
+	]},
+	{ ver => 4.12, plugin=>1, func => 'sys_update_412', system=>1 }	# 記事一覧とコメント一覧を管理画面に移した。デザインに残るリンクを作り直して消す
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -499,6 +500,147 @@ sub move_dir_files_410 {
 		rename("$src$_", "$des$_") || $ROBJ->message("Rename '%s' failed", "$src$_");
 	}
 	rmdir($src);
+}
+
+#-------------------------------------------------------------------------------
+# ●システムアップデート for Ver4.11
+#-------------------------------------------------------------------------------
+# 4.09〜4.11で消した機能の設定を片付ける
+# ・設定ファイル（adiary.conf.cgi）：公開フォルダのパスの定数、消したパーサー、消した設定
+# ・ブログの設定とシステムの設定：消した機能のキー
+# ・新しいブログの初期設定のファイル（data/default_setting.dat）
+sub sys_update_411 {
+	my $self = shift;
+	$self->update_conf_411();
+
+	# システムの設定と、新しいブログの初期設定のファイル（1つのadiaryで複数のブログを持つ機能。4.10）
+	$self->update_sysdat('create_blog_only_admin', undef);
+	my $file = $self->{data_dir} . 'default_setting.dat';
+	if (-e $file) {
+		my $ok = $self->{ROBJ}->file_delete($file);
+		$self->{ROBJ}->message($ok ? "Delete '%s'" : "Delete '%s' failed", $file);
+	}
+
+	my $blog = $self->{blog};
+	if (!$blog) { return; }
+	# tw_ping：Twitterへの投稿（4.09）、gaid：Universal Analytics（4.09）
+	# fb_admins、fb_app_id、asid：使われていなかった設定（4.09）
+	# spmenu、spmenu_info_all：スマホ用のメニュー（4.09）
+	# album_blogs：ブログを選ぶアルバム（4.10）、rst：reStructuredTextで入力する設定（4.10）
+	# sysmode_notheme：システムモードでテーマを使わない警告（管理画面は常に標準テーマ）
+	foreach(qw(tw_ping gaid fb_admins fb_app_id asid spmenu spmenu_info_all album_blogs rst sysmode_notheme)) {
+		if (!exists($blog->{$_})) { next; }
+		$self->update_blogset($blog, $_, undef);
+	}
+	# 消したパーサーが既定になっていたら、標準に戻す（4.10の設定の画面と同じ）
+	if ($blog->{parser} ne '' && !$self->{ROBJ}->check_skeleton("_parser/$blog->{parser}")) {
+		$self->update_blogset($blog, 'parser', 'default');
+	}
+}
+
+#-------------------------------------------------------------------------------
+# ●設定ファイル（adiary.conf.cgi）の書き換え（Ver4.11）
+#-------------------------------------------------------------------------------
+# 設定ファイルはgitで管理していないので、見本（adiary.conf.cgi.sample）を変えても届かない。
+# 書き換える前のファイルは、データのフォルダに写しておく。書き込めなければ、消す行を知らせる
+my %Conf_path_411 = (
+	pubdist_dir	=> [ 'pub-dist/', 'pub/assets/dist/'  ],
+	theme_dir	=> [ 'theme/',    'pub/assets/theme/' ],
+	script_dir	=> [ 'js/',       'pub/assets/js/'    ]
+);
+my $Conf_removed_411 = qr/^#?\s*<\$(?:Secure_time|v\.my_default_setting_file|v\.v2conf|v\.subdomain_mode|v\.subdomain_secure|v\.special_export)\s*=/;
+my %Conf_removed_comment_411 = map { $_ => 1 } (
+	'# ○Version2からの移行設定（絶対パスでも可）',
+	'# ●サブドメインモードに設定し、ドメイン部を指定',
+	'# サブドメインモード時、cookie の扱いを各ドメイン（ブログ）ごとに限定',
+	'# セキュリティIDの有効期限',
+	'# Sphinx連携機能など特殊export機能の許可（管理者のみ）'
+);
+sub update_conf_411 {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $file = $ROBJ->{Conf_file};
+	if (!-r $file) { return; }
+
+	my $lines = $ROBJ->fread_lines($file);
+	my @out;
+	my @removed;
+	my $in_parsers;
+	my $skip_blank;
+	foreach my $line (@$lines) {
+		my $remove;
+		if ($line =~ /^<\$v\.parsers\s*=\s*begin_hash/) {
+			$in_parsers = 1;
+		} elsif ($in_parsers && $line =~ /^<\$end>/) {
+			$in_parsers = 0;
+		} elsif ($in_parsers && $line =~ /^\s*(\w+)\s*=/) {
+			# パーサーのスケルトン（skel/_parser/）が無いもの。reStructuredText（4.10）など
+			$remove = !$ROBJ->check_skeleton("_parser/$1");
+		} elsif ($line =~ $Conf_removed_411) {
+			$remove = 1;
+		} else {
+			my $x = $line;
+			$x =~ s/\s+$//;
+			$remove = $Conf_removed_comment_411{$x};
+		}
+		if ($remove) {
+			push(@removed, $line);
+			$skip_blank = 1;
+			next;
+		}
+		# 消したまとまりの後の空行は、前も空行なら詰める
+		if ($skip_blank && $line =~ /^\s*$/ && (!@out || $out[$#out] =~ /^\s*$/)) {
+			next;
+		}
+		$skip_blank = 0;
+
+		# 公開フォルダのパス（4.11）。前の既定値のときだけ変える
+		if ($line =~ /^<\$constant\((\w+)\)\s*=\s*'([^']*)'>/ && $Conf_path_411{$1} && $Conf_path_411{$1}->[0] eq $2) {
+			my ($name, $old) = ($1, $2);
+			my $new = $Conf_path_411{$name}->[1];
+			push(@removed, $line);
+			$line =~ s/'\Q$old\E'/'$new'/;
+		}
+		push(@out, $line);
+	}
+	if (!@removed) { return; }
+
+	# 書き換える前のファイルを写す
+	my $base   = $file =~ m|([^/]+)$| ? $1 : $file;
+	my $backup = $self->{data_dir} . "$base.411.bak";
+	my $err    = $ROBJ->file_copy($file, $backup);
+	if (!$err) {
+		$err = $ROBJ->fwrite_lines($file, \@out);
+	}
+	if ($err) {
+		$ROBJ->clear_error();
+		$ROBJ->message("Can't update '%s'. Please edit these lines by yourself.", $file);
+		foreach(@removed) {
+			my $x = $_;
+			$x =~ s/\s+$//;
+			$ROBJ->message("  %s", $x);
+		}
+		return;
+	}
+	$ROBJ->message("Update '%s' (backup: '%s')", $file, $backup);
+}
+
+#-------------------------------------------------------------------------------
+# ●システムアップデート for Ver4.12
+#-------------------------------------------------------------------------------
+# 4.11の片付け（sys_update_411）は後から足したので、4.11にしてあった環境ではここで行う
+sub sys_update_412 {
+	my $self = shift;
+	if ($self->{sys}->{VERSION} >= 4.11) {
+		$self->sys_update_411();
+	}
+	# アルバムモードと、アルバムを誰でも見られるようにする設定
+	my $blog = $self->{blog};
+	if (!$blog) { return; }
+	foreach(qw(album_mode album_open_access)) {
+		if (!exists($blog->{$_})) { next; }
+		$self->update_blogset($blog, $_, undef);
+	}
 }
 
 #-------------------------------------------------------------------------------

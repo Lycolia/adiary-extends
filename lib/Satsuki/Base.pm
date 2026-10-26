@@ -115,6 +115,7 @@ sub start_up {
 	$self->init_path();
 
 	# conf解析
+	$self->{Conf_file}   = $conf;	# アップデート処理で書き換えるため
 	$self->{Conf_result} = $self->_call($conf);
 
 	# 致命的エラーがあった場合、表示して終了

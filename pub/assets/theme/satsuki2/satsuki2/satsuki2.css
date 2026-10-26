@@ -645,8 +645,8 @@ button:disabled
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-/* ここより下は管理メニュー内でのみ使用するクラス                           */
-/*		システムモードに対応しないテーマでは定義不要                */
+/* ここより下は、システムの部品（フォーム、ヘルプ、ダイアログ、メッセージなど）のクラス。 */
+/*	公開画面と、テーマで表示するシステム画面（デザイン編集、表示テスト）で使う */
 /******************************************************************************/
 /*--------------------------------------------------------------------
 ●システム画面
@@ -704,38 +704,6 @@ article .treebox,
 article:not(.edit) #editarea {
 	margin-top:		1em;
 	margin-bottom:		1em;
-}
-
-/*--------------------------------------------------------------------
-●記事の編集画面
---------------------------------------------------------------------*/
-article.system.notice {
-	margin-bottom:	0.4em;
-}
-textarea.edit-article {
-	width:		98%;
-	margin:		0;
-}
-article.edit form.delete {
-	margin-top:	1.5em;
-}
-article.edit span.element {
-	margin-right:	1em;
-}
-
-span.edit-caption {
-	font-weight:	bold;
-	margin-right:	0.3em;
-}
-
-/* タグ */
-article.edit span.tag {
-	font-size:		9pt;
-	color:			#600;
-	background-color:	#ccf;		/* $c=main */
-	border-radius:		6px;
-	padding:		0px 4px;
-	margin-right:		0.5em;
 }
 
 /*--------------------------------------------------------------------
@@ -826,32 +794,6 @@ nav.tree {
 	padding:		0.5em 1em 0.5em 1.5em;
 
 	background-color:	#eeeeff;		/* $c=sysartbg */
-}
-
-/*--------------------------------------------------------------------
-●プログレスバー（import等）
---------------------------------------------------------------------*/
-.ui-progressbar {
-	margin:			0.5em 0;
-	max-width:		400px;
-	border-color:		#6b75b8;	/* $c=border */
-	background-color:	#fff;
-}
-.ui-progressbar .label {
-	color:			#000;
-	font-weight:		bold;
-	text-shadow:	 1px -1px 2px #fff,
-			 1px -1px 2px #fff,
-			-1px  1px 2px #fff,
-			 1px  1px 2px #fff;
-}
-.ui-progressbar,
-.ui-progressbar .label:before {
-	height:			20px;
-	vertical-align:		middle;
-}
-.ui-progressbar-value {
-	background-color:	#aac;			/* $c=btndisable */
 }
 
 /******************************************************************************/

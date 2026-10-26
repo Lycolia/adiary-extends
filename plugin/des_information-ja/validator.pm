@@ -12,9 +12,6 @@ sub {
 	# 値を持たないモジュールの一覧
 	my %simple = map { $_ => 1 } qw(
 		description
-		artlist-link
-		comlist-link
-		artcomlist-link
 		bicon
 		rssicon
 	);
