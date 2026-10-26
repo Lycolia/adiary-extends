@@ -544,16 +544,16 @@ article#edit > div.body {
 	padding:		0.3em 0.5em;
 	margin-bottom:		0.4rem;
 }
-/* 記法の補助（左）と、記法の選択、アップロード、履歴（右）。本文が長くても押せるように上に止める */
+/* 記法の補助（上の段）と、記法の選択、アップロード、履歴（下の段）。どちらも左に寄せる。
+   本文が長くても押せるように上に止める */
 #edit-toolbar {
 	position:		sticky;
 	top:			var(--admin-bar-height);
 	z-index:		5;
 	display:		flex;
-	flex-wrap:		wrap;
-	align-items:		center;
-	justify-content:	space-between;
-	gap:			0.25rem 1rem;
+	flex-direction:		column;
+	align-items:		flex-start;
+	gap:			0.25rem;
 	padding:		0.2rem 0;
 	background-color:	var(--admin-bg);
 }
