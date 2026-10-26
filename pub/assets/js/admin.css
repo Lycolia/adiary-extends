@@ -560,7 +560,7 @@ article#edit > div.body {
 #edit #editarea {
 	resize:			vertical;
 	field-sizing:		content;
-	min-height:		max(16rem, calc(100vh - var(--admin-bar-height) - 15rem));
+	min-height:		max(16rem, calc(100vh - var(--admin-bar-height) - 30rem));
 }
 /* 下書きを開く：1行にまとめる */
 #draft-notice {
