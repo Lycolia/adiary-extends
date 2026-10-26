@@ -119,6 +119,10 @@ dt {
 	grid-template-columns:	var(--admin-nav-width) minmax(0, 1fr);
 	min-height:		calc(100vh - var(--admin-bar-height));
 }
+/* 別のウィンドウで開いたとき（記事作成画面からの画像アルバム）は、上のバーとナビを出さない */
+body.admin-popup {
+	--admin-bar-height:	0px;
+}
 /* ログインしていないとき（ログイン画面など）はナビを出さない */
 body:not(.admin-logged-in) #admin-frame {
 	grid-template-columns:	minmax(0, 1fr);
@@ -488,7 +492,122 @@ article.edit span.tag {
 	background-color:	#dcdcde;
 }
 article.edit form.delete {
-	margin-top:		1.5em;
+	margin-top:		1em;
+}
+
+/* 左に本文、右に公開などの枠（WordPressと同じ並び）。記事のフォームは display: contents にして、
+   フォームの外にある投稿情報と削除のフォーム（.edit-side-extra）も右の列に置く */
+.edit-layout > form {
+	display:		contents;
+}
+.edit-side {
+	margin-top:		1rem;
+}
+@media screen and (min-width: 1000px) {
+	.edit-layout {
+		display:		grid;
+		grid-template-columns:	minmax(0, 1fr) 18rem;
+		grid-template-rows:	auto 1fr;
+		gap:			0 1.25rem;
+		align-items:		start;
+	}
+	.edit-main		{ grid-column: 1; grid-row: 1 / span 2; }
+	.edit-side		{ grid-column: 2; grid-row: 1; margin-top: 0; }
+	.edit-side-extra	{ grid-column: 2; grid-row: 2; }
+}
+#edit-title input {
+	font-size:		1.3rem;
+	padding:		0.3em 0.5em;
+	margin-bottom:		0.5rem;
+}
+#edit-helper {
+	margin-bottom:		0.25rem;
+}
+#edit-under-body {
+	display:		flex;
+	flex-wrap:		wrap;
+	align-items:		center;
+	gap:			0.5rem;
+	margin-top:		0.5rem;
+}
+#edit-under-body button + button {
+	margin-left:		0;
+}
+
+/* 右の列の枠 */
+#edit .edit-box {
+	margin:			0 0 1rem;
+	border:			1px solid var(--admin-border-light);
+}
+#edit .edit-box > h3 {
+	margin:			0;
+	padding:		0.4rem 0.75rem;
+	font-size:		0.95rem;
+	background-color:	#f6f7f7;
+	border-top:		none;
+	border-bottom:		1px solid var(--admin-border-light);
+}
+#edit .edit-box > :not(h3):not(input) {
+	margin:			0.5rem 0.75rem;
+}
+#edit .edit-box ul.checkbox ul {
+	margin:			0.25rem 0;
+}
+#edit .edit-box .edit-buttons {
+	display:		flex;
+	flex-wrap:		wrap;
+	justify-content:	flex-end;
+	gap:			0.5rem;
+	padding-top:		0.5rem;
+	border-top:		1px solid var(--admin-border-light);
+}
+#edit .edit-box .edit-buttons button + button {
+	margin-left:		0;
+}
+#edit-publish .edit-open-link {
+	text-align:		right;
+}
+#edit-tags {
+	display:		block;
+}
+#edit-tags .tag {
+	margin-bottom:		0.25rem;
+}
+/* 下書きの保存は控えめにする（WordPressと同じ） */
+#edit #save-draft {
+	color:			var(--admin-link);
+	background-color:	#f6f7f7;
+}
+#edit #save-draft:hover {
+	color:			var(--admin-link-hover);
+	background-color:	#f0f0f1;
+}
+#edit-content #link-key {
+	width:			100%;
+	box-sizing:		border-box;
+}
+
+/* アイキャッチ画像 */
+#eyecatch-preview img {
+	display:		block;
+	max-width:		100%;
+	max-height:		12rem;
+	border-radius:		2px;
+}
+#eyecatch-preview button.eyecatch-change {
+	display:		block;
+	padding:		0;
+	min-height:		0;
+	border:			none;
+	background:		none;
+	cursor:			pointer;
+}
+#eyecatch-preview button.eyecatch-change:hover img {
+	outline:		2px solid var(--admin-accent);
+}
+#eyecatch-note {
+	font-size:		12px;
+	color:			var(--admin-muted);
 }
 
 /*--------------------------------------------------------------------

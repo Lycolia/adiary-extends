@@ -98,6 +98,11 @@ var set = {
 			data.icon  = 'trashbox.png';
 		}
 
+		// 開くフォルダの指定（?album/&folder=xxx/。記事作成画面のアイキャッチ画像から）
+		var open_key = !isReloading && new URLSearchParams(location.search).get('folder');
+		var open_node = open_key && tree.dynatree("getTree").getNodeByKey(open_key);
+		if (open_node) open_node.activateSilently();
+
 		// 選択中のノード
 		var sel = tree.dynatree("getActiveNode");
 		if (!sel) {
@@ -608,6 +613,7 @@ function update_selected_files() {
 	}
 	var bool = (imgs.length == 0);
 	$('#paste-form [data-select]').prop('disabled', bool);
+	$('#set-eyecatch').prop('disabled', !(imgs.length == 1 && $(imgs[0]).data('isimg')));
 }
 
 //------------------------------------------------------------------------------
@@ -1135,6 +1141,19 @@ function paste_button(evt) {
 
 	return false;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// ●アイキャッチ画像に設定（記事作成画面から開いたとき）
+////////////////////////////////////////////////////////////////////////////////
+$('#set-eyecatch').click(function(){
+	var sel = view.find('.selected');
+	if (sel.length != 1 || !window.opener || !window.opener.set_eyecatch) return false;
+
+	var name = sel.first().data('title').toString();	// 数字のみのファイル名対策
+	window.opener.set_eyecatch(cur_folder_rel + name);
+	window.close();
+	return false;
+});
 
 ////////////////////////////////////////////////////////////////////////////////
 // ●その他の操作（セレクトボックス or 独立ボタン）

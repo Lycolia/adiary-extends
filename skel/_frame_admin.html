@@ -1,5 +1,5 @@
 <@7>
-<@local(s,t,file)>
+<@local(s,t,file,popup)>
 <$inframe = argv#0>
 <@>
 <@> 管理画面の外フレーム。v.system_mode() で _frame から切り替わる
@@ -7,6 +7,8 @@
 <@>
 <$ifset(v.title eq '', v.title, 'adiary')>
 <$s = v.blog>
+<@> 記事作成画面から別のウィンドウで開いたとき（画像アルバム）は、上のバーとナビを出さない
+<$popup = Query.popup>
 <@>
 <!DOCTYPE html>
 <html lang="ja">
@@ -50,12 +52,13 @@
 <@v.extra_header>
 </head>
 <@>-----------------------------------------------------------------------------
-<body id="body" class="admin system responsive<@if(v.blog_admin, ' blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.sphone,' sp')><@if(v.special_body_class, " <@v.special_body_class>")><@if(Auth.ok, ' admin-logged-in')>">
+<body id="body" class="admin system responsive<@if(v.blog_admin, ' blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.sphone,' sp')><@if(v.special_body_class, " <@v.special_body_class>")><@if(Auth.ok && !popup, ' admin-logged-in')><@if(popup, ' admin-popup')>">
 <div id="adiary-body">
 
 <@>-----------------------------------------------------------------------------
 <@> 上のバー
 <@>-----------------------------------------------------------------------------
+<@ifexec(!popup, begin)>
 <header id="admin-bar">
 	<a class="admin-bar-blog" href="<@v.myself>"><@if(s.blog_name ne '', s.blog_name, 'adiary')></a>
 	<@ifexec(Auth.ok, begin)>
@@ -68,9 +71,10 @@
 	</span>
 	<$end>
 </header>
+<$end>
 
 <div id="admin-frame">
-<@ifcall(Auth.ok, '_sub/admin_nav')>
+<@ifcall(Auth.ok && !popup, '_sub/admin_nav')>
 
 <@>-----------------------------------------------------------------------------
 <@> main
