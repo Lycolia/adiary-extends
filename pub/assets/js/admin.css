@@ -61,6 +61,13 @@ dt {
 	font-weight:		bold;
 }
 
+/* 管理画面は角を丸めない。base.css、jQuery UIのダイアログ、ツリーなど、ほかのCSSの部品も含める */
+body.admin *,
+body.admin *::before,
+body.admin *::after {
+	border-radius:		0 !important;
+}
+
 /* adiary.js がアイコン（ui-icon）の色を読む */
 #ui-icon-autoload {
 	background-color:	#2271b1;
@@ -169,7 +176,6 @@ body:not(.admin-logged-in) #admin-frame {
 	line-height:		1.5;
 	color:			#fff;
 	background-color:	var(--admin-error);
-	border-radius:		0.75em;
 }
 /* 設定（子の項目） */
 #admin-nav .admin-nav-group.open > a.admin-nav-caption {
@@ -245,7 +251,6 @@ nav.admin-tabs li > span {
 	display:		block;
 	padding:		0.35rem 0.9rem;
 	border:			1px solid var(--admin-border);
-	border-radius:		4px 4px 0 0;
 	background-color:	#dcdcde;
 	color:			#50575e;
 	text-decoration:	none;
@@ -380,7 +385,6 @@ textarea {
 	color:			inherit;
 	padding:		0.2em 0.4em;
 	border:			1px solid #8c8f94;
-	border-radius:		4px;
 	background-color:	#fff;
 }
 select {
@@ -447,7 +451,6 @@ button {
 	color:			var(--admin-link);
 	background-color:	#f6f7f7;
 	border:			1px solid var(--admin-link);
-	border-radius:		3px;
 }
 button:hover {
 	color:			var(--admin-link-hover);
@@ -667,7 +670,6 @@ article#edit > div.body {
 	display:		block;
 	max-width:		100%;
 	max-height:		9rem;
-	border-radius:		2px;
 }
 #eyecatch-preview button.eyecatch-change {
 	display:		block;
@@ -725,7 +727,6 @@ div.popup-help {
 	color:			var(--admin-fg);
 	background-color:	#fff;
 	border:			1px solid var(--admin-border);
-	border-radius:		4px;
 	box-shadow:		0 3px 8px rgba(0,0,0,0.2);
 }
 #popup-com {
@@ -739,7 +740,6 @@ div.popup-help {
 .ui-dialog {
 	background-color:	var(--admin-card);
 	border:			1px solid var(--admin-border);
-	border-radius:		4px;
 	box-shadow:		0 5px 20px rgba(0,0,0,0.3);
 	font-size:		14px;
 	line-height:		1.5;
@@ -748,7 +748,6 @@ div.popup-help {
 	background-color:	#f6f7f7;
 	border:			none;
 	border-bottom:		1px solid var(--admin-border-light);
-	border-radius:		4px 4px 0 0;
 	font-weight:		bold;
 }
 .ui-dialog span.ui-dialog-title {
@@ -762,7 +761,6 @@ div.popup-help {
 	padding:		0.5em;
 	background-color:	#fff;
 	border:			1px solid var(--admin-border-light);
-	border-radius:		4px;
 }
 .ui-progressbar {
 	margin:			0.5em 0;

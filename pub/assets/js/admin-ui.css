@@ -22,7 +22,6 @@ article.edit span.tag {
 	font-size:		9pt;
 	display:		inline-block;
 	background-color:	#ccc;
-	border-radius:		6px;
 	padding:		0px 4px;
 	margin-right:		6px;
 }
@@ -46,7 +45,6 @@ article.edit span.tag {
 	justify-content:	space-between;
 	padding:		2px 6px;
 	cursor:			pointer;
-	border-radius:		4px;
 }
 #tag-candidates li:hover {
 	background-color:	#e4e8f4;
@@ -247,7 +245,6 @@ ul.dynatree-container a {
 	color:			#000;
 	background-color:	#fff;
 	padding:		6px;
-	border-radius:		6px;
 }
 #album-dnd-name-view span {
 	display:		block;
@@ -293,7 +290,6 @@ ul.dynatree-container a {
 }
 #selected-files li:hover {
 	background-color:	#e8e8e8;
-	border-radius:		4px;
 	cursor:			pointer;
 }
 
@@ -330,7 +326,6 @@ ul.dynatree-container a {
 .module-edit-header span.ui-icon {
 	margin-left:		1px;
 	border:			1px solid #333;
-	border-radius:		4px;
 	background-color:       #fff;
 }
 .module-edit-header span.ui-icon:hover {
