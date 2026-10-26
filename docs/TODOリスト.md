@@ -63,8 +63,6 @@ lyndbaum（`~/develop/perl/lyndbaum`）にある機能のうち、adiary-extends
 - デザインテンプレートのクラス名を変える
   - hatena〜とあるが全部普通の名前に変えたい
     - widget〜とか？名前は考える
-- 公開フォルダをpubに一本化し、ページ名に充てられるものを増やす
-  - Lyndbaum互換
 
 ### 整理・削除
 

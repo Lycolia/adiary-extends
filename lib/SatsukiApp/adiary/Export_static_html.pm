@@ -141,7 +141,7 @@ sub export {
 	$qr_query    =~ s/([^0-9A-Za-z\x80-\xff])/"\\$1"/eg;
 	$qr_basepath = qr|^$qr_basepath|;
 	$qr_myself2  = qr|^$qr_myself2|;
-	$qr_blogpub  = qr|^(?:\./)?$qr_blogpub(?:[\w\.]+/)?|;
+	$qr_blogpub  = qr|^(?:\./)?$qr_blogpub(?!assets/)(?:[\w\.]+/)?|;	# pub/assets/ はシステムのファイル（pub/assets/dist/ はそのまま書き出す）
 	$qr_imgdir   = qr|^$qr_imgdir|;
 	$qr_query    = qr|^$qr_query|;
 

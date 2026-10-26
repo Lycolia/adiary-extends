@@ -47,7 +47,10 @@ my @update_versions = (
 	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' },
 	{ ver => 4.08, info=>1, func => 'sys_update_408' },
 	{ ver => 4.09, plugin=>1, func => 'sys_update_409' },
-	{ ver => 4.10, plugin=>1, theme=>1, rebuild=>1 }	# データの持ち方を変えた（migrate_410）。パスが変わるので全部作り直す
+	{ ver => 4.10, plugin=>1, theme=>1, rebuild=>1 },	# データの持ち方を変えた（migrate_410）。パスが変わるので全部作り直す
+	{ ver => 4.11, plugin=>1, theme=>1, rebuild_cond=>[	# js/、pub-dist/、theme/ を pub/assets/ の下に移した
+		'\[(?:mj|icon|pubdist)[:\]]'				# pub-dist/ のパスを出す記法
+	]}
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート

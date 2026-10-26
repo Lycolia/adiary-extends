@@ -26,13 +26,18 @@
 # adiary files
 #--------------------------------------
 !/info/
-!/js/
 !/lib/
 !/plugin/
-!/pub-dist/
 !/skel/
-!/theme/
 !/t/
+
+#--------------------------------------
+# public directory
+#--------------------------------------
+!/pub/
+/pub/*
+!/pub/.gitkeep
+!/pub/assets/
 
 #--------------------------------------
 # private directory
@@ -42,8 +47,6 @@
 
 !/data/.htaccess
 !/data/index.html
-
-!/pub/.gitkeep
 
 !/skel.local/.htaccess
 !/skel.local/README.txt

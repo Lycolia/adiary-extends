@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="pub-dist/default-logo.svg" height="64" width="64">
+  <img src="pub/assets/dist/default-logo.svg" height="64" width="64">
 </div>
 
 # adiary-extends
@@ -15,16 +15,16 @@
 
 # 動作環境
 
-- Apache またはそれと互換性のあるWebサーバ
+- nginxまたはApache2
 - Perl 5.14.0以降（pure Perl可）
 
 # インストール方法
 
 1. 解凍してでてきたファイルをサーバ上の任意の位置に置く
 2. adiary.cgi に実行属性を付ける
-3. \_\_cache/, data/, pub/ を www 権限で書き込めるようにする。（suEXEC の場合は不要）
-4. adiary.conf.cgi.sample を adiary.conf.cgi としてコピーし適当にいじる
-5. adiary.cgi にアクセスし、ID、パスワードを適当に入力してログイン。
+3. `__cache/`, `data/`, `pub/`を`www`権限で書き込めるようにする。（suEXECの場合は不要）
+4. `adiary.conf.cgi.sample`を`adiary.conf.cgi`としてコピーし適当にいじる
+5. `adiary.cgi`にアクセスし、ID、パスワードを適当に入力してログイン。
 6. その後、自分自身をユーザーとして追加する。
 
 詳細は[オンラインマニュアル](http://adiary.org/v3man/)を参照してください。
@@ -61,23 +61,23 @@ AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3 または
 
 ## プラグインとテーマ
 
-- plugin/ 以下に存在するプラグインはそれぞれ個別の著作物です。
-- theme/ 以下に存在するテーマファイルはそれぞれ個別の著作物です。
+- `plugin/`以下に存在するプラグインはそれぞれ個別の著作物です。
+- `pub/assets/theme/`以下に存在するテーマファイルはそれぞれ個別の著作物です。
 
 ライセンスについては、各ディレクトリ内の README 等を参照してください。
 
 ## フォント
 
-VLゴシックフォント（pub-dist/VL-PGothic-Regular.ttf）を
+VLゴシックフォント（`pub/assets/dist/VL-PGothic-Regular.ttf`）を
 ライセンスに基づき同梱しています。
-フォントのライセンスは pub-dist/VLGothic/ 以下を参照してください。
+フォントのライセンスは`pub/assets/dist/VLGothic/`以下を参照してください。
 
 ## 画像アイコン
 
-- pub-dist/album-icon 以下のアイコンの多くはせりか氏の著作物です。
-- pub-dist/album-icon/pdf.png は http://iconhoihoi.oops.jp/ の著作物です。
-- pub-dist/album-icon 以下の g-\*.png と trashbox.png はGNOME Desktopアイコンです。
-- pub-dist/mahjong/ 以下のファイルは「[麻雀豆腐](http://majandofu.com/mahjong-images)」の画像を利用しています。
-- theme/base.css のソーシャルボタンのXとFacebookのロゴは、各社の商標です。はてなブックマークのマーク（「B!ブックマーク」）は、はてなの公式のブックマークボタンのものです。
+- `pub/assets/dist/album-icon`以下のアイコンの多くはせりか氏の著作物です。
+- `pub/assets/dist/album-icon/pdf.png`は http://iconhoihoi.oops.jp/ の著作物です。
+- `pub/assets/dist/album-icon`以下の`g-\*.png`と`trashbox.png`はGNOME Desktopアイコンです。
+- `pub/assets/dist/mahjong/`以下のファイルは「[麻雀豆腐](http://majandofu.com/mahjong-images)」の画像を利用しています。
+- `pub/assets/theme/base.css`のソーシャルボタンのXとFacebookのロゴは、各社の商標です。はてなブックマークのマーク（「B!ブックマーク」）は、はてなの公式のブックマークボタンのものです。
 
 せりか氏著作物のライセンスは、adiaryのライセンスに準じます。

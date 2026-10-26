@@ -35,7 +35,7 @@ sub new_parser {
 		$SATSUKI->{vars} = {
 			Basepath => '/',
 			public   => 'pub/',
-			pubdist  => 'pub-dist/',
+			pubdist  => 'pub/assets/dist/',
 			myself   => '/',
 			myself2  => '/',
 			image    => 'pub/attachments/',
