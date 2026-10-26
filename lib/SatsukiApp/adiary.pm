@@ -124,6 +124,9 @@ sub main {
 	# ServerURLのセキィリティを確保
 	$self->secure_http_host();
 
+	# 外部HTTPリクエストのUser-Agent
+	$ROBJ->{HttpAgent} = "adiary extends v$VERSION" . ($sys->{ServerURL} ? " ($sys->{ServerURL})" : '');
+
 	# pinfoとブログの選択。テーマ選択
 	$self->select_blog_and_pinfo();
 
