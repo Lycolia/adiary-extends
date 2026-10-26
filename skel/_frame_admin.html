@@ -28,7 +28,7 @@
 <@forexec(t, v.load_jscss('css'), begin)>
 <link rel="stylesheet" href="<@t>">
 <$end>
-<link rel="stylesheet" href="<@Basepath><@v.script_dir>lythumb.min.css">
+<link rel="stylesheet" href="<@Basepath><@v.script_dir>lythumb.min.css?<@get_lastmodified(v.script_dir . 'lythumb.min.css')>">
 <@>
 <@> ショートカットアイコン
 <link rel="icon" href="<@Basepath><@if(s.iconfile, s.iconfile, #'<@v.pubdist_dir>default-icon.png')>">
@@ -47,7 +47,7 @@
 <@forexec(t, v.load_jscss('js'), begin)>
 <script defer src="<@t>"></script>
 <$end>
-<script defer src="<@Basepath><@v.script_dir>lythumb.min.js"></script>
+<script defer src="<@Basepath><@v.script_dir>lythumb.min.js?<@get_lastmodified(v.script_dir . 'lythumb.min.js')>"></script>
 	<title><@v.subtitle><@if(v.subtitle ne '',' - ')><@v.title><@if(s.blog_name ne '', " - <@s.blog_name>")></title>
 <@v.extra_header>
 </head>
