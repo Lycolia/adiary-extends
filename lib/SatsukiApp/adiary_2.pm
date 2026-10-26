@@ -23,7 +23,7 @@ sub load_arts_list {
 	my $rev  = $opt->{rev};
 
 	# sortのチェック
-	my %a = ('enable'=>1,'yyyymmdd'=>1,'ctype'=>1,'name'=>1,'tm'=>1,'update_tm'=>1,'coms'=>1,'coms_all'=>1);
+	my %a = ('enable'=>1,'yyyymmdd'=>1,'ctype'=>1,'name'=>1,'tm'=>1,'update_tm'=>1,'coms'=>1,'coms_all'=>1,'title'=>1);
 	$sort =~ s/\W//g;
 	if (!$a{$sort} || $sort eq '') { $sort='yyyymmdd'; }
 	$rev = ($rev eq '' || $rev) ? 1 : 0;

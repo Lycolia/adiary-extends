@@ -377,6 +377,18 @@ table.list-table td.list-wrap a,
 table.list-table td.list-wrap span {
 	white-space:		nowrap;
 }
+/* 見出しを押して並べ替える列 */
+table.list-table th.sort a {
+	color:			inherit;
+	text-decoration:	none;
+}
+table.list-table th.sort a:hover {
+	color:			var(--admin-link-hover);
+	text-decoration:	underline;
+}
+table.list-table th.sort a.sorted {
+	color:			var(--admin-link);
+}
 table.list-table tbody tr:nth-child(even) {
 	background-color:	#f9f9f9;
 }
