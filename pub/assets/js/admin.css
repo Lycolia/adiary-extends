@@ -562,6 +562,11 @@ article#edit > div.body {
 	resize:			vertical;
 	height:			max(16rem, calc(100vh - var(--admin-bar-height) - 30rem));
 }
+/* 狭い画面では、キーボードを出しても上のバーと道具の段の下に収まる高さにする */
+@media screen and (max-width: 782px) {
+	#edit #editarea {
+		height:		10rem;
+	}
 }
 /* 下書きを開く：1行にまとめる */
 #draft-notice {
