@@ -56,7 +56,8 @@ my @update_versions = (
 		'\[(?:video|audio|file:(?:mp4|m4v|webm|ogv|wav|wave|ogg|oga|mp3|aac|m4a)):',	# 動画と音声に preload="none" を付けた
 		'\[image:'								# 画像に width と height を書くようにした
 	]},
-	{ ver => 4.14, info=>1 }	# RSSをRSS 2.0の仕様に合わせた。ブログ付加情報の再構築で書き出し直す
+	{ ver => 4.14, info=>1 },	# RSSをRSS 2.0の仕様に合わせた。ブログ付加情報の再構築で書き出し直す
+	{ ver => 4.15, plugin=>1, func => 'sys_update_415' }	# WebPushを削除した。デザインに残る登録ボタンは、デザインの作り直しで取り除く
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -342,22 +343,22 @@ sub sys_update_409 {
 	}
 
 	# 削除したプラグインを、入れたままのブログから外す
-	$self->uninstall_removed_plugins_409();
+	# twitter_post : Twitter API v1.1が使えなくなったため削除
+	# amp        : Googleの検索でAMPが有利でなくなり、手入れもされていないため削除
+	# des_twitter: Xのタイムラインの埋め込みが、ログインしていない人に表示されなくなったため削除
+	#              （デザインからは、デザインの作り直しで取り除く。reinstall_design_plugins）
+	$self->uninstall_removed_plugins(qw(twitter_post amp des_twitter));
 }
 
 # プラグインの管理画面での保存（save_use_plugins）は、plugin/に今あるプラグインしか見ないので、
 # フォルダを消したプラグインは外せない。ブログに写したファイルとイベントが残り、動き続けてしまう。
-sub uninstall_removed_plugins_409 {
+sub uninstall_removed_plugins {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $pd   = $self->load_plugins_dat();
 
 	my $flag;
-	# twitter_post : Twitter API v1.1が使えなくなったため削除
-	# amp        : Googleの検索でAMPが有利でなくなり、手入れもされていないため削除
-	# des_twitter: Xのタイムラインの埋め込みが、ログインしていない人に表示されなくなったため削除
-	#              （デザインからは、デザインの作り直しで取り除く。reinstall_design_plugins）
-	foreach my $name (qw(twitter_post amp des_twitter)) {
+	foreach my $name (@_) {
 		# デザインモジュールは、複数置くと「名前,番号」の別名でも記録される
 		my @names = sort { length($b) <=> length($a) } grep { $pd->{$_} && /^\Q$name\E(?:,\d+)?$/ } keys(%$pd);
 		foreach my $n (@names) {
@@ -376,6 +377,23 @@ sub uninstall_removed_plugins_409 {
 
 	$ROBJ->fwrite_hash($self->{blog_dir} . 'plugins.dat', $pd);
 	$self->set_event_info($self->{blog}, $pd);
+}
+
+#-------------------------------------------------------------------------------
+# ●システムアップデート for Ver4.15
+#-------------------------------------------------------------------------------
+# WebPushを削除した。使う人がほとんどいないため
+sub sys_update_415 {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	$self->uninstall_removed_plugins('webpush');
+
+	# 設定（送信用の鍵を含む）と、購読者の一覧を消す
+	my $blog = $self->{blog};
+	foreach(grep { substr($_,0,10) eq 'p:webpush:' } keys(%$blog)) {
+		$self->update_blogset($blog, $_, undef);
+	}
+	$ROBJ->file_delete($self->{blog_dir} . 'webpush.dat');
 }
 
 #-------------------------------------------------------------------------------
