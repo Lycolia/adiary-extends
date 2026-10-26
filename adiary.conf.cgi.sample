@@ -16,9 +16,9 @@
 
 # 公開のデータディレクトリ
 <$constant(pub_dir)    = 'pub/'>
-<$constant(pubdist_dir)= 'pub-dist/'>
-<$constant(theme_dir)  = 'theme/'>
-<$constant(script_dir) = 'js/'>
+<$constant(pubdist_dir)= 'pub/assets/dist/'>
+<$constant(theme_dir)  = 'pub/assets/theme/'>
+<$constant(script_dir) = 'pub/assets/js/'>
 
 # 非公開のデータディレクトリ
 <$constant(data_dir) = 'data/'>
