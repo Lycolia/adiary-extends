@@ -1062,41 +1062,6 @@ form#import-form table {
 }
 
 /*--------------------------------------------------------------------
-●プログレスバー（import等）
---------------------------------------------------------------------*/
-.ui-progressbar {
-    position:               relative;
-    background-color:       rgba(255,255,255,0.5);
-    border-radius:          5px;
-    border-width:           0px;
-    box-shadow:             3px 3px 10px rgba(0, 0, 0, 0.3);
-    min-height:             18px;
-    margin:                 0 8px 8px 0;
-    padding:                0;
-    max-width:              400px;
-}
-.ui-progressbar .label {
-    position:               absolute;
-    width:                  100%;
-    font-size:              14px;
-    text-align:             center;
-    font-weight:            bold;
-    text-shadow:            1px -1px 2px #fff,
-             1px -1px 2px #fff,
-            -1px  1px 2px #fff,
-             1px  1px 2px #fff;
-}
-.ui-progressbar,
-.ui-progressbar .label:before {
-    height:                 20px;
-    vertical-align:         middle;
-}
-.ui-progressbar-value {
-    padding:                1px 0 0 1px;
-    background-color:       rgba(181,0,31,0.5);
-} 
-
-/*--------------------------------------------------------------------
 ●ポップアップヘルプ, info		by nabe
 --------------------------------------------------------------------*/
 .help, .btn-help:after {
