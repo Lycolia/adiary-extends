@@ -543,6 +543,7 @@ sub remake_thumbnail {
 	my $dir   = $self->image_folder_to_dir( $form->{folder} ); # 値check付
 	my $files = $form->{file_ary};
 	my $size  = $form->{size};
+	my @names = @{ $files || [] };
 
 	# サムネイル生成
 	$self->make_thumbnail( $dir, $files, {
@@ -551,6 +552,8 @@ sub remake_thumbnail {
 		force    => 1
 	});
 
+	# サムネイルの大きさが変わるので、使っている記事を作り直す
+	$self->rebuild_arts_using_files(\@names);
 	return 0;
 }
 
@@ -568,13 +571,47 @@ sub remove_exifjpeg {
 	# Exif削除
 	my $jpeg = $ROBJ->loadpm('Jpeg');
 	my $fail = 0;
+	my @names;
 	foreach(@$files) {
 		if (!$self->is_image($_) || $_ !~ /\.jpe?g$/i) { next; }
+		push(@names, $_);
 		$ROBJ->fs_encode(\$_);
 		my $r = $jpeg->strip("$dir$_");
 		$fail += $r ? 1 : 0;
 	}
+	# Exifの向きが消えると縦と横が入れ替わることがあるので、使っている記事を作り直す
+	$self->rebuild_arts_using_files(\@names);
 	return $fail;
+}
+
+#-------------------------------------------------------------------------------
+# ●ファイルを使っている記事を作り直す
+#-------------------------------------------------------------------------------
+# 記事のHTMLには、保存したときの画像の大きさ（width、height）を書いている（Tag_image.pm）。
+# 本文にファイル名がある記事を作り直して、今の大きさにする。
+# ファイル名だけで探すので、ほかのフォルダの同じ名前のファイルを使う記事も作り直すが、害は無い
+#
+sub rebuild_arts_using_files {
+	my ($self, $files) = @_;
+	my @names;
+	foreach(@$files) {
+		if ($_ eq '') { next; }
+		push(@names, $_);
+		my $esc = $_;			# 記法の中では : [ ] を \ でエスケープする
+		if ($esc =~ s/([:\[\]])/\\$1/g) { push(@names, $esc); }
+	}
+	if (!@names) { return 0; }
+
+	my $filter = sub {
+		my $text = shift->{_text};
+		foreach(@names) {
+			if (index($text, $_) >= 0) { return 1; }
+		}
+		return 0;
+	};
+	# 編集者もサムネイルを作り直せるので、ここでは再構築を許す
+	local($self->{blog_admin}) = 1;
+	return $self->rebuild_blog({ filter => $filter });
 }
 
 #-------------------------------------------------------------------------------

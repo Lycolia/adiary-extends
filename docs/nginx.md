@@ -58,3 +58,32 @@ location ^~ /theme/    { rewrite ^/theme/(.*)$    /pub/assets/theme/$1 permanent
 ```
 
 `js`、`pub-dist`、`theme`は4.11からコンテンツのキーの先頭に使えるが、この転送を入れている間は、`/js/…`のように`/`が続くURLは転送が先に当たる。その名前のコンテンツを作るときは、転送を外す。
+
+## キャッシュの期間
+
+`pub/`の下のファイルは、nginxがそのまま返す。キャッシュの期間（`Cache-Control`）を付けないと、ブラウザは開くたびに確かめに来る。
+
+```nginx
+# 配布物（CSS、JS、画像など）。更新日時のクエリ（?数字）が付くURLは長く、付かないURLは短くする
+map $args $pub_assets_cache {
+    ""      "public, max-age=86400";
+    default "public, max-age=31536000, immutable";
+}
+
+server {
+    # …
+
+    location ^~ /pub/assets/ {
+        add_header Cache-Control $pub_assets_cache;
+    }
+    location ^~ /pub/attachments/ {
+        add_header Cache-Control "public, max-age=2592000";
+    }
+}
+```
+
+- `map`は`server`の外（`http`の中）に書く。
+- `/pub/assets/`：adiaryが読み込むCSSとJSには、ファイルの更新日時をクエリに付けている（`skel/_frame.html`など）。ファイルを更新するとURLが変わるので、1年キャッシュさせてよい。クエリが付かないもの（Prism.jsが後から読む言語のファイルなど）は1日にする。
+- `/pub/attachments/`：画像アルバムのファイル。30日にする。同じ名前のまま中身を変えたファイル（サムネイルの再生成、上書きのアップロード）は、キャッシュが切れるまで前のものが出ることがある。
+- `^~`を付けると、正規表現の`location`（「非公開のフォルダ」の`/\.`など）より先に当たる。サムネイルは`.thumbnail/`の下にあるので、`^~`が無いとドットで始まる名前の拒否に当たる。
+- `/pub/`の直下（`dynamic.css`、`rss.xml`、`sitemap.xml`、`contents.json`など）は、adiaryが中身を書き換えるので付けない。

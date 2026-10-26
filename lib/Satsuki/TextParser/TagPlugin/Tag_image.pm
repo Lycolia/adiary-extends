@@ -4,6 +4,7 @@ use strict;
 #                                                   (C)2015 nabe / nabe@abk.nu
 #-------------------------------------------------------------------------------
 package Satsuki::TextParser::TagPlugin::Tag_image;
+use Satsuki::ImageFormat ();
 ################################################################################
 # ■基本処理
 ################################################################################
@@ -96,6 +97,11 @@ sub image {
 		$size=$w . $h;
 		$ary = \@ary2;
 	}
+	# 大きさの指定が無ければ、画像のファイルから読んで書く。
+	# 読み込む前に場所を空けておき、読み込んだときにページがずれないようにする（CLS）
+	if ($size eq '') {
+		$size = &image_size_attr($ROBJ, $url);
+	}
 
 	# Captionあり？
 	my $caption;
@@ -135,6 +141,31 @@ sub image {
 	if (!$caption && $pobj->{image_no_figure}) { return $tag; }
 
 	return "<figure>$tag$caption</figure>";
+}
+
+#-------------------------------------------------------------------------------
+# ●画像のファイルの大きさを width、height の属性にする
+#-------------------------------------------------------------------------------
+# このサイトの中の画像だけを読む。読めなければ空
+# 記法を変換する時点のURLは、サイトの置き場所からの相対（pub/attachments/…）。/で始まるならBasepathを外す
+# ※記事を保存、再構築したときのファイルの大きさを書くので、サムネイルを作り直したら記事も作り直す
+#
+sub image_size_attr {
+	my ($ROBJ, $url) = @_;
+	if ($url =~ m|^[A-Za-z][\w+.\-]*:| || $url =~ m|^//|) { return ''; }	# 外のサイト
+
+	my $file = $url;
+	if ($file =~ m|^/|) {
+		my $base = $ROBJ->{Basepath};
+		if ($base eq '' || index($file, $base) != 0) { return ''; }
+		$file = substr($file, length($base));
+	}
+	$file =~ s/[?#].*//;
+	$file =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
+	if ($file =~ m|^/| || $file =~ m!(?:^|/)\.\.(?:/|$)!) { return ''; }
+
+	my ($w, $h) = Satsuki::ImageFormat::get_size($file);
+	return $w ? " width=\"$w\" height=\"$h\"" : '';
 }
 
 1;

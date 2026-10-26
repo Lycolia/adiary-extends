@@ -153,7 +153,7 @@ sub rebuild_blog {
 	my $DB   = $self->{DB};
 	if (! $self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
 
-	my $arts = $opt->{logs} || $DB->select_match("art", '*cols', ['pkey', '_text', 'parser', 'yyyymmdd', 'tm', 'link_key']);
+	my $arts = $opt->{logs} || $DB->select_match("art", '*cols', ['pkey', '_text', 'parser', 'yyyymmdd', 'tm', 'link_key', 'main_image']);
 	my $filter = $opt->{filter};
 	my %update;
 	my $r=0;
@@ -191,8 +191,10 @@ sub rebuild_blog {
 		if ($opt->{logs}) {
 			$h{_text} = $_->{_text};
 		}
-		# 記事概要の生成
-		$self->set_description(\%h);
+		# 記事概要の生成。アイキャッチ画像（main_image）は今のものを残し、無ければ本文の最初の画像にする
+		# ※set_description()は画像を渡さないとmain_imageを空にする
+		my $main_image = $_->{main_image} ne '' ? $_->{main_image} : $self->get_main_image_from_article($text);
+		$self->set_description(\%h, $main_image);
 
 		$update{ $_->{pkey} } = \%h;
 	}

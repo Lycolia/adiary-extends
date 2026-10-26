@@ -88,8 +88,8 @@ menu		type, label
 command		type, label, icon, disabled, checked, radiogroup, title
 
 ### メディア ####################
-audio		src, controls, type
-video		src, controls, type, poster, width, height
+audio		src, controls, type, preload
+video		src, controls, type, poster, width, height, preload
 source		src, type
 track		subtitles, label, src, srclang, default
 

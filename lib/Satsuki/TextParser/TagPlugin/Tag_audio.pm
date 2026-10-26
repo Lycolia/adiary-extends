@@ -95,7 +95,8 @@ sub audio_video {
 	$width  = $width  ?  " width=\"$width\""  : ' width="480"';
 	$height = $height ? " height=\"$height\"" : ' height="270"';
 
-	return "<$tname$width$height controls>$src(Browser not support $tname tag) <a class=\"$tname\" href=\"$url0\">$url0</a></$tname>";
+	# 再生するまで読み込まない（ページを開いただけで動画を全部読み込まないように）
+	return "<$tname$width$height controls preload=\"none\">$src(Browser not support $tname tag) <a class=\"$tname\" href=\"$url0\">$url0</a></$tname>";
 }
 
 1;
