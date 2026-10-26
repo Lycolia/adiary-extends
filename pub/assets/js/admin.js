@@ -108,9 +108,10 @@ $$.load_tags_list = function(id, callback) {
 ////////////////////////////////////////////////////////////////////////////////
 // ●コンテンツ一覧のロード
 ////////////////////////////////////////////////////////////////////////////////
+// 読み込みの jqXHR を返す（option を足して change した後に done、always が呼ばれる）
 $$.load_contents_list = function(id) {
 	var obj = $(id);
-	$.getJSON( obj.data('url'), function(data){
+	return $.getJSON( obj.data('url'), function(data){
 		var _default  = obj.data('default');
 		var this_pkey = obj.data('this-pkey');
 
