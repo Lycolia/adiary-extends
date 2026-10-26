@@ -416,7 +416,7 @@ th.error input, td.error input {
 }
 
 textarea#editarea {
-	font-size:		15px;
+	font-size:		14px;
 	line-height:		1.6;
 }
 textarea.edit-article {
@@ -539,8 +539,8 @@ article#edit > div.body {
 	padding:		0;
 }
 #edit-title input {
-	font-size:		1.15rem;
-	padding:		0.25em 0.5em;
+	font-size:		15px;
+	padding:		0.3em 0.5em;
 	margin-bottom:		0.4rem;
 }
 /* 記法の補助は、本文が長くても押せるように上に止める */
