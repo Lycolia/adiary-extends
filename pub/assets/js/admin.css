@@ -585,20 +585,24 @@ article#edit > div.body {
 	align-items:		center;
 }
 #draft-notice > h2 {
-	padding:		0.4rem 1rem;
+	padding:		0.4rem 0 0.4rem 1rem;
 	font-size:		1rem;
 	border-bottom:		none;
 }
 #draft-notice > div.body {
-	flex:			1;
+	flex:			1 1 20rem;
+	min-width:		0;
 	display:		flex;
 	flex-wrap:		wrap;
 	align-items:		center;
 	gap:			0.5rem;
-	padding:		0.4rem 1rem 0.4rem 0;
+	padding:		0.4rem 1rem;
 }
+/* 下書きの題名が長くても、画面の幅に合わせて縮める */
 #draft-notice #select-draft {
-	max-width:		32rem;
+	flex:			0 1 32rem;
+	min-width:		0;
+	max-width:		100%;
 }
 
 /* 右の列の枠 */
