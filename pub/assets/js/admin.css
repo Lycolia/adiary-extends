@@ -222,59 +222,6 @@ body:not(.admin-logged-in) #admin-frame {
 #admin-main > :not(.main):not(#admin-side) { grid-area: debug; }
 
 /*--------------------------------------------------------------------
-■画面内のタブ（_sub/menu_tree）
---------------------------------------------------------------------*/
-nav.admin-tabs {
-	margin:			0 0 1rem;
-}
-nav.admin-tabs:not(:has(li)),
-nav.admin-tabs ul:not(:has(li)) {
-	display:		none;
-}
-nav.admin-tabs ul.tabs {
-	display:		flex;
-	flex-wrap:		wrap;
-	gap:			0.25rem;
-	list-style:		none;
-	margin:			0;
-	padding:		0;
-	border-bottom:		1px solid var(--admin-border);
-}
-nav.admin-tabs ul.tabs + ul.tabs {
-	margin-top:		0.5rem;
-}
-nav.admin-tabs li {
-	margin:			0 0 -1px;
-}
-nav.admin-tabs li > a,
-nav.admin-tabs li > span {
-	display:		block;
-	padding:		0.35rem 0.9rem;
-	border:			1px solid var(--admin-border);
-	background-color:	#dcdcde;
-	color:			#50575e;
-	text-decoration:	none;
-	font-weight:		bold;
-}
-nav.admin-tabs li > a:hover {
-	background-color:	#fff;
-	color:			var(--admin-link-hover);
-}
-nav.admin-tabs li.current > a,
-nav.admin-tabs li.current > span {
-	background-color:	var(--admin-bg);
-	border-bottom-color:	var(--admin-bg);
-	color:			var(--admin-fg);
-}
-/* 上の段（ディレクトリ）は小さく */
-nav.admin-tabs ul.tabs-dir li > a,
-nav.admin-tabs ul.tabs-dir li > span {
-	padding:		0.2rem 0.75rem;
-	font-weight:		normal;
-	font-size:		90%;
-}
-
-/*--------------------------------------------------------------------
 ■箱（article.system）
 --------------------------------------------------------------------*/
 article.system {

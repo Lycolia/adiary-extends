@@ -411,6 +411,60 @@ ul.menu {
 }
 
 /*--------------------------------------------------------------------
+●画面内のタブ（_sub/menu_tree）
+--------------------------------------------------------------------*/
+/* 管理画面の変数（admin.css）が無い画面（テーマの表示テストなど）でも出せるよう、既定の色を書く */
+nav.admin-tabs {
+	margin:			0 0 1rem;
+}
+nav.admin-tabs:not(:has(li)),
+nav.admin-tabs ul:not(:has(li)) {
+	display:		none;
+}
+nav.admin-tabs ul.tabs {
+	display:		flex;
+	flex-wrap:		wrap;
+	gap:			0.25rem;
+	list-style:		none;
+	margin:			0;
+	padding:		0;
+	border-bottom:		1px solid var(--admin-border, #c3c4c7);
+}
+nav.admin-tabs ul.tabs + ul.tabs {
+	margin-top:		0.5rem;
+}
+nav.admin-tabs li {
+	margin:			0 0 -1px;
+}
+nav.admin-tabs li > a,
+nav.admin-tabs li > span {
+	display:		block;
+	padding:		0.35rem 0.9rem;
+	border:			1px solid var(--admin-border, #c3c4c7);
+	background-color:	#dcdcde;
+	color:			#50575e;
+	text-decoration:	none;
+	font-weight:		bold;
+}
+nav.admin-tabs li > a:hover {
+	background-color:	#fff;
+	color:			var(--admin-link-hover, #135e96);
+}
+nav.admin-tabs li.current > a,
+nav.admin-tabs li.current > span {
+	background-color:	var(--admin-bg, #f0f0f1);
+	border-bottom-color:	var(--admin-bg, #f0f0f1);
+	color:			var(--admin-fg, #1d2327);
+}
+/* 上の段（ディレクトリ）は小さく */
+nav.admin-tabs ul.tabs-dir li > a,
+nav.admin-tabs ul.tabs-dir li > span {
+	padding:		0.2rem 0.75rem;
+	font-weight:		normal;
+	font-size:		90%;
+}
+
+/*--------------------------------------------------------------------
 ●スマホ
 --------------------------------------------------------------------*/
 /* システムモードでは sidebar 非表示 */
