@@ -23,7 +23,6 @@ lyndbaum（`~/develop/perl/lyndbaum`）にある機能のうち、adiary-extends
     - Lythumb-viewer側の改修も必要
 - バックリンク、コメントに一撃で飛べるリンクを記事ページの頭辺りに作る
   - これはテーマ側の対応
-- RSS2.0の規格準拠
 - NSFWフラグの追加
   - Googleが検索のメタ情報として扱っているのであって良いと思う
   - サイト全体と記事個別に出来るとよいか？

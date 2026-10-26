@@ -5,32 +5,38 @@
 <@>
 <@> RSS 2.0 スケルトン
 <@>		code is UTF-8 only
-<@> Reference(ja)
-<@>	http://hail2u.net/documents/rss20notes.html
+<@> Reference
+<@>	https://www.rssboard.org/rss-specification
+<@>	https://www.rssboard.org/rss-profile （仕様の曖昧なところの推奨）
+<@>
+<@> opt.file は書き出すファイル名（atom:link の rel="self" に使う）
 <@>
 <?xml version="1.0" encoding="utf-8" ?>
 <@> <?xml-stylesheet href="" type="text/xsl" media="screen"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
 <$(logs, h) = v.load_arts_for_rss( opt )>
 <channel>
-	<title><@if(opt.title ne '', opt.title, s.blog_name)></title>
+	<title><@esc_xml(if(opt.title ne '', opt.title, s.blog_name))></title>
 	<link><@ServerURL><@v.myself></link>
 	<language>ja</language>
 	<description><@esc_xml(s.description_txt)></description>
-	<copyright>Copyright <@Now.year></copyright>
 	<pubDate><@h.rfc_update></pubDate>
 	<lastBuildDate><@rfc_date(TM)></lastBuildDate>
 	<generator>https://adiary.org/#<@v.VERSION></generator>
-	<docs>http://blogs.law.harvard.edu/tech/rss</docs>
+	<docs>https://www.rssboard.org/rss-specification</docs>
+	<atom:link href="<@ServerURL><@Basepath><@v.blogpub_dir><@opt.file>" rel="self" type="application/rss+xml" />
 <@forexec(t, logs, begin)>
 	<$url = ServerURL . v.myself2 . t.elink_key>
 	<item>
 		<title><@t.title></title>
 		<link><@url></link>
 		<guid><@url></guid>
-		<category><@t.tags></category>
+<@>		タグごとに1つ。author はメールアドレスを書く欄なので、書いた人の名前は dc:creator に書く
+<@forexec(t2, split(',', t.tags), begin)>
+		<category><@t2></category>
+<$end>
 		<pubDate><@t.rfc_date></pubDate>
-		<author><@t.name></author>
+		<dc:creator><@t.name></dc:creator>
 		<description><![CDATA[<@t.description>
 <@ifexec(!opt.no_comment && t.coms, begin.comment)>
 <hr>
@@ -39,7 +45,7 @@
 <@forexec(t2, v.load_comments_current_blog(t, 5, flagq(enable_only)), begin)>
 <$replace_dest(t2.text, '<br>', ' ')>
 <$tag_delete(t2.text)>
-<@t2.name>『<@v.string_clip(t2.text, 64)>』(<@print_tmf('%Y/%m/%d %H:%M', t2.tm)>)</span><br>
+<@t2.name>『<@v.string_clip(t2.text, 64)>』(<@print_tmf('%Y/%m/%d %H:%M', t2.tm)>)<br>
 <$end>
 </div>
 <$end.comment>
