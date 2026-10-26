@@ -14,7 +14,7 @@
 <h2><@v.title></h2>
 <div class="body">
 	<form action="<@v.myself>?<@v.skeleton>" method="POST">
-	<@ifexec(v.blogid, begin)>
+	<@ifexec(v.blog, begin)>
 	<p><button type="submit" name="action" value="<@v.skel_dir>rebuild_blog_info">付加情報の再生成</button><span class="help" data-help="アクセスURLが変わった時に必ず実行してください。">?</span></p>
 
 	<p><button type="submit" name="action" value="<@v.skel_dir>rebuild_blog">ブログの再構築</button><span class="help" data-help="すべての記事を再構築します。">?</span></p>

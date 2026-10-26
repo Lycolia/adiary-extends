@@ -110,6 +110,32 @@ sub drop_table {
 	return 0;
 }
 
+#-------------------------------------------------------------------------------
+# ●テーブルの名前の変更
+#-------------------------------------------------------------------------------
+# 成功時は 0 が返る
+sub rename_table {
+	my ($self, $table, $new) = @_;
+	my $dbh  = $self->{dbh};
+	$table =~ s/\W//g;
+	$new   =~ s/\W//g;
+
+	my $sql = "ALTER TABLE $table RENAME TO $new";
+	$dbh->do($sql);
+	if ($dbh->err) {
+		$self->error($sql);
+		$self->error($dbh->errstr);
+		return 1;
+	}
+
+	# テーブルの存在キャッシュを削除
+	my $cache = $self->{exist_tables_cache};
+	delete $cache->{$self->{db_id} . $table};
+	delete $cache->{$self->{db_id} . $new};
+
+	return 0;
+}
+
 ################################################################################
 # ■オプショナル関数
 ################################################################################

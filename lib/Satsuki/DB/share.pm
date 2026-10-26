@@ -125,7 +125,7 @@ sub error {
 ################################################################################
 my @timer_functions = qw(new find_table select generate_pkey
  insert update_match delete_match select_by_group
- begin rollback commit create_table drop_table
+ begin rollback commit create_table drop_table rename_table
  add_column drop_column add_index
 );
 #-------------------------------------------------------------------------------

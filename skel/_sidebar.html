@@ -16,10 +16,8 @@
 <tr>
 <td>UserID</td><td<@if(Auth.isadmin, ' title="あなたは管理者です"')>><@Auth.id><@if(Auth.isadmin, '(*)')></td>	
 </tr>
-<@ifexec(v.blogid, begin)>
+<@ifexec(v.blog, begin)>
 <tr>
-<td>BlogID</td><td><@v.blogid></td>
-</tr><tr>
 <td>公開記事&ensp;</td><td><@v.blog.arts || 0>件</td>
 </tr>
 <@ifexec(v.blog.darts, begin)>
@@ -40,7 +38,7 @@
 <@>$HEADER:END$----------------------------------------------------------------
 <@v.sidebar_html> <@> from _top.html
 
-<@ifexec(v.blogid, begin)>
+<@ifexec(v.blog, begin)>
 <!--Information==========================================-->
 <div class="hatena-module" id="side-information" data-module-name="des_information-ja">
 <div class="hatena-moduletitle">Information</div>
@@ -57,7 +55,7 @@
 
 <div id="side-b">
 <@>$SEPARATOR:END$------------------------------------------------------------
-<@ifexec(v.blogid, begin)>
+<@ifexec(v.blog, begin)>
 <!--検索=================================================-->
 <$ps = v.load_plgset('des_searchbox')>
 <div class="hatena-module" id="side-search" data-module-name="des_searchbox">

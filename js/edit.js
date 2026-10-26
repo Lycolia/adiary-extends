@@ -992,7 +992,7 @@ function ajax_upload( form_dom, files, option ) {
 		mon  = (101 + d.getMonth()).toString().substr(1);
 	}
 	var folder = $fileup.data('folder');
-	if (folder == '') folder='adiary/%y/';
+	if (folder == '') folder='posts/%y/';
 	folder = folder.replace('%y', year).replace('%m', mon).replace(/^\/+/, '');
 
 	// FormData生成

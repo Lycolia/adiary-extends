@@ -50,9 +50,8 @@ sub adiary_link {
 	#---------------------------
 	my $title;
 	{
-		my $blogid=$aobj->{blogid};
 		my $DB = $aobj->{DB};
-		my $h = $DB->select_match_limit1("${blogid}_art", 'link_key', $link_key, '*cols', ['title']);
+		my $h = $DB->select_match_limit1("art", 'link_key', $link_key, '*cols', ['title']);
 		if ($h) {
 			$title = $h->{title};
 		}
@@ -85,7 +84,6 @@ sub adiary_key {
 
 	my $url;
 	my $name;
-	my $blogid = $aobj->{blogid};
 	if ($tag->{_this}) {
 		$url = $pobj->{thisurl};
 	} else {
@@ -110,7 +108,7 @@ sub adiary_key {
 			# 記事タイトルの自動抽出
 			#-------------------------
 			my $DB = $aobj->{DB};
-			my $h = $DB->select_match_limit1("${blogid}_art", 'link_key', $link_key, '*cols', ['title']);
+			my $h = $DB->select_match_limit1("art", 'link_key', $link_key, '*cols', ['title']);
 			if ($h) {
 				$title = $h->{title};
 			}
@@ -137,9 +135,8 @@ sub adiary_tm {
 	#---------------------------
 	my $title;
 	{
-		my $blogid = $aobj->{blogid};
 		my $DB = $aobj->{DB};
-		my $h = $DB->select_match_limit1("${blogid}_art", 'tm', $tm, '*cols', ['title']);
+		my $h = $DB->select_match_limit1("art", 'tm', $tm, '*cols', ['title']);
 		if ($h) {
 			$title = $h->{title};
 		}

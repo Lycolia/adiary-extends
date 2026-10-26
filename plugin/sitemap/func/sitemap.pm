@@ -12,7 +12,7 @@ sub {
 		not_match => { ctype => 'link' },
 		cols      => [ 'title', 'tm', 'link_key', 'update_tm' ],
 	};
-	my $ary = $DB->select("$self->{blogid}_art", $h);
+	my $ary = $DB->select("art", $h);
 
 	foreach(@$ary) {
 		$_->{elink_key} = $_->{link_key};

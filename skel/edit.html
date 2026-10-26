@@ -195,7 +195,7 @@
 		<$end>
 	</select></span>
 
-	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'adiary/%y/')>" data-title="ファイルを選択">Upload</button>
+	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'posts/%y/')>" data-title="ファイルを選択">Upload</button>
 	<@ifexec(edit_pkey, begin)>
 	<button type="button" id="edit-revision" data-title="更新履歴">履歴</button>
 	<$end>

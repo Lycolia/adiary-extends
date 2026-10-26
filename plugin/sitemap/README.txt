@@ -11,7 +11,7 @@
 
 
 生成した xml ファイルの実態は、
-	pub/<blogid>/sitemap.xml
+	pub/sitemap.xml
 に置かれています。
 
 記事を更新するごとに sitemap.xml は再生成されますので、

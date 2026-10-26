@@ -34,7 +34,7 @@ sub make_contents_tree {
 	my $ROBJ = $self->{ROBJ};
 
 	if ($self->{event_name} ne 'CONTENT_STATE_CHANGE') {
-		$root = $self->load_contents_tree( $self->{blogid} );
+		$root = $self->load_contents_tree();
 	}
 
 	# コンテンツキーの加工
@@ -72,10 +72,9 @@ sub make_tags_tree {
 	my $name = shift;
 	my $root = shift;
 	my $ROBJ   = $self->{ROBJ};
-	my $blogid = $self->{blogid};
 
 	if ($self->{event_name} ne 'TAG_STATE_CHANGE') {
-		$root = $self->load_tag_tree( $blogid );
+		$root = $self->load_tag_tree();
 	}
 
 	my $node = $self->load_plgset($name, 'tag');

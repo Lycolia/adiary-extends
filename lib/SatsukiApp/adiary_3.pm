@@ -18,7 +18,7 @@ package SatsukiApp::adiary;
 sub init_image_dir {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
-	if ($self->{blogid} eq '') { return -1; }
+	if (!$self->{blog}) { return -1; }
 
 	my $dir = $self->blogimg_dir();
 	$ROBJ->mkdir($dir);
@@ -34,7 +34,7 @@ sub init_image_dir {
 sub genarete_imgae_dirtree {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
-	if ($self->{blogid} eq '') { return -1; }
+	if (!$self->{blog}) { return -1; }
 
 	my $dir   = $self->blogimg_dir();
 	my $tree  = $self->get_dir_tree($dir);
@@ -893,92 +893,10 @@ sub save_blogset {
 
 	# 権限確認
 	if (! $self->{blog_admin}) { $ROBJ->message('Operation not permitted'); return 10; }
-	my $blogid = $self->{blogid};
 	my $blog   = $self->{blog};
-
-	$self->update_blogset($blogid, $new_set);
-
-	# プライベートモードチェック
-	$self->save_private_mode( $blogid );
-
-	# ブログ一覧情報に保存
-	$self->update_bloginfo($blogid, {
-		private   => $blog->{private},
-		blog_name => $blog->{blog_name}
-	});
+	$self->update_blogset($blog, $new_set);
 
 	return 0;
-}
-
-#-------------------------------------------------------------------------------
-# ●プライベートモードの現在の状態保存
-#-------------------------------------------------------------------------------
-sub save_private_mode {
-	my $self = shift;
-	my $blogid = shift;
-	my $ROBJ = $self->{ROBJ};
-	my $blog = $self->load_blogset($blogid);
-
-	my $postfix = $blog->{blogpub_dir_postfix};
-	my $evt_name;
-	if ($blog->{private} && $postfix eq '') {
-		$postfix = $self->change_blogpub_dir_postfix( $blogid );
-		$evt_name = "PRIVATE_MODE_ON";
-	} elsif (!$blog->{private} && $postfix ne '') {
-		$postfix = $self->change_blogpub_dir_postfix( $blogid, 0 );
-		$evt_name = "PRIVATE_MODE_OFF";
-	} else {
-		return ;	# 特に変更がなければ何もしない
-	}
-	if (!defined $postfix) {
-		$ROBJ->error('Rename failed blog public directory (%s)', $blogid);
-		return 1;
-	}
-	my $old_dir = $self->blogpub_dir();
-	$self->update_blogset($blog, 'blogpub_dir_postfix', $postfix);
-	my $new_dir = $self->blogpub_dir();
-	$self->{blogpub_dir} = $new_dir;
-
-	# pub/<uid>/ 以下に保存してあるファイルのパス変更
-	my $len = length($old_dir);
-	foreach(keys(%$blog)) {
-		if (substr($blog->{$_}, 0, $len) ne $old_dir) { next; }
-		$blog->{$_} = $new_dir . substr($blog->{$_}, $len);
-	}
-
-	$self->call_event($evt_name);
-	$self->rebuild_blog();
-}
-
-#-------------------------------------------------------------------------------
-# ●ブログ公開ディレクトリ名の変更
-#-------------------------------------------------------------------------------
-sub change_blogpub_dir_postfix {
-	my $self = shift;
-	my $blogid = shift;
-	my $len = (defined $_[0]) ? shift : ($self->{sys}->{dir_postfix_len} || $self->{dir_postfix_len});
-	my $ROBJ = $self->{ROBJ};
-
-	my $postfix = '';
-	if ($len > 0) {
-		if (32<$len) { $len=32; }
-		$postfix = $ROBJ->generate_nonce($len);
-		$postfix =~ s/\W/-/g;
-		$postfix = '.' . $postfix;
-	}
-
-	# ディレクトリ名変更
-	my $cur_dir = $self->blogpub_dir($blogid);
-	chop($cur_dir);
-	my $new_dir = $cur_dir;
-	$new_dir =~ s|\.[^./]+$||;
-	$new_dir .= $postfix;
-
-	# リネーム
-	my $r = rename( $cur_dir, $new_dir );
-	if (!$r) { return undef; }
-
-	return $postfix;
 }
 
 ################################################################################
@@ -1000,11 +918,10 @@ sub edit_articles {
 	$keylist = [ map { int($_) } @$keylist ];
 
 	# 初期状態設定
-	my $blogid = $self->{blogid};
 	if ($self->{blog}->{edit_by_author_only} && !$self->{blog_admin}) {
 		# 他人の記事は編集できないので、IDが一致するかチェックする
 		my $id = $auth->{id};
-		my $ary = $DB->select_match("${blogid}_art", 'pkey', $keylist, '*cols', ['pkey','id']);
+		my $ary = $DB->select_match("art", 'pkey', $keylist, '*cols', ['pkey','id']);
 		my @pkeys;
 		foreach(@$ary) {
 			if ($_->{id} ne $id) { next; }
@@ -1030,16 +947,16 @@ sub edit_articles {
 		if (!@$keylist) {
 			return wantarray ? (1,0) : 1;
 		}
-		$DB->delete_match("${blogid}_tagart", 'a_pkey', $keylist);
+		$DB->delete_match("tagart", 'a_pkey', $keylist);
 		# 更新履歴はゴミ箱から戻すときのために残す（ゴミ箱から削除するときに消す）
-		$com = $DB->delete_match("${blogid}_com", 'a_pkey', $keylist);
-		$cnt = $DB->delete_match("${blogid}_art", 'pkey', $keylist);
+		$com = $DB->delete_match("com", 'a_pkey', $keylist);
+		$cnt = $DB->delete_match("art", 'pkey', $keylist);
 
 	} elsif ($mode eq 'tagset') {
 		# タグの追加
 		$event_name = 'ARTICLES_EDIT';
 		my $append = $opt->{tag_append};
-		my $arts = $DB->select_match("${blogid}_art", 'pkey', $keylist, '*cols', ['pkey', 'enable', 'tags'] );
+		my $arts = $DB->select_match("art", 'pkey', $keylist, '*cols', ['pkey', 'enable', 'tags'] );
 
 		$DB->begin();
 		foreach(@$arts) {
@@ -1047,15 +964,15 @@ sub edit_articles {
 			my $t = ($append ? $_->{tags} . ',' : '') . $opt->{tags};
 			my @tag  = $self->normalize_tag( $t );
 			my $tags = join(",",@tag);
-			my $r = $DB->update_match("${blogid}_art", { tags => $tags }, 'pkey', $pkey);
+			my $r = $DB->update_match("art", { tags => $tags }, 'pkey', $pkey);
 			if (!$r) { next; }
 
 			# タグ情報書き換え
 			$cnt += 1;
-			$DB->delete_match("${blogid}_tagart", 'a_pkey', $pkey);
-			my $t_pkeys = $self->regist_tags($blogid, \@tag);
+			$DB->delete_match("tagart", 'a_pkey', $pkey);
+			my $t_pkeys = $self->regist_tags(\@tag);
 			foreach my $t_pkey (@$t_pkeys) {
-				$DB->insert("${blogid}_tagart", {
+				$DB->insert("tagart", {
 					'a_pkey'   => $pkey,
 					'a_enable' => $_->{enable},
 					't_pkey'   => $t_pkey
@@ -1067,13 +984,13 @@ sub edit_articles {
 	} elsif ($mode eq 'enable') {
 		# 表示に設定
 		$event_name = 'ARTICLES_EDIT';
-		$cnt = $DB->update_match("${blogid}_art",
+		$cnt = $DB->update_match("art",
 			{ enable => 1 },
 			'enable', 0,
 			'-tm', '',	# 下書き記事は対象外
 			'pkey', $keylist
 		);
-		$DB->update_match("${blogid}_tagart", {
+		$DB->update_match("tagart", {
 			'a_enable' => 1
 		}, 'a_pkey', $keylist);
 
@@ -1081,18 +998,18 @@ sub edit_articles {
 		# 非表示に設定
 		$event_name  = 'ARTICLES_EDIT';
 		$cevent_name = 'COMMENTS_EDIT';
-		$cnt = $DB->update_match("${blogid}_art",
+		$cnt = $DB->update_match("art",
 			{ enable => 0 },
 			'enable', 1,
 			'-tm', '',	# 下書き記事は対象外
 			'pkey', $keylist
 		);
-		$DB->update_match("${blogid}_tagart", {
+		$DB->update_match("tagart", {
 			'a_enable' => 0
 		}, 'a_pkey', $keylist);
 
 		# 非公開にした記事にコメントがあれば
-		my $ary = $DB->select_match("${blogid}_art",
+		my $ary = $DB->select_match("art",
 			'enable', 0,
 			'-coms', 0,	# 公開コメントがある
 			'pkey', $keylist,
@@ -1100,7 +1017,7 @@ sub edit_articles {
 		);
 		my @pkeys = map { $_->{pkey} } @$ary;
 		if (@pkeys) {
-			$com = $DB->update_match("${blogid}_com",
+			$com = $DB->update_match("com",
 				{ enable => 0 },
 				'enable',  1,
 				'a_pkey', \@pkeys
@@ -1137,32 +1054,31 @@ sub move_articles_to_trash {
 	my ($self, $keylist) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid   = $self->{blogid};
-	my $art_cols = $self->table_info_cols( $self->art_table_info($blogid) );
-	my $com_cols = $self->table_info_cols( $self->com_table_info($blogid) );
+	my $art_cols = $self->table_info_cols( $self->art_table_info() );
+	my $com_cols = $self->table_info_cols( $self->com_table_info() );
 
-	my $arts = $DB->select_match("${blogid}_art", 'pkey', $keylist, '*cols', $art_cols);
+	my $arts = $DB->select_match("art", 'pkey', $keylist, '*cols', $art_cols);
 	my @moved;
 	foreach my $art (@$arts) {
 		my $pkey = $art->{pkey};
 		# 前回戻すのに失敗した残骸があれば消しておく
-		$DB->delete_match("${blogid}_trashcom", 'a_pkey', $pkey);
-		$DB->delete_match("${blogid}_trash",    'pkey',   $pkey);
+		$DB->delete_match("trashcom", 'a_pkey', $pkey);
+		$DB->delete_match("trash",    'pkey',   $pkey);
 
 		$art->{deleted_tm} = $ROBJ->{TM};
 		$art->{deleted_id} = $ROBJ->{Auth}->{id};
-		if (!$DB->insert("${blogid}_trash", $art)) {
+		if (!$DB->insert("trash", $art)) {
 			$ROBJ->message("Can't move to trash: %s", $art->{title});
 			next;
 		}
-		my $coms = $DB->select_match("${blogid}_com", 'a_pkey', $pkey, '*cols', $com_cols);
+		my $coms = $DB->select_match("com", 'a_pkey', $pkey, '*cols', $com_cols);
 		my $fail;
 		foreach(@$coms) {
-			if (!$DB->insert("${blogid}_trashcom", $_)) { $fail=1; last; }
+			if (!$DB->insert("trashcom", $_)) { $fail=1; last; }
 		}
 		if ($fail) {
-			$DB->delete_match("${blogid}_trashcom", 'a_pkey', $pkey);
-			$DB->delete_match("${blogid}_trash",    'pkey',   $pkey);
+			$DB->delete_match("trashcom", 'a_pkey', $pkey);
+			$DB->delete_match("trash",    'pkey',   $pkey);
 			$ROBJ->message("Can't move to trash: %s", $art->{title});
 			next;
 		}
@@ -1183,7 +1099,7 @@ sub load_trash_list {
 	if ($self->{blog}->{edit_by_author_only} && !$self->{blog_admin}) {
 		@opt = ('id', $self->{ROBJ}->{Auth}->{id});	# 自分の記事のみ
 	}
-	return $DB->select_match("$self->{blogid}_trash", @opt, '*sort', '-deleted_tm',
+	return $DB->select_match("trash", @opt, '*sort', '-deleted_tm',
 		'*cols', [qw(pkey title tags ctype link_key name id yyyymmdd coms_all enable deleted_tm deleted_id)]);
 }
 
@@ -1198,7 +1114,7 @@ sub filter_trash_keys {
 	if ($self->{blog}->{edit_by_author_only} && !$self->{blog_admin}) {
 		@opt = ('id', $self->{ROBJ}->{Auth}->{id});
 	}
-	my $ary = $self->{DB}->select_match("$self->{blogid}_trash", 'pkey', $keylist, @opt, '*cols', ['pkey']);
+	my $ary = $self->{DB}->select_match("trash", 'pkey', $keylist, @opt, '*cols', ['pkey']);
 	return [ map { $_->{pkey} } @$ary ];
 }
 
@@ -1209,47 +1125,46 @@ sub restore_articles {
 	my ($self, $keylist) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 	if (!$self->{allow_edit}) { $ROBJ->message('Operation not permitted'); return 5; }
 
 	$keylist = $self->filter_trash_keys($keylist);
 	if (!@$keylist) { return wantarray ? (0,0) : 0; }
 
-	my $art_cols = $self->table_info_cols( $self->art_table_info($blogid) );
-	my $com_cols = $self->table_info_cols( $self->com_table_info($blogid) );
-	my $arts = $DB->select_match("${blogid}_trash", 'pkey', $keylist, '*cols', $art_cols);
+	my $art_cols = $self->table_info_cols( $self->art_table_info() );
+	my $com_cols = $self->table_info_cols( $self->com_table_info() );
+	my $arts = $DB->select_match("trash", 'pkey', $keylist, '*cols', $art_cols);
 
 	my @restored;
 	my $com_cnt = 0;
 	foreach my $art (@$arts) {
 		my $pkey = $art->{pkey};
-		if ($DB->select_match_limit1("${blogid}_art", 'pkey', $pkey, '*cols', ['pkey'])) {
+		if ($DB->select_match_limit1("art", 'pkey', $pkey, '*cols', ['pkey'])) {
 			$ROBJ->message("Article already exists: %s", $art->{title});
 			next;
 		}
 		# content keyが他の記事に使われていたら既定のkeyにする
-		if ($DB->select_match_limit1("${blogid}_art", 'link_key', $art->{link_key}, '*cols', ['pkey'])) {
+		if ($DB->select_match_limit1("art", 'link_key', $art->{link_key}, '*cols', ['pkey'])) {
 			$ROBJ->message("Content key '%s' is already used. Changed to '%s'.", $art->{link_key}, "0$pkey");
 			$art->{link_key} = "0$pkey";
 		}
-		if (!$DB->insert("${blogid}_art", $art)) {
+		if (!$DB->insert("art", $art)) {
 			$ROBJ->message("Can't restore: %s", $art->{title});
 			next;
 		}
 
 		# コメント
-		my $coms = $DB->select_match("${blogid}_trashcom", 'a_pkey', $pkey, '*cols', $com_cols);
+		my $coms = $DB->select_match("trashcom", 'a_pkey', $pkey, '*cols', $com_cols);
 		foreach(@$coms) {
-			if ($DB->select_match_limit1("${blogid}_com", 'pkey', $_->{pkey}, '*cols', ['pkey'])) { next; }
-			$DB->insert("${blogid}_com", $_) && $com_cnt++;
+			if ($DB->select_match_limit1("com", 'pkey', $_->{pkey}, '*cols', ['pkey'])) { next; }
+			$DB->insert("com", $_) && $com_cnt++;
 		}
 
 		# タグ
 		my @tag = $self->normalize_tag( $art->{tags} );
 		if (@tag) {
-			my $t_pkeys = $self->regist_tags($blogid, \@tag);
+			my $t_pkeys = $self->regist_tags(\@tag);
 			foreach(ref($t_pkeys) ? @$t_pkeys : ()) {	# 失敗時は -1
-				$DB->insert("${blogid}_tagart", {
+				$DB->insert("tagart", {
 					a_pkey   => $pkey,
 					a_enable => $art->{enable},
 					t_pkey   => $_
@@ -1257,8 +1172,8 @@ sub restore_articles {
 			}
 		}
 
-		$DB->delete_match("${blogid}_trashcom", 'a_pkey', $pkey);
-		$DB->delete_match("${blogid}_trash",    'pkey',   $pkey);
+		$DB->delete_match("trashcom", 'a_pkey', $pkey);
+		$DB->delete_match("trash",    'pkey',   $pkey);
 		push(@restored, $pkey);
 	}
 
@@ -1283,21 +1198,20 @@ sub purge_trash {
 	my ($self, $keylist, $all) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 	if (!$self->{allow_edit}) { $ROBJ->message('Operation not permitted'); return 5; }
 
 	if ($all) {
 		if (!$self->{blog_admin}) { $ROBJ->message('Operation not permitted'); return 5; }
-		my $ary = $DB->select_match("${blogid}_trash", '*cols', ['pkey']);
+		my $ary = $DB->select_match("trash", '*cols', ['pkey']);
 		$keylist = [ map { $_->{pkey} } @$ary ];
 	} else {
 		$keylist = $self->filter_trash_keys($keylist);
 	}
 	if (!@$keylist) { return wantarray ? (0,0) : 0; }
 
-	$DB->delete_match("${blogid}_rev",      'a_pkey', $keylist);
-	$DB->delete_match("${blogid}_trashcom", 'a_pkey', $keylist);
-	my $cnt = $DB->delete_match("${blogid}_trash", 'pkey', $keylist);
+	$DB->delete_match("rev",      'a_pkey', $keylist);
+	$DB->delete_match("trashcom", 'a_pkey', $keylist);
+	my $cnt = $DB->delete_match("trash", 'pkey', $keylist);
 	return wantarray ? (0, $cnt) : 0;
 }
 
@@ -1308,7 +1222,6 @@ sub edit_comment {
 	my ($self, $mode, $keylist) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 	if (! $self->{allow_edit}) { $ROBJ->message('Operation not permitted'); return 5; }
 
 	if (ref($keylist) ne 'ARRAY' || !@$keylist) {
@@ -1317,7 +1230,7 @@ sub edit_comment {
 	$keylist = [ map { int($_) } @$keylist ];
 
 	# 該当する記事のリスト
-	my $ary = $DB->select_by_group("${blogid}_com",{
+	my $ary = $DB->select_by_group("com",{
 		group_by => 'a_pkey',
 		match => { pkey => $keylist }
 	});
@@ -1328,13 +1241,13 @@ sub edit_comment {
 	my $event_name;
 	if ($mode eq 'delete') {
 		$event_name = 'COMMENTS_DELETE';
-		$cnt = $DB->delete_match("${blogid}_com", 'pkey', $keylist);
+		$cnt = $DB->delete_match("com", 'pkey', $keylist);
 
 	} elsif ($mode eq 'enable') {
 		$event_name = 'COMMENTS_EDIT';
 
 		# 非公開記事のコメントは公開しない
-		my $ary = $DB->select_match("${blogid}_art",
+		my $ary = $DB->select_match("art",
 			'pkey', \@a_pkeys,
 			'*cols', ['pkey', 'enable']
 		);
@@ -1343,7 +1256,7 @@ sub edit_comment {
 			if ($_->{enable}) { next; }
 			push(@exlist, $_->{pkey});
 		}
-		$cnt = $DB->update_match("${blogid}_com",
+		$cnt = $DB->update_match("com",
 			{ enable => 1 },
 			'enable', 0,
 			'hidden', 0,
@@ -1352,7 +1265,7 @@ sub edit_comment {
 		);
 	} else {
 		$event_name = 'COMMENTS_EDIT';
-		$cnt = $DB->update_match("${blogid}_com",
+		$cnt = $DB->update_match("com",
 			{ enable => 0 },
 			'enable',  1,
 			'pkey', $keylist
@@ -1362,7 +1275,7 @@ sub edit_comment {
 	# イベント処理
 	if ($cnt) {
 		foreach( @a_pkeys ) {
-			$self->calc_comments($blogid, $_);
+			$self->calc_comments($_);
 		}
 		$keylist = ref($keylist) ? $keylist : [$keylist];
 		$self->call_event($event_name,            \@a_pkeys, $keylist, $cnt);
@@ -1384,7 +1297,6 @@ sub tag_edit {
 	my $form = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 
 	my $joins = $form->{join_ary} || [];
 	my $dels  = $form->{del_ary}  || [];
@@ -1393,7 +1305,7 @@ sub tag_edit {
 	# タグリスト
 	my @tags;
 	{
-		my $ary = $DB->select_match("${blogid}_tag");
+		my $ary = $DB->select_match("tag");
 		foreach(@$ary) {
 			$tags[ $_->{pkey} ] = $_;
 		}
@@ -1403,12 +1315,12 @@ sub tag_edit {
 	# 中で e_art を参照しているので順番を逆にしてはいけない。
 	foreach(@$joins) {
 		my ($master, @slaves) = split(',',$_);
-		my $ta = $DB->select_match("${blogid}_tagart", 't_pkey', \@slaves, '*cols', ['a_pkey', 'a_enable'] );
-		$DB->delete_match("${blogid}_tagart", 't_pkey', \@slaves);
-		$DB->delete_match("${blogid}_tag",    'pkey'  , \@slaves);
+		my $ta = $DB->select_match("tagart", 't_pkey', \@slaves, '*cols', ['a_pkey', 'a_enable'] );
+		$DB->delete_match("tagart", 't_pkey', \@slaves);
+		$DB->delete_match("tag",    'pkey'  , \@slaves);
 		foreach(@$ta) {
 			if ($e_art{ $_->{a_pkey} }) { next; }
-			my $r = $DB->insert("${blogid}_tagart", {
+			my $r = $DB->insert("tagart", {
 				a_pkey => $_->{a_pkey},
 				t_pkey => $master,
 				a_enable => $_->{a_enable}
@@ -1418,9 +1330,9 @@ sub tag_edit {
 	}
 	# タグの削除
 	if(@$dels) {
-		my $ta = $DB->select_match("${blogid}_tagart", 't_pkey', $dels, '*cols', 'a_pkey' );
-		$DB->delete_match("${blogid}_tagart", 't_pkey', $dels);
-		$DB->delete_match("${blogid}_tag"   ,   'pkey', $dels);
+		my $ta = $DB->select_match("tagart", 't_pkey', $dels, '*cols', 'a_pkey' );
+		$DB->delete_match("tagart", 't_pkey', $dels);
+		$DB->delete_match("tag"   ,   'pkey', $dels);
 		foreach(@$ta) {
 			$e_art{ $_->{a_pkey} } = 1;
 		}
@@ -1449,7 +1361,7 @@ sub tag_edit {
 			priority => $priority,
 			name     => $name
 		);
-		my $r = $DB->update_match("${blogid}_tag", \%h, 'pkey', $pkey);
+		my $r = $DB->update_match("tag", \%h, 'pkey', $pkey);
 		if (!$r) {	# 失敗
 			if ($name ne $org->{name}) {
 				$ROBJ->message("Tag edit error '%s' to '%s' (same tag name exist?)", $org->{name}, $name);
@@ -1464,7 +1376,7 @@ sub tag_edit {
 
 		# 記事の変更予約処理
 		if (!$ef_art) { next; }
-		my $ta = $DB->select_match("${blogid}_tagart", 't_pkey', $pkey);
+		my $ta = $DB->select_match("tagart", 't_pkey', $pkey);
 		foreach(@$ta) {
 			$e_art{ $_->{a_pkey} } = 1;
 		}
@@ -1472,7 +1384,7 @@ sub tag_edit {
 
 	# 変更があったarticleのタグ情報を書き換える
 	foreach my $a_pkey (keys(%e_art)) {
-		my $ta = $DB->select_match("${blogid}_tagart", 'a_pkey', $a_pkey, '*cols', 't_pkey');
+		my $ta = $DB->select_match("tagart", 'a_pkey', $a_pkey, '*cols', 't_pkey');
 		my @t_pkeys = map { $_->{t_pkey} } @$ta;
 
 		# upnodeのいずれかのタグを含まないかチェック
@@ -1494,11 +1406,11 @@ sub tag_edit {
 			push(@tag, $tags[ $_ ]->{name});
 		}
 		# ツリー組み換えにより重複したタグを削除
-		$DB->delete_match("${blogid}_tagart", 'a_pkey', $a_pkey, 't_pkey', \@dels);
+		$DB->delete_match("tagart", 'a_pkey', $a_pkey, 't_pkey', \@dels);
 
 		# 新しいタグ情報に書き換え
 		my $tag = join(',', @tag);
-		$DB->update_match("${blogid}_art", {tags => $tag}, 'pkey', $a_pkey);
+		$DB->update_match("art", {tags => $tag}, 'pkey', $a_pkey);
 	}
 	if (%e_art) {
 		my $artkeys = keys(%e_art);
@@ -1520,12 +1432,11 @@ sub contents_edit {
 	my $form = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 
 	# タグリスト
 	my %cons;
 	{
-		my $ary = $DB->select_match("${blogid}_art",
+		my $ary = $DB->select_match("art",
 			'enable', 1,
 			'-ctype', '',
 			'*cols', ['pkey', 'title', 'link_key', 'priority', 'upnode', 'coms_all']
@@ -1555,11 +1466,11 @@ sub contents_edit {
 		}
 		if (!%h) { next; }
 
-		$DB->update_match("${blogid}_art", \%h, 'pkey', $pkey);
+		$DB->update_match("art", \%h, 'pkey', $pkey);
 		if (exists($h{link_key}) && $cons{$pkey}->{coms_all}) {
 			my $elkey = $h{link_key};
 			$self->link_key_encode($elkey);
-			my $r = $DB->update_match("${blogid}_com", { a_elink_key=>$elkey }, 'a_pkey', $pkey);
+			my $r = $DB->update_match("com", { a_elink_key=>$elkey }, 'a_pkey', $pkey);
 			if ($r) { $com_edit=1; }
 		}
 	}

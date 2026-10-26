@@ -82,14 +82,12 @@ sub SetDefaultValue {
 
 	my %h = (
 blog_cache_unit  => 100,	# ブログ記事キャッシュ保存時の分割単位
-dir_postfix_len  => 8,
 theme_skeleton_level => 10,
 user_skeleton_level  => 20,
 theme_design_skeleton_level => 21,	# テンプレート別に生成したデザイン
 sphone_skeleton_level => 100,
 default_tag_priority => 100000,
 default_wiki_priority=> 100000,
-bloglist_table  => '_bloglist',	# DBのブログ管理テーブル
 top_skeleton	=> '_top',
 main_skeleton	=> '_main',
 article_skeleton=> '_article',
@@ -126,7 +124,7 @@ sub main {
 	$self->secure_http_host();
 
 	# pinfoとブログの選択。テーマ選択
-	my $blogid = $self->blogid_and_pinfo();
+	$self->select_blog_and_pinfo();
 
 	# キャッシュの処理
 	if ($ROBJ->{CGI_cache} && $sys->{html_cache}) {
@@ -235,14 +233,14 @@ sub secure_http_host {
 #-------------------------------------------------------------------------------
 # ●pinfoとブログ選択処理
 #-------------------------------------------------------------------------------
-sub blogid_and_pinfo {
+sub select_blog_and_pinfo {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 
 	my @pinfo   = @{ $ROBJ->read_path_info() };	# PATH_INFO
 
-	# ブログは1つ（デフォルトブログ）だけ。ブログが無いときも選択して内部変数を初期化すること
-	$self->set_and_select_blog( $self->{sys}->{default_blogid} );
+	# ブログは1つだけ。ブログが無いときも選択して内部変数を初期化すること
+	$self->select_blog();
 
 	# テーマの設定
 	my $theme = $self->{blog}->{theme};
@@ -397,26 +395,12 @@ sub output_html {
 # ■ブログの存在確認と設定ロード
 ################################################################################
 #-------------------------------------------------------------------------------
-# ●ブログの存在確認	※キュッシュ仕様を変更したら blog_create も変更すること!!
-#-------------------------------------------------------------------------------
-sub find_blog {
-	my $self = shift;
-	my $blogid = shift;
-	if ($blogid =~ /\W/) { return ; }
-
-	if(exists $self->{_cache_find_blog}->{$blogid}) {
-		return $self->{_cache_find_blog}->{$blogid};
-	}
-	return ($self->{_cache_find_blog}->{$blogid} = $self->{DB}->find_table("${blogid}_art"));
-}
-
-#-------------------------------------------------------------------------------
-# ●ブログ（デフォルトブログ）が作られているか
+# ●ブログが作られているか	※キュッシュ仕様を変更したら blog_create も変更すること!!
 #-------------------------------------------------------------------------------
 sub exists_blog {
 	my $self = shift;
-	my $blogid = $self->{sys}->{default_blogid};
-	return $blogid ne '' && $self->find_blog($blogid);
+	if (exists $self->{_cache_exists_blog}) { return $self->{_cache_exists_blog}; }
+	return ($self->{_cache_exists_blog} = $self->{DB}->find_table('art'));
 }
 
 #-------------------------------------------------------------------------------
@@ -424,21 +408,21 @@ sub exists_blog {
 #-------------------------------------------------------------------------------
 # ※書き換えは瞬時に反映され、$blog->{_update}=1 ならばプログラム終了時に保存される。
 sub load_blogset {
-	my ($self, $blogid) = @_;	# * = 新しいブログの既定値
+	my ($self, $default) = @_;	# '*' = 新しいブログの既定値
 	my $ROBJ = $self->{ROBJ};
-	if ($self->{'_loaded_bset'}->{$blogid}) { return $self->{'_loaded_bset'}->{$blogid}; }
-	if ($blogid ne '*' && !$self->find_blog($blogid)) { return undef; }
+	my $key  = $default eq '*' ? '*' : '';
+	if ($self->{_loaded_bset}->{$key}) { return $self->{_loaded_bset}->{$key}; }
+	if ($key eq '' && !$self->exists_blog()) { return undef; }
 
-	my $file = $self->blog_dir($blogid) . 'setting.dat';
-	if ($blogid eq '*' || !-e $file) {
+	my $file = $self->blog_dir() . 'setting.dat';
+	if ($key eq '*' || !-e $file) {
 		$file = $self->{default_setting_file};
 	}
 
 	# 設定のロード
 	my $blog = $ROBJ->fread_hash_cached($file);
 	if (%$blog) {
-		$blog->{blogid} = $blogid;
-		$self->{_loaded_bset}->{$blogid} = $blog;
+		$self->{_loaded_bset}->{$key} = $blog;
 	}
 	return $blog;
 }
@@ -448,38 +432,13 @@ sub load_blogset {
 #-------------------------------------------------------------------------------
 # ブログを選択し、内部変数に権限を設定する。
 # ブログがみつからないか閲覧できないときは undef が返る
-sub set_and_select_blog_force {
-	my ($self, $blogid) = @_;
-	$self->set_and_select_blog($blogid, 1);
-}
-sub set_and_select_blog {
-	my ($self, $blogid, $force) = @_;
+sub select_blog {
+	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
-	if (!$force && $blogid ne '' && $self->{blogid} eq $blogid) { return $self->{blog}; }
 
-	# myself設定
-	$self->{myself}     = $ROBJ->{myself};
-	$self->{myself2}    = $ROBJ->{myself2};
-
-	# 内部変数初期化
-	$self->{blogid} = undef;
-	$self->{blog}   = undef;
-	$self->{allow_edit} = undef;
-	$self->{allow_com}  = undef;
-	$self->{blog_admin} = undef;
-	$self->{blog_dir}    = undef;
-	$self->{blogpub_dir} = undef;
-	$ROBJ->{Change_hour} = 0;
-	$self->{now} = $ROBJ->{Now};
-
-	# スケルトン登録の削除
-	$ROBJ->delete_skeleton($self->{user_skeleton_level});
-	$ROBJ->delete_skeleton($self->{theme_design_skeleton_level});
-
-	# blogid の設定
-	if ($blogid eq '') { return; }				# 内部変数初期化時に使用
-	my $blog = $self->load_blogset( $blogid );
-	if (!$blog || !%$blog || $blogid eq '*') { return; }	# blogidが存在しない
+	$self->unselect_blog();
+	my $blog = $self->load_blogset();
+	if (!$blog || !%$blog) { return; }	# ブログが無い
 
 	# 表示権限
 	my $view_ok = $self->set_blog_permission($self, $blog);
@@ -489,8 +448,7 @@ sub set_and_select_blog {
 	}
 
 	# ブログ情報設定
-	$self->{blogid} = $blogid;
-	$self->{blog}   = $blog;
+	$self->{blog}        = $blog;
 	$self->{blog_dir}    = $self->blog_dir();
 	$self->{blogpub_dir} = $self->blogpub_dir();
 	# ブログ個別スケルトンの登録（プラグイン等で生成される）
@@ -509,6 +467,32 @@ sub set_and_select_blog {
 }
 
 #-------------------------------------------------------------------------------
+# ●ブログの選択の解除（内部変数の初期化）
+#-------------------------------------------------------------------------------
+sub unselect_blog {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+
+	# myself設定
+	$self->{myself}     = $ROBJ->{myself};
+	$self->{myself2}    = $ROBJ->{myself2};
+
+	# 内部変数初期化
+	$self->{blog}   = undef;
+	$self->{allow_edit} = undef;
+	$self->{allow_com}  = undef;
+	$self->{blog_admin} = undef;
+	$self->{blog_dir}    = undef;
+	$self->{blogpub_dir} = undef;
+	$ROBJ->{Change_hour} = 0;
+	$self->{now} = $ROBJ->{Now};
+
+	# スケルトン登録の削除
+	$ROBJ->delete_skeleton($self->{user_skeleton_level});
+	$ROBJ->delete_skeleton($self->{theme_design_skeleton_level});
+}
+
+#-------------------------------------------------------------------------------
 # ●ブログの権限設定
 #-------------------------------------------------------------------------------
 sub set_blog_permission {
@@ -521,7 +505,7 @@ sub set_blog_permission {
 	my $auth   = $ROBJ->{Auth};
 	my $authok = $auth->{ok};
 	my $authid = $auth->{id};
-	if ($authid eq $blog->{blogid} || $auth->{isadmin}) {	# 自分のブログか管理者は許可
+	if ($auth->{isadmin}) {	# 管理者は許可
 		$h->{blog_admin} = 1;
 		$h->{allow_edit} = 1;
 		$h->{allow_com}  = 1;
@@ -569,10 +553,9 @@ sub save_blogset_sys {
 
 	foreach(keys(%$x)) {
 		my $h = $x->{$_};
-		if (ref($h) ne 'HASH' || !$h->{_update}) { next; }
+		if ($_ eq '*' || ref($h) ne 'HASH' || !$h->{_update}) { next; }
 		delete $h->{_update};
-		delete $h->{blogid};
-		$ROBJ->fwrite_hash($self->blog_dir($_) . 'setting.dat', $h);
+		$ROBJ->fwrite_hash($self->blog_dir() . 'setting.dat', $h);
 	}
 }
 
@@ -680,7 +663,7 @@ sub load_articles_current_blog {
 	if ($self->{allow_edit}) {
 		$opt->{load_hidden} = 1;
 	}
-	return $self->load_articles($self->{blogid}, $mode, $query, $opt);
+	return $self->load_articles($mode, $query, $opt);
 }
 
 #-------------------------------------------------------------------------------
@@ -693,7 +676,7 @@ sub load_article_current_blog {
 		$opt->{load_hidden} = 1;
 		$opt->{load_draft}  = 1;
 	}
-	return $self->load_article($self->{blogid}, $mode, $query, $opt);
+	return $self->load_article($mode, $query, $opt);
 }
 
 sub load_article {
@@ -722,11 +705,11 @@ sub load_article {
 #	ret.title_tag	検索がタイトルかタグ検索のみ（mode が 'search'のときのみ）
 #
 sub load_articles {
-	my ($self, $blogid, $mode, $query, $opt) = @_;
+	my ($self, $mode, $query, $opt) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 
-	my $blog = $self->load_blogset( $blogid );
+	my $blog = $self->load_blogset();
 	if (! $blog) { return []; }
 
 	#-------------------------------------------------------------
@@ -818,7 +801,7 @@ sub load_articles {
 		#-------------------------------------------
 		if ($query->{t}) {
 			if (!defined $title_tag) { $title_tag=1; }
-			my $taglist = $self->load_tag_cache($blogid);
+			my $taglist = $self->load_tag_cache();
 			my $name2pkey = $taglist->[0];
 			my $tags = $query->{t};
 			$ROBJ->tag_escape(@$tags);
@@ -971,11 +954,11 @@ sub load_articles {
 		#---------------------------------------------------------------
 		$q{cols} = ['pkey', 'yyyymmdd', 'tags'];
 		delete $q{limit};
-		my $all = $DB->select("${blogid}_art", \%q);
+		my $all = $DB->select("art", \%q);
 		my $hits = @$all;
 
 		if ($hits > 1) {
-			my $taglist = $self->load_tag_cache($blogid);
+			my $taglist = $self->load_tag_cache();
 			my $name2pkey = $taglist->[0];
 			my $blog_only = $opt->{blog_only};
 			my %tags;
@@ -1035,7 +1018,7 @@ sub load_articles {
 				my $pkey = $all->[$offset+$i]->{pkey} || next;
 				push(@pkeys, $pkey);
 			}
-			$logs = $DB->select("${blogid}_art", {
+			$logs = $DB->select("art", {
 				match => { pkey => \@pkeys },
 				sort     => $q{sort},
 				sort_rev => $q{sort_rev}
@@ -1048,7 +1031,7 @@ sub load_articles {
 			$q{offset} = ($page-1) * $limit;
 			$q{limit} += 1;
 		}
-		$logs = $DB->select("${blogid}_art", \%q);
+		$logs = $DB->select("art", \%q);
 		$ret{next_page} = ($ret{page} && $#$logs == $limit);	# 余計に取得した1件が存在する
 		if ($ret{next_page}) { pop(@$logs); }			# その1件を読み捨て
 	}
@@ -1212,7 +1195,7 @@ sub load_comments_current_blog {
 	$opt->{loads} = $num ? $num : undef;
 
 	# ロード
-	return $self->load_comments($self->{blogid}, $a_pkey, $opt);
+	return $self->load_comments($a_pkey, $opt);
 }
 
 #-------------------------------------------------------------------------------
@@ -1223,11 +1206,10 @@ sub load_comments_current_blog {
 #
 sub load_comments {
 	my $self = shift;
-	my ($blogid, $a_pkey, $opt) = @_;
+	my ($a_pkey, $opt) = @_;
 	my $DB   = $self->{DB};
 
 	# コメントのロード
-	my $blogid = $self->{blogid};
 	my $loads  = $opt->{loads} ne '' ? int($opt->{loads}) : undef;
 	my %h;
 	$h{match} = {a_pkey => int($a_pkey)};
@@ -1242,7 +1224,7 @@ sub load_comments {
 	}
 
 	# ロード
-	my $comments = $DB->select("${blogid}_com", \%h);
+	my $comments = $DB->select("com", \%h);
 	$self->set_comment_by_admin($comments);
 	if (defined $loads) {
 		return [ reverse(@$comments) ];
@@ -1442,7 +1424,6 @@ sub load_plgset {
 		if (substr($_,0,$len) ne $head) { next; }
 		$h{ substr($_,$len) } = $blog->{$_};
 	}
-	$h{_blogid} = $blog->{blogid};
 	return \%h;
 }
 
@@ -1501,10 +1482,10 @@ sub save_sysdat {
 #-------------------------------------------------------------------------------
 # &generate_tag_tree で生成
 sub load_tag_cache {
-	my ($self, $blogid) = @_;
+	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 
-	my $file = $self->blog_dir($blogid) . "tag_cache.txt";
+	my $file = $self->blog_dir() . "tag_cache.txt";
 	return $ROBJ->fread_lines_cached($file, {
 		NoError=>1,
 		PostProcessor=>\&load_tag_postprocessor
@@ -1537,7 +1518,7 @@ sub load_art_node {
 	my ($self, $pkey) = @_;
 
 	my $cache = $self->{_loadart_cache} ||= {};
-	my $key   = $self->{blogid} . ':' . $pkey;
+	my $key   = $pkey;
 	if ($cache->{$key}) { return $cache->{$key}; }
 
 	my $con = $self->load_arts_cache( $pkey );
@@ -1573,7 +1554,7 @@ sub load_content_node {
 	my ($self, $pkey) = @_;
 
 	my $cache = $self->{_loadcn_cache} ||= {};
-	my $key   = $self->{blogid} . ':' . $pkey;
+	my $key   = $pkey;
 	if ($cache->{$key}) { return $cache->{$key}; }
 
 	my $con = $self->load_contents_cache();
@@ -1633,7 +1614,7 @@ sub make_comment_token {
 	my $payload = 'v1.' . int($a_pkey) . '.' . ($tm || $self->{ROBJ}->{TM});
 	return $payload . '.' . $self->sign_comment_token($payload);
 }
-# 署名：ブログIDと$payloadをSecret_wordでHMAC-SHA256にし、base64urlにしたもの
+# 署名：$payloadをSecret_wordでHMAC-SHA256にし、base64urlにしたもの
 sub sign_comment_token {
 	my ($self, $payload) = @_;
 	my $hmac = eval { require Digest::SHA; \&Digest::SHA::hmac_sha256_base64 };
@@ -1641,7 +1622,7 @@ sub sign_comment_token {
 		require Digest::SHA::PurePerl;
 		$hmac = \&Digest::SHA::PurePerl::hmac_sha256_base64;
 	}
-	my $sig = $hmac->("$self->{blogid}.$payload", $self->{sys}->{Secret_word});
+	my $sig = $hmac->($payload, $self->{sys}->{Secret_word});
 	$sig =~ tr|+/|-_|;
 	return $sig;
 }
@@ -1653,22 +1634,16 @@ sub sign_comment_token {
 # ●blog_dirを取得
 #-------------------------------------------------------------------------------
 sub blog_dir {
-	my ($self, $blogid) = @_;
-	$blogid ||= $self->{blogid};
-	$blogid =~ s/\W//;
-	return "$self->{data_dir}blog/$blogid/";
+	my $self = shift;
+	return "$self->{data_dir}blog/";
 }
 sub blogpub_dir {
-	my ($self, $blogid) = @_;
-	$blogid ||= $self->{blogid};
-	$blogid =~ s/\W//;
-	my $blog = $self->load_blogset($blogid);
-	my $postfix = $blog ? $blog->{blogpub_dir_postfix} : '';
-	return "$self->{pub_dir}$blogid$postfix/";
+	my $self = shift;
+	return $self->{pub_dir};
 }
 sub blogimg_dir {
 	my $self = shift;
-	return $self->{blogpub_dir} . 'image/';
+	return $self->{pub_dir} . 'attachments/';
 }
 
 #-------------------------------------------------------------------------------
@@ -1892,7 +1867,7 @@ sub check_editor {
 	my $auth = $self->{ROBJ}->{Auth};
 	$artid = ref($artid) ? $artid->{id} : $artid;
 	if ($artid =~ /^\d+$/) {
-		my $h = $self->{DB}->select_match_limit1($self->{blogid} . "_art", 'pkey', $artid, '*cols', ['id']);
+		my $h = $self->{DB}->select_match_limit1("art", 'pkey', $artid, '*cols', ['id']);
 		if (!$h) { return ; }
 		$artid = $h->{id};
 	}

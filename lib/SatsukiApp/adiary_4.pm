@@ -338,8 +338,6 @@ sub load_plugin_info {
 		$h->{events} .= <<DCSS_EVENT;
 INSTALL=skel/_sub/module_css_generate
 SETTING=skel/_sub/module_css_generate
-PRIVATE_MODE_ON=skel/_sub/module_css_generate
-PRIVATE_MODE_OFF=skel/_sub/module_css_generate
 UNINSTALL=skel/_sub/module_css_delete
 DCSS_EVENT
 	}
@@ -1364,15 +1362,8 @@ sub reset_design {
 #-------------------------------------------------------------------------------
 sub load_default_design {
 	my $self = shift;
-	my $id   = shift;
 	my $ROBJ = $self->{ROBJ};
-
-	my $blogid = $self->{blogid};
-	if (!$id && !$blogid) { return -1; }
-	if ($id && $id ne $blogid) {
-		my $r = $self->set_and_select_blog($id);
-		if (!$r) { return -1; }
-	}
+	if (!$self->{blog}) { return -1; }
 
 	my $h = $self->parse_design_dat( $ROBJ->fread_hash( $self->{default_design_file} ) );
 	$self->save_design( $h );

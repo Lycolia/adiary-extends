@@ -120,12 +120,6 @@
 		</td>
 	</tr>
 	<tr>
-		<th>公開ディレクト付加文字列長<span class="help" data-help="プライベートモード設定時に、ブログ公開ディレクトリを推測されないよう付加するランダムな文字列の長さを指定します。">?</span></th>
-		<td<@err.c_dir_postfix_len>>
-			<input type="number" name="dir_postfix_len" min="2" max="32" class="w50" value="<@if(s.dir_postfix_len eq '', 8, s.dir_postfix_len)>">文字（2～32文字）
-		</td>
-	</tr>
-	<tr>
 		<th>文末省略時の付加文字列<span class="help" data-help="長い文章などが途中で省略された場合に付加する文字列を指定します。記事本文は対象になりません。">?</span></th>
 		<td<@err.c_clip_append>>
 			<input type="text" class="w200" name="clip_append" value="<@if(s.clip_append, s.clip_append, '...')>">（最大20文字）
