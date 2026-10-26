@@ -508,12 +508,18 @@ sub move_dir_files_410 {
 # 4.09〜4.11で消した機能の設定を片付ける
 # ・設定ファイル（adiary.conf.cgi）：公開フォルダのパスの定数、消したパーサー、消した設定
 # ・ブログの設定とシステムの設定：消した機能のキー
+# ・新しいブログの初期設定のファイル（data/default_setting.dat）
 sub sys_update_411 {
 	my $self = shift;
 	$self->update_conf_411();
 
-	# システムの設定（1つのadiaryで複数のブログを持つ機能。4.10）
+	# システムの設定と、新しいブログの初期設定のファイル（1つのadiaryで複数のブログを持つ機能。4.10）
 	$self->update_sysdat('create_blog_only_admin', undef);
+	my $file = $self->{data_dir} . 'default_setting.dat';
+	if (-e $file) {
+		my $ok = $self->{ROBJ}->file_delete($file);
+		$self->{ROBJ}->message($ok ? "Delete '%s'" : "Delete '%s' failed", $file);
+	}
 
 	my $blog = $self->{blog};
 	if (!$blog) { return; }
