@@ -3,7 +3,7 @@
 <$err=FormError>
 
 <@> システムモード
-<$v.system_mode("ブログの削除")>
+<$v.system_mode("全記事の削除")>
 
 <!--=========================================================================-->
 <@> 階層ツリー、権限確認、エラー表示
@@ -13,29 +13,24 @@
 <article class="system">
 <h2><@v.title></h2>
 <div class="body">
-	<p>このブログを削除します。</p>
+	<p>このブログの記事とコメントをすべて削除します。設定、デザイン、画像は残ります。</p>
 
 	<table>
 	<tbody>
-	<tr><th>ブログID</th>  <td><@v.blogid></td></tr>
 	<tr><th>ブログ名</th>  <td><@v.blog.blog_name></td></tr>
-	<tr><th>ブログ紹介</th><td><@v.blog.description_txt></td></tr>
 	<tr><th>公開記事</th>  <td><@v.blog.arts || 0>件</td>
 	<tr><th>非公開記事</th><td><@v.blog.darts || 0>件</td>
 	<tr><th>コメント</th>  <td><@v.blog.coms || 0>件</td>
 	</tbody>
 	</table>
 
-	<form action="<@v.myself>?<@v.skeleton>" method="POST" class="js-check-form" data-confirm="『<@v.blog.blog_name>』<br><br>本当に削除してもよろしいですか？" data-focus="cancel">
+	<form action="<@v.myself>?<@v.skeleton>" method="POST" class="js-check-form" data-confirm="『<@v.blog.blog_name>』の記事をすべて削除します。<br><br>本当に削除してもよろしいですか？" data-focus="cancel">
 	<input type="hidden" name="action" value="<@v.skeleton>">
 
-	<p><label><input type="checkbox" name="art_only" value="1" id="art-only">記事データのみ削除する</label></p>
-
-	<p id="clear-msg"><strong class="warning">全ての記事データが削除されます。</strong></p>
-	<p id="drop-msg"><strong class="warning">すべてのデータが削除されます。</strong></p>
+	<p><strong class="warning">全ての記事データが削除されます。</strong></p>
 
 	削除する場合は 'Yes' と入力 <input type="text" id="yes-box" name="yes" class="w60<@FormError.e_yes>"><br>
-	<button type="submit" id="submit-btn">ブログを削除する</button><br>
+	<button type="submit" id="submit-btn">全記事を削除する</button><br>
 
 	</form>
 </div>
@@ -52,17 +47,4 @@
 		yesbox.change();
 	});
 	yesbox.change();
-
-	var art_only = $('#art-only');
-	art_only.change(function(){
-		var flag = art_only.prop('checked');
-		if (flag) {
-			$('#clear-msg').show();
-			$('#drop-msg').hide();
-		} else {
-			$('#clear-msg').hide();
-			$('#drop-msg').show();
-		}
-	});
-	art_only.change();
 --></script-defer>

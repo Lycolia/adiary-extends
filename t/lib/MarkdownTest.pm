@@ -38,7 +38,7 @@ sub new_parser {
 			pubdist  => 'pub-dist/',
 			myself   => '/',
 			myself2  => '/',
-			image    => 'pub/blog/image/',
+			image    => 'pub/attachments/',
 		};
 		$SATSUKI->{seemore_msg} = '続きを読む';
 		$SATSUKI->{image_attr}  = 'data-lythumb="k%k"';

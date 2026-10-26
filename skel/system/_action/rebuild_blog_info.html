@@ -1,7 +1,7 @@
 <@20>
 <$ifbreak(! Auth.isadmin)>
 
-<$action_return = v.rebuild_all_blogs_info()>
+<$action_return = v.blog_info_rebuild()>
 
 POST成功時の処理
 <$ifexec(action_return eq '0', begin)>

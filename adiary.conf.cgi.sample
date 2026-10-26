@@ -177,7 +177,6 @@
 <$v.default_usertag_file = "<@info_dir>default_usertag.txt">
 <$v.default_setting_file = "<@info_dir>default_setting.dat">
 <$v.default_design_file  = "<@info_dir>default_design.dat">
-<$v.my_default_setting_file = "<@data_dir>default_setting.dat">
 
 #----------------------------------------------------------
 # ■テーマ
@@ -193,7 +192,6 @@
 	default       = 標準（改行処理）
 	default_p1    = １行＝１段落
 	default_p2    = 空行で段落処理
-	rst           = reStructuredText
 	simple	      = HTML（そのまま）
 	simple_br     = HTML（改行処理）
 <$end>

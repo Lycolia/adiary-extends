@@ -25,10 +25,10 @@ my @update_versions = (
 	{ ver => 3.04, plugin=>1 },
 	{ ver => 3.05, plugin=>1 },
 	{ ver => 3.09, plugin=>1 },
-	{ ver => 3.10, plugin=>1, theme=>1, func => 'sys_update_310' },
+	{ ver => 3.10, plugin=>1, theme=>1, func => 'sys_update_310', system=>1 },
 	{ ver => 3.11, plugin=>1 },
 	{ ver => 3.14, plugin=>1 },
-	{ ver => 3.15, plugin=>1, func => 'sys_update_315' },
+	{ ver => 3.15, plugin=>1, func => 'sys_update_315', system=>1 },
 	{ ver => 3.20, plugin=>1 },
 	{ ver => 3.21, plugin=>1, theme=>1, rebuild_cond=>[
 		'\[&https?://github\.com',
@@ -42,11 +42,12 @@ my @update_versions = (
 	{ ver => 3.32, plugin=>1 },
 	{ ver => 3.34, plugin=>1 },
 	{ ver => 3.40, plugin=>1 },
-	{ ver => 3.50, plugin=>1, func => 'sys_update_350' },
+	{ ver => 3.50, plugin=>1, func => 'sys_update_350', system=>1 },
 	{ ver => 3.52, func => 'sys_update_352' },
 	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' },
 	{ ver => 4.08, info=>1, func => 'sys_update_408' },
-	{ ver => 4.09, plugin=>1, func => 'sys_update_409' }
+	{ ver => 4.09, plugin=>1, func => 'sys_update_409' },
+	{ ver => 4.10, plugin=>1, theme=>1, rebuild=>1 }	# データの持ち方を変えた（migrate_410）。パスが変わるので全部作り直す
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -57,11 +58,15 @@ sub system_update {
 	my $auth = $ROBJ->{Auth};
 	if (!$auth->{isadmin}) { $ROBJ->message('Operation not permitted'); return 5; }
 
-	my $cur_blogid = $self->{blogid};
-	my $blogs = $self->load_all_blogid();
-
 	my %opt;
 	my $cur = $self->{sys}->{VERSION};
+
+	# データの持ち方の変更（Ver4.10）。各バージョンの処理は新しいテーブル名とパスで動くので、それより先に行う
+	if ($cur < 4.10) {
+		$self->migrate_410();
+	}
+	my $exists = $self->select_blog();
+
 	foreach my $h (@update_versions) {
 		if ($cur >= $h->{ver}) { next; }
 		$ROBJ->message("System update for Ver %.2f", $h->{ver});
@@ -77,17 +82,18 @@ sub system_update {
 		}
 
 		my $func = $h->{func};
-		if ($func) {
-			$self->$func($blogs);
+		if ($func && ($exists || $h->{system})) {
+			$self->$func();
 		}
 		$cur = $h->{ver};
 	}
-	$self->set_and_select_blog($cur_blogid);
+	$self->select_blog();
+	if (!$exists) { %opt = (); }	# ブログが無ければ再構築などは不要
 
 	# 再構築
 	if ($opt{rebuild}) {
-		$ROBJ->message("Rebuild all blogs");
-		$self->rebuild_all_blogs();
+		$ROBJ->message("Rebuild blog");
+		$self->rebuild_blog();
 		$opt{info} = 0;
 
 	# 条件付き再構築（記事内容による）
@@ -101,9 +107,9 @@ sub system_update {
 			}
 			return 0;
 		};
-		$self->rebuild_all_blogs({ filter => $filter });
+		$self->rebuild_blog({ filter => $filter });
 		if ($cnt) {
-			$ROBJ->message("Rebuild '%d articles' of all blogs", $cnt);
+			$ROBJ->message("Rebuild '%d articles'", $cnt);
 		}
 		$opt{info} = 0;
 
@@ -111,17 +117,18 @@ sub system_update {
 	# プラグイン再インストール
 	if ($opt{plugin}) {
 		$ROBJ->message("Reinstall all plugins");
-		$self->reinstall_all_plugins();
+		local($self->{stop_plugin_install_msg}) = 1;
+		$self->reinstall_plugins();
 	}
 	# テーマカスタムCSS更新
 	if ($opt{theme}) {
 		$ROBJ->message("Remake all custom css");
-		$self->remake_all_custom_css();
+		$self->remake_theme_custom_css();
 	}
 	# ブログ付加情報の再構築
 	if ($opt{info}) {
-		$ROBJ->message("Reinstall all blogs infomation");
-		$self->rebuild_all_blogs_info();
+		$ROBJ->message("Rebuild blog infomation");
+		$self->blog_info_rebuild();
 	}
 
 	$self->update_sysdat('VERSION', $cur);
@@ -132,33 +139,25 @@ sub system_update {
 # ●システムアップデート for Ver2.93
 #-------------------------------------------------------------------------------
 sub sys_update_293 {
-	my $self  = shift;
-	my $blogs = shift;
-	my $ROBJ = $self->{ROBJ};
-	foreach(@$blogs) {
-		$self->update_blogset($_, 'http_rel');
-		$self->update_blogset($_, 'image_rel');
-		$self->update_blogset($_, 'image_data', 'lightbox=%k');
-	}
+	my $self = shift;
+	my $blog = $self->{blog};
+	$self->update_blogset($blog, 'http_rel');
+	$self->update_blogset($blog, 'image_rel');
+	$self->update_blogset($blog, 'image_data', 'lightbox=%k');
 }
 
 #-------------------------------------------------------------------------------
 # ●システムアップデート for Ver2.94
 #-------------------------------------------------------------------------------
 sub sys_update_294 {
-	my $self  = shift;
-	my $blogs = shift;
+	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
-	foreach(@$blogs) {
-		$self->set_and_select_blog( $_ );
-		#
-		my $file = $self->{blogpub_dir} . 'usercss.css';
-		if (-r $file) {
-			my $lines = $ROBJ->fread_lines( $file );
-			my $css = join('', @$lines);
-			$self->save_usercss( $css );
-			unlink( $file );
-		}
+	my $file = $self->{blogpub_dir} . 'usercss.css';
+	if (-r $file) {
+		my $lines = $ROBJ->fread_lines( $file );
+		my $css = join('', @$lines);
+		$self->save_usercss( $css );
+		unlink( $file );
 	}
 }
 
@@ -166,39 +165,32 @@ sub sys_update_294 {
 # ●システムアップデート for Ver2.96
 #-------------------------------------------------------------------------------
 sub sys_update_296 {
-	my $self  = shift;
-	my $blogs = shift;
-	my $ROBJ = $self->{ROBJ};
-	foreach(@$blogs) {
-		$self->update_blogset($_, 'bgfile_fit');
-		$self->update_blogset($_, 'bgfile_w');
-		$self->update_blogset($_, 'bgfile_h');
-		$self->update_blogset($_, 'bgfile');
-	}
+	my $self = shift;
+	my $blog = $self->{blog};
+	$self->update_blogset($blog, 'bgfile_fit');
+	$self->update_blogset($blog, 'bgfile_w');
+	$self->update_blogset($blog, 'bgfile_h');
+	$self->update_blogset($blog, 'bgfile');
 }
 
 #-------------------------------------------------------------------------------
 # ●システムアップデート for Ver2.97 (RC1)
 #-------------------------------------------------------------------------------
 sub sys_update_297 {
-	my $self  = shift;
-	my $blogs = shift;
+	my $self = shift;
 	my $DB   = $self->{DB};
 	my $ROBJ = $self->{ROBJ};
-	foreach(@$blogs) {
-		my $blog = $self->load_blogset($_);
-		my $desc = $blog->{description_txt};
-		$ROBJ->tag_delete($desc);
-		$self->update_blogset($blog, 'description_notag', $desc);
+	my $blog = $self->{blog};
+	my $desc = $blog->{description_txt};
+	$ROBJ->tag_delete($desc);
+	$self->update_blogset($blog, 'description_notag', $desc);
 
-		# DB変更
-		my $r=0;
-		$r +=    $DB->drop_table("${_}_log");
-		$r += 10*$DB->add_column("${_}_art", {name=>'main_image',  type=>'text'});
-		$r += 10*$DB->add_column("${_}_art", {name=>'description', type=>'text'});
+	# DB変更（古いログのテーブル「ブログID_log」は、migrate_410で消す）
+	my $r=0;
+	$r += 10*$DB->add_column("art", {name=>'main_image',  type=>'text'});
+	$r += 10*$DB->add_column("art", {name=>'description', type=>'text'});
 
-		if ($r) { $ROBJ->message("Blog '$_' database error($r)"); }
-	}
+	if ($r) { $ROBJ->message("Blog database error(%s)", $r); }
 }
 
 #-------------------------------------------------------------------------------
@@ -227,13 +219,10 @@ sub sys_update_315 {
 # ●システムアップデート for Ver3.30
 #-------------------------------------------------------------------------------
 sub sys_update_330 {
-	my $self  = shift;
-	my $blogs = shift;
-	foreach(@$blogs) {
-		my $blog = $self->load_blogset($_);
-		foreach(qw(http_target http_class http_data image_target image_class image_data section_anchor subsection_anchor)) {
-			$self->update_blogset($blog, $_, undef);
-		}
+	my $self = shift;
+	my $blog = $self->{blog};
+	foreach(qw(http_target http_class http_data image_target image_class image_data section_anchor subsection_anchor)) {
+		$self->update_blogset($blog, $_, undef);
 	}
 	$self->update_sysdat('edit_lock_interval', $self->{sys}->{edit_lock_time});
 	$self->update_sysdat('edit_lock_time', undef);
@@ -256,17 +245,14 @@ sub sys_update_350 {
 # ●システムアップデート for Ver3.52
 #-------------------------------------------------------------------------------
 sub sys_update_352 {
-	my $self  = shift;
-	my $blogs = shift;
-	my $ROBJ  = $self->{ROBJ};
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
 
 	# 記事の更新履歴テーブル、ゴミ箱テーブル追加
-	foreach(@$blogs) {
-		my $r = 0;
-		$r += $self->create_rev_table($_);
-		$r += $self->create_trash_tables($_);
-		if ($r) { $ROBJ->message("Blog '$_' database error($r)"); }
-	}
+	my $r = 0;
+	$r += $self->create_rev_table();
+	$r += $self->create_trash_tables();
+	if ($r) { $ROBJ->message("Blog database error(%s)", $r); }
 }
 
 #-------------------------------------------------------------------------------
@@ -277,15 +263,14 @@ sub sys_update_352 {
 # ・見出しに、今の見出しのIDを識別子[#id]として書き足す（Markdownの記事）
 sub sys_update_353 {
 	my $self = shift;
-	$self->do_all_blogs('update_art_text_353');
+	$self->update_art_text_353();
 }
 sub update_art_text_353 {
 	my $self   = shift;
 	my $ROBJ   = $self->{ROBJ};
 	my $DB     = $self->{DB};
-	my $blogid = $self->{blogid};
 
-	my $arts = $DB->select_match("${blogid}_art", '*cols', ['pkey', '_text', 'parser', 'link_key']);
+	my $arts = $DB->select_match("art", '*cols', ['pkey', '_text', 'parser', 'link_key']);
 	my %update;
 	foreach(@$arts) {
 		my $text = $self->normalize_file_alt( $_->{_text} );
@@ -293,7 +278,7 @@ sub update_art_text_353 {
 		my $parser = $_->{parser} ne '' && $self->load_parser( $_->{parser} );
 		if (ref($parser) && $_->{parser} eq 'markdown') {
 			$self->post_process_link_key( $_ );
-			$parser->{thisurl}  = $self->get_blog_path( $blogid ) . $_->{elink_key};
+			$parser->{thisurl}  = $self->{myself2} . $_->{elink_key};
 			$parser->{thispkey} = $_->{pkey};
 			$text = $self->freeze_heading_ids_353( $parser, $text );
 		}
@@ -304,10 +289,10 @@ sub update_art_text_353 {
 
 	$DB->begin();
 	foreach(keys(%update)) {
-		$DB->update_match("${blogid}_art", $update{$_}, 'pkey', $_);
+		$DB->update_match("art", $update{$_}, 'pkey', $_);
 	}
 	my $r = $DB->commit();
-	if ($r) { $ROBJ->message("Blog '$blogid' database error($r)"); }
+	if ($r) { $ROBJ->message("Blog database error(%s)", $r); }
 }
 
 #-------------------------------------------------------------------------------
@@ -316,17 +301,14 @@ sub update_art_text_353 {
 # 参照元（バックリンク）のテーブルとカラムを追加する
 # ※参照元は、この後のブログ付加情報の再構築（ARTICLE_STATE_CHANGE）で作られる
 sub sys_update_408 {
-	my $self  = shift;
-	my $blogs = shift;
-	my $DB    = $self->{DB};
-	my $ROBJ  = $self->{ROBJ};
-	foreach(@$blogs) {
-		my $r = 0;
-		$r +=    $self->create_link_table($_);
-		$r += 10*$DB->add_column("${_}_art",   {name=>'backlinks', type=>'text'});
-		$r += 10*$DB->add_column("${_}_trash", {name=>'backlinks', type=>'text'});
-		if ($r) { $ROBJ->message("Blog '$_' database error($r)"); }
-	}
+	my $self = shift;
+	my $DB   = $self->{DB};
+	my $ROBJ = $self->{ROBJ};
+	my $r = 0;
+	$r +=    $self->create_link_table();
+	$r += 10*$DB->add_column("art",   {name=>'backlinks', type=>'text'});
+	$r += 10*$DB->add_column("trash", {name=>'backlinks', type=>'text'});
+	if ($r) { $ROBJ->message("Blog database error(%s)", $r); }
 }
 
 #-------------------------------------------------------------------------------
@@ -336,32 +318,22 @@ sub sys_update_408 {
 # 記事とゴミ箱のテーブルから、使われていなかったrevisionのカラムを消す
 # ※コメントフォームのトークンを変えたため、プラグインの再インストールでデザインのスケルトンも作り直す
 sub sys_update_409 {
-	my $self  = shift;
-	my $blogs = shift;
-	my $DB    = $self->{DB};
-	my $ROBJ  = $self->{ROBJ};
-	foreach(@$blogs) {
-		# 定義から外した後に作ったブログにはカラムが無く、エラーになるので出さない
-		my $noerr = $DB->set_noerror(1);
-		$DB->drop_column("${_}_art",   'revision');
-		$DB->drop_column("${_}_trash", 'revision');
-		$DB->set_noerror($noerr);
+	my $self = shift;
+	my $DB   = $self->{DB};
 
-		my $blog = $self->load_blogset($_);
-		if ($blog->{rev_cycle} eq '') { next; }
+	# 定義から外した後に作ったブログにはカラムが無く、エラーになるので出さない
+	my $noerr = $DB->set_noerror(1);
+	$DB->drop_column("art",   'revision');
+	$DB->drop_column("trash", 'revision');
+	$DB->set_noerror($noerr);
+
+	my $blog = $self->{blog};
+	if ($blog->{rev_cycle} ne '') {
 		$self->update_blogset($blog, 'rev_cycle', int($blog->{rev_cycle}) * 60);
 	}
 
 	# 削除したプラグインを、入れたままのブログから外す
-	$self->do_all_blogs('uninstall_removed_plugins_409');
-
-	# デフォルトのブログ設定値
-	my $file = $self->{my_default_setting_file};
-	if (!-e $file) { return; }
-	my $def = $ROBJ->fread_hash($file);
-	if ($def->{rev_cycle} eq '') { return; }
-	$def->{rev_cycle} = int($def->{rev_cycle}) * 60;
-	$ROBJ->fwrite_hash($file, $def);
+	$self->uninstall_removed_plugins_409();
 }
 
 # プラグインの管理画面での保存（save_use_plugins）は、plugin/に今あるプラグインしか見ないので、
@@ -395,6 +367,135 @@ sub uninstall_removed_plugins_409 {
 
 	$ROBJ->fwrite_hash($self->{blog_dir} . 'plugins.dat', $pd);
 	$self->set_event_info($self->{blog}, $pd);
+}
+
+#-------------------------------------------------------------------------------
+# ●データの持ち方の変更（Ver4.10）
+#-------------------------------------------------------------------------------
+# ブログは1つだけにしたので、ブログIDを使わない持ち方にする。
+# ・テーブル    ブログID_art など → art など
+# ・データ      data/blog/ブログID/ → data/blog/
+# ・公開フォルダ pub/ブログID/ → pub/、画像は pub/ブログID/image/ → pub/attachments/（adiary/ は posts/ にする）
+# ・記事の原文の記法（[image:…:adiary/…]）と、ブログの設定のパスを書き換える
+# ・ブログ管理テーブル（_bloglist）とデフォルトブログ（default_blogid）を消す
+# ※ブログIDのテーブルが無いとき（ブログを作る前など）は、_bloglistとdefault_blogidを消すだけ
+sub migrate_410 {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $DB   = $self->{DB};
+
+	# 移すブログ（デフォルトブログ、無ければブログIDの順で最初のブログ）
+	my $id = $self->{sys}->{default_blogid};
+	if ($id !~ /^\w+$/ || !$DB->find_table("${id}_art")) {
+		my $noerr = $DB->set_noerror(1);
+		my $list  = $DB->select_match('_bloglist', '*cols', 'id');
+		$DB->set_noerror($noerr);
+		($id) = sort grep { /^\w+$/ && $DB->find_table("${_}_art") } map { $_->{id} } @$list;
+	}
+	if ($id ne '' && !$DB->find_table('art')) {
+		$self->migrate_blog_410($id);
+	}
+
+	my $noerr = $DB->set_noerror(1);
+	$DB->drop_table('_bloglist');
+	$DB->set_noerror($noerr);
+	$self->update_sysdat('default_blogid', undef);
+	$self->update_sysdat('dir_postfix_len', undef);
+	delete $self->{_cache_exists_blog};
+}
+
+sub migrate_blog_410 {
+	my $self = shift;
+	my $id   = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $DB   = $self->{DB};
+	$ROBJ->message("Migrate blog '%s'", $id);
+
+	# テーブル
+	foreach(qw(art com tag tagart rev trash trashcom link)) {
+		if (!$DB->find_table("${id}_$_")) { next; }
+		if ($DB->rename_table("${id}_$_", $_)) {
+			$ROBJ->message("Rename table '%s' failed", "${id}_$_");
+		}
+	}
+	my $noerr = $DB->set_noerror(1);
+	$DB->drop_table("${id}_log");		# Ver2.97より前のもの
+	$DB->set_noerror($noerr);
+
+	# データ
+	my $old_dir = "$self->{data_dir}blog/$id/";
+	my $set     = $ROBJ->fread_hash("${old_dir}setting.dat");
+	$self->move_dir_files_410($old_dir, $self->blog_dir());
+
+	# 公開フォルダ（非公開モードで付けた文字列が付いていることがある）
+	my $old_pub = "$self->{pub_dir}$id$set->{blogpub_dir_postfix}/";
+	my $img_dir = $self->blogimg_dir();
+	if (-d "${old_pub}image/") {
+		rename("${old_pub}image/", $img_dir) || $ROBJ->message("Rename '%s' failed", "${old_pub}image/");
+		if (-d "${img_dir}adiary/" && !-e "${img_dir}posts/") {
+			rename("${img_dir}adiary/", "${img_dir}posts/") || $ROBJ->message("Rename '%s' failed", "${img_dir}adiary/");
+		}
+	}
+	$self->move_dir_files_410($old_pub, $self->blogpub_dir());
+
+	# ブログの設定のパス
+	my %path = (
+		"${old_pub}image/adiary/" => "${img_dir}posts/",
+		"${old_pub}image/"        => $img_dir,
+		$old_pub                  => $self->blogpub_dir()
+	);
+	my $re = join('|', map { quotemeta } sort { length($b) <=> length($a) } keys(%path));
+	foreach(keys(%$set)) {
+		$set->{$_} =~ s/($re)/$path{$1}/g;
+	}
+	$set->{edit_upload} =~ s|^adiary/|posts/|;
+	delete $set->{blogpub_dir_postfix};
+	$ROBJ->fwrite_hash($self->blog_dir() . 'setting.dat', $set);
+	delete $self->{_cache_exists_blog};
+	delete $self->{_loaded_bset};
+
+	# 記事の原文の記法と、アイキャッチのパス
+	foreach my $table (qw(art rev trash)) {
+		if (!$DB->find_table($table)) { next; }
+		my $cols = $table eq 'rev' ? ['pkey', '_text'] : ['pkey', '_text', 'main_image'];
+		my $ary  = $DB->select_match($table, '*cols', $cols);
+		$DB->begin();
+		foreach(@$ary) {
+			my %up;
+			my $text = $_->{_text};
+			if ($text =~ s/(\[(?:image|file):[^:\]\n]*:)adiary\//$1posts\//g) { $up{_text} = $text; }
+			my $img  = $_->{main_image};
+			if ($img ne '' && $img =~ s/($re)/$path{$1}/g) { $up{main_image} = $img; }
+			if (%up) { $DB->update_match($table, \%up, 'pkey', $_->{pkey}); }
+		}
+		if ($DB->commit()) { $ROBJ->message("Blog database error(%s)", $table); }
+	}
+
+	# ブログに写したプラグインの処理が古いテーブル名を使っているので、先に入れ直す
+	if ($self->select_blog()) {
+		local($self->{stop_plugin_install_msg}) = 1;
+		$self->reinstall_plugins();
+	}
+}
+
+# $src の中身を $des に移し、$src を消す（同じ名前のものがあれば移さない）
+sub move_dir_files_410 {
+	my ($self, $src, $des) = @_;
+	my $ROBJ = $self->{ROBJ};
+	if (!-d $src) { return; }
+	$ROBJ->mkdir($des);
+
+	opendir(my $dh, $src) || return;
+	my @files = grep { $_ ne '.' && $_ ne '..' } readdir($dh);
+	closedir($dh);
+	foreach(@files) {
+		if (-e "$des$_") {
+			$ROBJ->message("Already exists '%s'", "$des$_");
+			next;
+		}
+		rename("$src$_", "$des$_") || $ROBJ->message("Rename '%s' failed", "$src$_");
+	}
+	rmdir($src);
 }
 
 #-------------------------------------------------------------------------------

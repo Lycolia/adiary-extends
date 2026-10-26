@@ -1,6 +1,5 @@
 <@7>
 <$ifjump_clear(! Auth.ok, '_sub/error_message_403', 'ログインしていません')>
-<$ifredirect(v.exists_my_blog && v.blogid eq '', v.myself3 . '?menu')>
 
 <@> システムモード
 <$v.system_mode("管理メニュー")>
@@ -35,14 +34,9 @@
 	<strong class="notice">新着コメントがあります</strong> &gt;<a href="<@v.myself>?comlist">コメント一覧から確認</a><br>
 	<$end>
 
-	<@ifexec(!v.exists_my_blog && (!v.sys.create_blog_only_admin || Auth.isadmin), begin)>
+	<@ifexec(Auth.isadmin && !v.exists_blog(), begin)>
 	<ul class="menu">
-		<li><a href="<@myself>?etc/myblog_create">自分のブログを作成</a></li>
-	</ul>
-	<$end>
-	<@ifexec(v.others_blog && v.exists_my_blog, begin)>
-	<ul class="menu">
-		<li><a href="<@v.myself3>">自分のブログへ</a></li>
+		<li><a href="<@myself>?etc/myblog_create">ブログを作成</a></li>
 	</ul>
 	<$end>
 <$end>
@@ -57,7 +51,7 @@
 	<@ifexec(v.blog_admin, begin)>
 		<li><a href="<@v.myself>?plugin/">プラグイン設定</a></li>
 		<li><a href="<@v.myself>?design/">デザイン設定</a><span class="help" data-help="テーマ選択、デザイン編集、ユーザーCSS">?</span></li>
-		<li><a href="<@v.myself>?mainte/">ブログの管理</a><span class="help" data-help="ブログの再構築・削除、インポート、エクスポート">?</span></li>
+		<li><a href="<@v.myself>?mainte/">ブログの管理</a><span class="help" data-help="ブログの再構築、全記事の削除、インポート、エクスポート">?</span></li>
 	<$end>
 	<@ifexec(!Auth.auto, begin)>
 		<li><a href="<@v.myself>?personal/">アカウント設定</a><span class="help" data-help="ユーザー名の変更、パスワードの変更">?</span></li>
@@ -67,7 +61,7 @@
 	<@ifexec(Auth.isadmin, begin)>
 	<ul class="menu">
 		<li><a href="<@v.myself>?user/">【管理者】ユーザー管理</a></li>
-		<li><a href="<@v.myself>?system/">【管理者】システム管理</a><span class="help" data-help="システム設定、任意のブログ作成、アップデート処理、システムチェック">?</span></li>
+		<li><a href="<@v.myself>?system/">【管理者】システム管理</a><span class="help" data-help="システム設定、アップデート処理、システムチェック">?</span></li>
 	</ul>
 	<$end>
 </div>

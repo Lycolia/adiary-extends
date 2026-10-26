@@ -1,4 +1,3 @@
-create_blog_only_admin=0
 reload_time=3
 *ping_servers_txt=<<__END_BLK_DATA
 # adiary official

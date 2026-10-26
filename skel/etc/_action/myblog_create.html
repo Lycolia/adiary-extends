@@ -1,18 +1,13 @@
 <@20>
-<$ifbreak(v.sys.create_blog_only_admin && !Auth.isadmin)>
+<$ifbreak(! Auth.isadmin)>
 
-<$action_return = v.blog_create( Auth.id )>
+<$action_return = v.blog_create()>
 
 POST成功時の処理
 <$ifexec(action_return eq '0', begin)>
 	<$message('ブログを作成しました')>
 	<$ifexec(Form.load_design, begin)>
-		<$v.load_default_design(Auth.id)>
+		<$v.load_default_design()>
 	<$end>
-	<$url = v.myself3 . '?set/'>
-	<$ifexec(Auth.isadmin && Form.default_blog, begin)>
-		<$call('_sub/set_default_blog', Auth.id)>
-		<$url = myself . '?set/'>
-	<$end>
-	<$jump('_sub/reload_message', url)>
+	<$jump('_sub/reload_message', myself . '?set/')>
 <$end>

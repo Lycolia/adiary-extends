@@ -1,7 +1,6 @@
 <@7>
-<@local(s, err, default)>
+<@local(s, err)>
 <$err=FormError>
-<$default = if(Query.blogid eq '*' && Auth.isadmin, 1, 0)>
 
 <@> システムモード
 <$v.system_mode("ブログの基本設定")>
@@ -20,15 +19,7 @@
 <article class="system setting">
 <h2><@v.title></h2>
 <div class="body">
-	<@ifexec(Auth.isadmin, begin)>
-	<@ifexec(default, begin, begin)>
-		<p><a href="<@v.myself>?<@v.skeleton>">&gt;ブログ固有の設定に戻る</a></p>
-	<$else>
-		<p><a href="<@v.myself>?<@v.skeleton>&amp;blogid=*">&gt;標準設定を変更する</a></p>
-	<$end>
-	<$end>
-
-	<form action="<@v.myself>?<@v.skeleton><@if(default, '&amp;blogid=*')>" method="POST" enctype="multipart/form-data">
+	<form action="<@v.myself>?<@v.skeleton>" method="POST" enctype="multipart/form-data">
 	<input type="hidden" name="action" value="<@v.skeleton>" >
 	<table class="blog-setting">
 	<tbody>
@@ -46,8 +37,7 @@
 	</tr>
 	<tr><th>記事の入力方法<span class="help" data-help="詳細は「編集画面の設定」から行ってください。">?</span></th>
 		<td>
-		<label><input type="checkbox" id="markdown" class="js-disable" data-target="#rst" name="markdown" value="1"<@if(s.parser eq 'markdown' || s.markdown, ' checked')>>Markdownで入力する</label><br>
-		<label><input type="checkbox" id="rst"      class="js-disable" data-target="#markdown" name="rst" value="1"<@if(s.parser eq 'rst' || s.rst, ' checked')>>reStructuredTextで入力する</label>
+		<label><input type="checkbox" name="markdown" value="1"<@if(s.parser eq 'markdown' || s.markdown, ' checked')>>Markdownで入力する</label>
 		</td>
 	</tr>
 	<tr><th>プライベートモード<span class="help" data-help="ログインしているブログ所有者（＋書き込み権限保持者）以外にはブログ全体が非表示になるモードです。画像等はURLを直指定すれば表示されます。">?</span></th>
@@ -55,7 +45,6 @@
 		<label><input type="checkbox" name="private" value="1"<@if(s.private eq '1', ' checked')>>プライベートモードに設定する</label>
 		</td>
 	</tr>
-<@ifexec(!default, begin)>
 	<tr><th>サイトアイコン<span class="help" data-help="Faviconの設定。サイトをブックマークした時やWebPush通知時等に表示されるアイコンを設定します。64x64ピクセル程度を推奨します。">?</span></th>
 		<td>
 			<input type="file" name="iconfile"><br>
@@ -65,7 +54,6 @@
 			<$end>
 		</td>
 	</tr>
-<$end>
 	</tbody>
 	</table>
 

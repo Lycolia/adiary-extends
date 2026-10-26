@@ -9,11 +9,11 @@
 <$art_mon  = ret.mon>
 <$art_day  = ret.day>
 
-<@ifexec(!v.blogid, begin)>
-	<$message(if(v.path_blogid, "ブログ <@v.path_blogid> が存在しません", "ブログが指定されていません"))>
-	<$ifmessage(v.path_blogid && ! Auth.ok, "もしあなたが「ID:<@v.path_blogid>」ならばログインしてください。")>
+<@ifexec(!v.blog, begin)>
+	<$message(if(v.exists_blog(), "ブログを見る権限がありません", "ブログがまだ作られていません"))>
+	<$ifmessage(v.exists_blog() && ! Auth.ok, "閲覧を許可されている場合はログインしてください。")>
 <$end>
-<$ifexec(v.blogid && !t, begin)>
+<$ifexec(v.blog && !t, begin)>
 	<$message("該当する記事がありません")>
 <$end>
 <$ifjump_clear(!t || @Message, "_sub/error_message_404")>

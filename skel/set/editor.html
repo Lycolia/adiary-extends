@@ -1,7 +1,6 @@
 <@7>
-<@local(s, err, default)>
+<@local(s, err)>
 <$err=FormError>
-<$default = if(Query.blogid eq '*' && Auth.isadmin, 1, 0)>
 
 <@> システムモード
 <$v.system_mode("編集画面の設定")>
@@ -23,15 +22,7 @@
 <article class="system setting">
 <h2><@v.title></h2>
 <div class="body">
-	<@ifexec(Auth.isadmin, begin)>
-	<@ifexec(default, begin, begin)>
-		<p><a href="<@v.myself>?<@v.skeleton>">&gt;ブログ固有の設定に戻る</a></p>
-	<$else>
-		<p><a href="<@v.myself>?<@v.skeleton>&amp;blogid=*">&gt;標準設定を変更する</a></p>
-	<$end>
-	<$end>
-
-	<form action="<@v.myself>?<@v.skeleton><@if(default, '&amp;blogid=*')>" method="POST">
+	<form action="<@v.myself>?<@v.skeleton>" method="POST">
 	<input type="hidden" name="action" value="<@v.skeleton>">
 
 	<table class="blog-setting">
@@ -84,7 +75,7 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr><th>Upload先<span class="help" data-help="編集画面から直接ファイル（画像）アップロードする機能を使った時、どのフォルダにアップロードするか設定します。">?</span></th>
-		<td<@err.c_edit_upload>><input type="text" class="w200" name="edit_upload" value="<@if(s.edit_upload eq '', 'adiary/%y/', s.edit_upload)>"><br>
+		<td<@err.c_edit_upload>><input type="text" class="w200" name="edit_upload" value="<@if(s.edit_upload eq '', 'posts/%y/', s.edit_upload)>"><br>
 		%y=年, %m=月（※記事の日付を参照します）</td>
 	</tr>
 	<tr><th>Exif貼り付け形式</th>

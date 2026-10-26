@@ -155,8 +155,7 @@ $mop->{load_artdays_in_month} = sub {
 	my ($self, $year, $mon) = @_;
 	my $aobj = $self->{aobj};
 	my $DB     = $aobj->{DB};
-	my $blogid = $aobj->{blogid};
-	if ($blogid eq '') { return []; }
+	if (!$aobj->{blog}) { return []; }
 	my $yyyymm = $year*100 + $mon;
 
 	# データベースからロード
@@ -169,7 +168,7 @@ $mop->{load_artdays_in_month} = sub {
 		$h{flag}->{enable} = 1;
 	}
 
-	my $data = $DB->select("${blogid}_art", \%h);
+	my $data = $DB->select("art", \%h);
 	my @days;
 	foreach(@$data) {
 		@days[ substr($_->{yyyymmdd}, -2) ] = 1;

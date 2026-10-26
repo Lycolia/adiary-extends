@@ -14,19 +14,6 @@
 	<$v.skel_dir = bak>
 <$end>
 
-<@> ブログ一覧表示
-<@ifexec(v.blog.album_blogs, begin)>
-<nav class="tree">
-	<$list = v.load_blog_list()>
-	<select onchange="location.href=$(this).val()">
-		<option value="">（ブログ選択）</a>
-		<@forexec(t, list, begin)><$ifnext(t.id eq v.blogid)>
-		<option value="<@t.url>"><@t.blog_name></option>
-		<$end>
-	</select>
-</nav>
-<$end>
-
 <!--=========================================================================-->
 <$v.init_image_dir()>
 <$v.special_body_class = 'album'>

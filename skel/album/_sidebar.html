@@ -12,9 +12,9 @@
 <tr>
 <td>UID</td><td<@if(Auth.isadmin, ' title="あなたは管理者です"')>><@Auth.id><@if(Auth.isadmin, '(*)')></td>	
 </tr>
-<@ifexec(v.blogid, begin)>
+<@ifexec(v.blog, begin)>
 <tr>
-<td>Blog</td><td>『<a href="<@v.myself>"><@s.blog_name></a>』(<@v.blogid>)</td>
+<td>Blog</td><td>『<a href="<@v.myself>"><@s.blog_name></a>』</td>
 </tr>
 <$end>
 </tbody></table>

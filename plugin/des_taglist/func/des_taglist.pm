@@ -7,10 +7,9 @@ sub {
 	my $root = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 
 	if ($self->{event_name} ne 'TAG_STATE_CHANGE') {
-		$root = $self->load_tag_tree( $blogid );
+		$root = $self->load_tag_tree();
 	}
 
 	my $node = $self->load_plgset($name, 'node');
@@ -28,7 +27,7 @@ sub {
 	}
 
 	# タグのない記事を探す
-	my $ary = $DB->select_match("${blogid}_art", 'tags', '', '*cols', 'pkey', 'enable', 1);
+	my $ary = $DB->select_match("art", 'tags', '', '*cols', 'pkey', 'enable', 1);
 	my $notag_arts = @$ary;
 
 	# スケルトンの実行と保存

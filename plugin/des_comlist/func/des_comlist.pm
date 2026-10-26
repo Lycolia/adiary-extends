@@ -6,10 +6,9 @@ sub {
 	my $name = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 
 	my $num = $self->load_plgset($name, 'displays') || 5;
-	my $ary = $DB->select("${blogid}_com",{
+	my $ary = $DB->select("com",{
 		flag     => { enable => 1 },
 		cols     => [ 'name','id','tm','num','a_pkey','a_yyyymmdd','a_title','a_elink_key' ],
 		sort     => 'tm',

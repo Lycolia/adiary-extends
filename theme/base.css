@@ -111,13 +111,11 @@ table.plugins button {
 }
 #com div.comment-text {
 	white-space:		pre-wrap;
-/*	font-family:		monospace;	*/
 }
 
 /* 管理者の印 */
 .comment-badge {
 	border:			1px solid;
-	border-radius:		3px;
 	padding:		0 0.3em;
 	font-size:		80%;
 	font-weight:		normal;
@@ -286,124 +284,8 @@ h3, h4, .clear,
 div.body-footer {
 	clear:		both;
 }
-
-/*--------------------------------------------------------------------
-●記法関連 / RST (reStructuredText)
---------------------------------------------------------------------*/
-/* 列挙型 */
-ol.arabic	> li { list-style-type: decimal; }
-ol.upper-alpha	> li { list-style-type: upper-alpha; }
-ol.lower-alpha	> li { list-style-type: lower-alpha; }
-ol.upper-roman	> li { list-style-type: upper-roman; }
-ol.lower-roman	> li { list-style-type: lower-roman; }
-
 /* チェックボックス付きリスト（Markdown の - [ ] / - [x]）。リストの記号を出さない */
 li.task-list-item { list-style-type: none; }
-
-/* option list */
-.body table.option-list th {
-	font-weight:	normal;
-	text-align:	left;
-}
-.body table.option-list th var {
-	font-style:	italic;
-	font-weight:	bold;
-}
-
-.line-block {
-	margin:		1em 0 1em 2em;
-	font-style:	italic;
-}
-.line-block .line-block {
-	margin:		0 0 0 2em;
-}
-div.citation {
-	margin:		1em 0 1em 2em;
-}
-article section .rest-footnote a {
-	font-size:		70%;
-	line-height:		140%;
-	vertical-align:		top;
-	text-decoration:	none;
-	border-bottom-width:	1px;
-	border-bottom-style:	dotted;
-}
-article section .rest-footnote a:hover {
-	border-bottom-style:	solid;
-}
-.problematic {
-	color:			red;
-	text-decoration:	underline;
-}
-
-div.admonition, div.topic {
-	background-color:	rgba(255,210,210,0.7);
-	border:			1px solid #888;
-	margin:			1em 0;
-	padding:		0.2em 1em;
-}
-div.admonition.note, div.topic {
-	background-color:	rgba(128,128,128,0.1);
-}
-p.admonition-title,
-p.topic-title,
-p.sidebar-title {
-	font-weight:		bold;
-	font-size:		130%;
-	text-indent:		0;
-	margin-top:		0;
-	text-decoration:	underline;
-}
-div.sidebar {
-	min-width:		15%;
-	max-width:		40%;
-	border:			1px solid #ccc;
-	background-color:	rgba(255,255,232,0.6);
-	margin-left:		1em;
-	padding:		0 0.5em;
-	float:			right;
-}
-
-.align-left {
-	float:			left;
-	margin-right:		1em;
-}
-.align-right {
-	float:			right;
-	margin-left:		1em;
-}
-figure.align-center {
-	text-align:		center;
-}
-figure.align-center,
-.align-center > img {
-	display:		block;
-	margin-left:		auto;
-	margin-right:		auto;
-}
-.align-top    img { vertical-align: top; }
-.align-bottom img { vertical-align: bottom; }
-.align-middle img { vertical-align: middle; }
-
-.line-number-block {
-	color:			blue;
-	float:			left;
-	margin-right:		1em;
-	padding-right:		2px;
-	border-right:		solid rgba(0,0,0,0.3) 1px;
-	text-align:		right;
-}
-
-pre.line-number {
-	white-space:		pre;
-}
-p.rubric {
-	margin-top:		30px;
-	font-weight:		bold;
-}
-div.compound p:nth-child(n + 2) {
-	text-indent:		0;
-}
 
 /*--------------------------------------------------------------------
 ●フォントサイズ／種類設定
@@ -2304,15 +2186,15 @@ pre[class*="language-"].line-numbers > code {
 
 }
 
-	.line-numbers-rows > span {
-		display: block;
-		counter-increment: linenumber;
-	}
+.line-numbers-rows > span {
+	display: block;
+	counter-increment: linenumber;
+}
 
-		.line-numbers-rows > span:before {
-			content: counter(linenumber);
-			color: #999;
-			display: block;
-			padding-right: 0.8em;
-			text-align: right;
-		}
+.line-numbers-rows > span:before {
+	content: counter(linenumber);
+	color: #999;
+	display: block;
+	padding-right: 0.8em;
+	text-align: right;
+}

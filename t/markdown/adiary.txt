@@ -28,13 +28,13 @@
 --- input
 [image:S:adiary/2026/01/:a.png:キャプション]
 --- expected
-<p><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="キャプション" data-lythumb="k1"><img alt="キャプション" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a></p>
+<p><a href="pub/attachments/adiary/2026/01/a.png" class="tag-image-S" title="キャプション" data-lythumb="k1"><img alt="キャプション" src="pub/attachments/adiary/2026/01/.thumbnail/a.png.jpg"></a></p>
 
 === 画像を並べても参照リンクにならない
 --- input
 [image:S:adiary/2026/01/:a.png:A][image:S:adiary/2026/01/:b.png:B]
 --- expected
-<p><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="A" data-lythumb="k1"><img alt="A" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a><a href="pub/blog/image/adiary/2026/01/b.png" class="tag-image-S" title="B" data-lythumb="k1"><img alt="B" src="pub/blog/image/adiary/2026/01/.thumbnail/b.png.jpg"></a></p>
+<p><a href="pub/attachments/adiary/2026/01/a.png" class="tag-image-S" title="A" data-lythumb="k1"><img alt="A" src="pub/attachments/adiary/2026/01/.thumbnail/a.png.jpg"></a><a href="pub/attachments/adiary/2026/01/b.png" class="tag-image-S" title="B" data-lythumb="k1"><img alt="B" src="pub/attachments/adiary/2026/01/.thumbnail/b.png.jpg"></a></p>
 
 === 画像のキャプションがあるときだけ figure で囲む
 # キャプションは、画像の後の2つ目以降の引数に # を付けて書く
@@ -42,25 +42,25 @@
 --- input
 [image:S:adiary/2026/01/:a.png:代替:#説明]
 --- expected
-<figure><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="代替" data-lythumb="k1"><img alt="代替" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a><figcaption>説明</figcaption></figure>
+<figure><a href="pub/attachments/adiary/2026/01/a.png" class="tag-image-S" title="代替" data-lythumb="k1"><img alt="代替" src="pub/attachments/adiary/2026/01/.thumbnail/a.png.jpg"></a><figcaption>説明</figcaption></figure>
 
 === 代替テキストを省いた画像の title はタグ名にしない
 --- input
 [image:S:adiary/2026/01/:a.png]
 --- expected
-<p><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="" data-lythumb="k1"><img alt="" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a></p>
+<p><a href="pub/attachments/adiary/2026/01/a.png" class="tag-image-S" title="" data-lythumb="k1"><img alt="" src="pub/attachments/adiary/2026/01/.thumbnail/a.png.jpg"></a></p>
 
 === 代替テキストの : は title にもそのまま出す
 --- input
 [image:S:adiary/2026/01/:a.png:4:30と23:00]
 --- expected
-<p><a href="pub/blog/image/adiary/2026/01/a.png" class="tag-image-S" title="4:30と23:00" data-lythumb="k1"><img alt="4:30と23:00" src="pub/blog/image/adiary/2026/01/.thumbnail/a.png.jpg"></a></p>
+<p><a href="pub/attachments/adiary/2026/01/a.png" class="tag-image-S" title="4:30と23:00" data-lythumb="k1"><img alt="4:30と23:00" src="pub/attachments/adiary/2026/01/.thumbnail/a.png.jpg"></a></p>
 
 === 名前を省いた添付ファイルはファイル名をリンクの文字にする
 --- input
 [file:pdf:posts/2026/10/:a.pdf] [file:zip:posts/2026/10/:demo.zip:デモ一式]
 --- expected
-<p><a href="pub/blog/image/posts/2026/10/a.pdf" class="tag-file" title="ファイル">a.pdf</a> <a href="pub/blog/image/posts/2026/10/demo.zip" class="tag-file" title="ファイル">デモ一式</a></p>
+<p><a href="pub/attachments/posts/2026/10/a.pdf" class="tag-file" title="ファイル">a.pdf</a> <a href="pub/attachments/posts/2026/10/demo.zip" class="tag-file" title="ファイル">デモ一式</a></p>
 
 === YouTube
 --- input

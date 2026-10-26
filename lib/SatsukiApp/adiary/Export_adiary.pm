@@ -26,7 +26,6 @@ sub new {
 sub export {
 	my ($self, $skeleton, $logs, $option) = @_;
 	my $ROBJ = $self->{ROBJ};
-	my $aobj = $option->{aobj};
 
 	# 文字コード変換
 	my $system_coding = $ROBJ->{SystemCode};
@@ -42,8 +41,6 @@ sub export {
 		}
 		# ※エクスポートするログの中に対象記事がなければ書き換えない
 	}
-	my $id2link = $option->{id2link};
-	my $parser  = $id2link ? $aobj->load_parser('default') : undef;
 
 	#-----------------------------------------------------------------------
 	# ログの解析と保存
@@ -61,26 +58,14 @@ sub export {
 		#---------------------------------------------------------------
 		# 本文の加工（記事番号指定 → 記事時刻指定）
 		#---------------------------------------------------------------
-		if ($_->{parser} =~ /^default/ &&
-		   ($key2tm && $_->{_text} =~ /\[key:/ || $id2link && $_->{_text} =~ /\[id:/)) {
+		if ($_->{parser} =~ /^default/ && $key2tm && $_->{_text} =~ /\[key:/) {
 			my $backup = $self->backup_blocks($_->{_text});
 
 			# key指定をtm指定に変更
-			if ($key2tm) {
-				$_->{_text} =~ s/\[key:(\d+)([\]:])/
-					$pkey2tm[$1] ? "[tm:$pkey2tm[$1]$2" : "[key:$1$2"/eg;
-				$_->{_text} =~ s/\[link:0(\d+)([\]:])/
-					$pkey2tm[$1] ? "[tm:$pkey2tm[$1]$2" : "[key:$1$2"/eg;
-			}
-
-			# id 指定を通常リンクに書き換え（パーサーに通す）
-			if ($id2link) {
-				$_->{_text} =~ s!(\[id:[^\]]+\])!
-					my $link = $parser->parse_tag( $1 );
-					$parser->un_escape( $link );
-					$link;
-				!eg;
-			}
+			$_->{_text} =~ s/\[key:(\d+)([\]:])/
+				$pkey2tm[$1] ? "[tm:$pkey2tm[$1]$2" : "[key:$1$2"/eg;
+			$_->{_text} =~ s/\[link:0(\d+)([\]:])/
+				$pkey2tm[$1] ? "[tm:$pkey2tm[$1]$2" : "[key:$1$2"/eg;
 
 			# 戻す
 			$self->restore_blocks($_->{_text}, $backup);

@@ -5,8 +5,8 @@
 <$mode = Query.mode>
 <$replace_dest(name, '[^\w\-,]', '')>
 
-<@ifexec(v.blogid eq '', begin)>
-	<@"blog id not defined!">
+<@ifexec(!v.blog, begin)>
+	<@"blog not found!">
 	<$break()>
 <$end>
 

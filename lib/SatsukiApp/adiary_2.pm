@@ -67,8 +67,7 @@ sub load_arts_list {
 	# ロードカラム
 	$h{cols} = [qw(pkey link_key title tags ctype name id yyyymmdd tm update_tm coms coms_all enable)];
 
-	my $blogid = $self->{blogid};
-	my ($logs,$hits) =  $DB->select("${blogid}_art", \%h);
+	my ($logs,$hits) =  $DB->select("art", \%h);
 
 	my %name;
 	my %ctype;
@@ -117,8 +116,7 @@ sub load_coms_list {
 		$h{flag} = {enable => 1};
 	}
 
-	my $blogid = $self->{blogid};
-	my ($logs,$hits) =  $DB->select("${blogid}_com", \%h);
+	my ($logs,$hits) =  $DB->select("com", \%h);
 
 	foreach(@$logs) {
 		$_->{text_nobr} = $_->{text};
@@ -133,38 +131,6 @@ sub load_coms_list {
 	return wantarray ? ($logs,\%ret) : $logs;
 }
 
-#-------------------------------------------------------------------------------
-# ●ブログリストのロード
-#-------------------------------------------------------------------------------
-sub load_blog_list {
-	my ($self, $sort, $rev) = @_;
-	my $ROBJ = $self->{ROBJ};
-	my $DB   = $self->{DB};
-
-	# sortのチェック
-	my %a = ('id'=>1,'arts'=>1,'coms'=>1,'art_tm'=>1,'com_tm'=>1);
-	$sort =~ s/\W//g;
-	if (! $a{$sort}) { $sort='art_tm'; }
-	if ($sort eq '') { $sort='art_tm'; }
-
-	my %h;
-	$h{sort} = [$sort];
-	$h{sort_rev} = [0];
-	$h{no_error} = 1;
-	if ($sort ne 'id')     { $h{sort_rev}->[0] = 1; }
-	if ($sort ne 'art_tm') { $h{sort}->[1] = 'art_tm'; $h{sort_rev}->[1] = $rev;}
-	if ($rev) {
-		$h{sort_rev} = [ map { !$_ } @{$h{sort_rev}} ];
-	}
-	if (! $ROBJ->{Auth}->{isadmin}) { $h{flag} = {private => 0}; }
-
-	my $blogs = $DB->select($self->{bloglist_table}, \%h);
-	foreach(@$blogs) {
-		$_->{url} = $self->get_blog_path($_->{id});
-	}
-	return $blogs;
-}
-
 ################################################################################
 # ■編集・執筆関連
 ################################################################################
@@ -177,7 +143,6 @@ sub edit_article {
 	my $auth = $ROBJ->{Auth};
 
 	# 書き込み権限確認
-	my $blogid = $self->{blogid};
 	my $blog = $self->{blog};
 	if (! $self->{allow_edit}) { $ROBJ->message('Operation not permitted'); return 5; }
 
@@ -226,7 +191,7 @@ sub edit_article {
 	#-----------------------------------------------------------------------
 	# 書き込み
 	#-----------------------------------------------------------------------
-	my ($art, $elink_key) = $self->regist_article($blogid, $form, \%opt);
+	my ($art, $elink_key) = $self->regist_article($form, \%opt);
 	if (!ref($art)) {
 		# エラー
 		return $art;
@@ -278,12 +243,12 @@ sub edit_article {
 #	opt.comment_disable	コメントが非表示になった可能性がある
 #
 sub regist_article {
-	my ($self, $blogid, $form, $opt) = @_;
+	my ($self, $form, $opt) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blog = $self->load_blogset($blogid);
+	my $blog = $self->load_blogset();
 	if (!$blog) {
-		$ROBJ->message("Blog '%s' not found", $blogid);
+		$ROBJ->message("Blog not found");
 		return -1;
 	}
 	$ROBJ->clear_form_error();
@@ -336,7 +301,7 @@ sub regist_article {
 	my $old = {};
 	my $edit_pkey = int($opt->{edit_pkey});
 	if ($edit_pkey) {
-		$old = $DB->select_match_limit1("${blogid}_art", 'pkey', $edit_pkey);
+		$old = $DB->select_match_limit1("art", 'pkey', $edit_pkey);
 		if (! $old) {
 			$ROBJ->form_error('edit_pkey', "Can't find the article (key: %d)", $edit_pkey);
 			return 10;
@@ -373,7 +338,7 @@ sub regist_article {
 		# link_key の重複回避
 		my $cons = $self->load_contents_cache();
 		my %h = map { $cons->{$_}->{link_key} => 1 } keys(%$cons);
-		my $ary = $DB->select("${blogid}_art", {	# 非公開記事
+		my $ary = $DB->select("art", {	# 非公開記事
 			flag => {enable => 0},
 			not_match => {ctype => ''},
 			cols => ['link_key']
@@ -427,7 +392,7 @@ sub regist_article {
 		if ($opt->{save_pkey}) {
 			$pkey = int($opt->{save_pkey});
 		} else {
-			$pkey = $DB->generate_pkey("${blogid}_art");
+			$pkey = $DB->generate_pkey("art");
 			if (!$pkey) {
 				$ROBJ->message('Article post failed');
 				return 9;
@@ -487,7 +452,7 @@ sub regist_article {
 		}
 
 		# パース準備
-		$parser->{thisurl}  = $self->get_blog_path( $blogid ) . $elink_key;
+		$parser->{thisurl}  = $self->{myself2} . $elink_key;
 		$parser->{thispkey} = $pkey;
 		# 識別子の無い見出しに新しい識別子を書き足す（見出しの文字を変えてもIDが変わらないように）
 		if ($parser->can('add_heading_ids')) {
@@ -523,7 +488,7 @@ sub regist_article {
 	# DBに書き込み
 	#-------------------------------------------------------------
 	if ($edit_pkey) {
-		my $r = $DB->update_match("${blogid}_art", \%art, 'pkey', $pkey);
+		my $r = $DB->update_match("art", \%art, 'pkey', $pkey);
 		if (!$r) {
 			$ROBJ->message('Article edit failed');
 			return 11;
@@ -532,12 +497,12 @@ sub regist_article {
 
 		# 本文かタイトルが変わったら、変更前の版を履歴に残す
 		if ($old->{_text} ne $art{_text} || $old->{title} ne $art{title}) {
-			$self->save_revision($blogid, $old);
+			$self->save_revision($old);
 		}
 	} else {
 		$self->set_ip_host_agent(\%art, $form, $opt->{iha_default});
 		$art{pkey} = $pkey;
-		my $r = $DB->insert("${blogid}_art", \%art);
+		my $r = $DB->insert("art", \%art);
 		if (!$r) {
 			$ROBJ->message('Article post failed');
 			return 12;
@@ -556,7 +521,7 @@ sub regist_article {
 
 		# コメントの書き換え
 		if (%update && $old->{coms_all}) {
-			my $r = $DB->update_match("${blogid}_com", \%update, 'a_pkey', $pkey);
+			my $r = $DB->update_match("com", \%update, 'a_pkey', $pkey);
 			if ($r) {
 				$opt->{comment_edit}    = 1;
 				$opt->{comment_disable} = exists($update{enable});
@@ -568,14 +533,14 @@ sub regist_article {
 	# タグ情報の書き換え
 	#-------------------------------------------------------------
 	if ($old->{tags} ne $tags || $old->{enable} != $art{enable}) {
-		my $pkeys = $self->regist_tags($blogid, \@tag);
+		my $pkeys = $self->regist_tags(\@tag);
 		$edit_pkey && $DB->begin();
 		if (ref($pkeys)) {
 			if ($edit_pkey) {
-				$DB->delete_match("${blogid}_tagart", 'a_pkey', $pkey);
+				$DB->delete_match("tagart", 'a_pkey', $pkey);
 			}
 			foreach(@$pkeys) {
-				$DB->insert("${blogid}_tagart", {
+				$DB->insert("tagart", {
 					'a_pkey'   => $pkey,
 					'a_enable' => $art{enable},
 					't_pkey'   => $_
@@ -674,23 +639,23 @@ sub get_main_image_from_input {
 # 追加しない（連続した保存を1つの版にまとめる）。rev_maxを超えた古い版は削除する。
 #
 sub save_revision {
-	my ($self, $blogid, $old) = @_;
+	my ($self, $old) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 	if ($self->{require_update}) { return; }	# 履歴テーブル未作成
 
-	my $blog  = $self->load_blogset($blogid);
+	my $blog  = $self->load_blogset();
 	my $cycle = $blog->{rev_cycle} eq '' ? 180 : int($blog->{rev_cycle});
 	my $max   = $blog->{rev_max}   eq '' ? 120 : int($blog->{rev_max});
 	my $a_pkey= $old->{pkey};
 	my $now   = $ROBJ->{TM};
 
 	if ($cycle > 0) {
-		my $last = $DB->select_match_limit1("${blogid}_rev", 'a_pkey', $a_pkey, '*sort', '-tm', '*cols', ['tm']);
+		my $last = $DB->select_match_limit1("rev", 'a_pkey', $a_pkey, '*sort', '-tm', '*cols', ['tm']);
 		if ($last && $now - $last->{tm} < $cycle * 60) { return; }
 	}
 
-	$DB->insert("${blogid}_rev", {
+	$DB->insert("rev", {
 		a_pkey    => $a_pkey,
 		tm        => $now,
 		update_tm => $old->{update_tm} || $old->{tm},
@@ -700,10 +665,10 @@ sub save_revision {
 
 	# 上限を超えた古い版を削除（0なら無制限）
 	if ($max > 0) {
-		my $revs = $DB->select_match("${blogid}_rev", 'a_pkey', $a_pkey, '*sort', '-tm', '*sort', '-pkey', '*cols', ['pkey']);
+		my $revs = $DB->select_match("rev", 'a_pkey', $a_pkey, '*sort', '-tm', '*sort', '-pkey', '*cols', ['pkey']);
 		if ($#$revs >= $max) {
 			my @del = map { $_->{pkey} } @$revs[$max .. $#$revs];
-			$DB->delete_match("${blogid}_rev", 'pkey', \@del);
+			$DB->delete_match("rev", 'pkey', \@del);
 		}
 	}
 }
@@ -717,7 +682,7 @@ sub load_revisions_json {
 	$a_pkey = int($a_pkey);
 	if (!$a_pkey || !$self->check_editor($a_pkey)) { return; }
 
-	my $revs = $DB->select_match("$self->{blogid}_rev", 'a_pkey', $a_pkey, '*sort', '-tm', '*sort', '-pkey',
+	my $revs = $DB->select_match("rev", 'a_pkey', $a_pkey, '*sort', '-tm', '*sort', '-pkey',
 		'*cols', ['pkey', 'tm', 'update_tm', 'title', '_text']);
 	foreach(@$revs) {
 		my $text = $_->{_text};
@@ -733,7 +698,7 @@ sub load_revisions_json {
 sub load_revision_json {
 	my ($self, $pkey) = @_;
 	my $DB = $self->{DB};
-	my $rev = $DB->select_match_limit1("$self->{blogid}_rev", 'pkey', int($pkey));
+	my $rev = $DB->select_match_limit1("rev", 'pkey', int($pkey));
 	if (!$rev || !$self->check_editor($rev->{a_pkey})) { return; }
 
 	my $ROBJ = $self->{ROBJ};
@@ -750,7 +715,7 @@ sub load_article_now_json {
 	my ($self, $pkey) = @_;
 	$pkey = int($pkey);
 	if (!$pkey || !$self->check_editor($pkey)) { return; }
-	my $art = $self->{DB}->select_match_limit1("$self->{blogid}_art", 'pkey', $pkey);
+	my $art = $self->{DB}->select_match_limit1("art", 'pkey', $pkey);
 	if (!$art) { return; }
 
 	my $ROBJ = $self->{ROBJ};
@@ -787,7 +752,7 @@ my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok 
 sub article_digest {
 	my ($self, $art) = @_;
 	if (!ref $art) {
-		$art = $self->{DB}->select_match_limit1("$self->{blogid}_art", 'pkey', int($art));
+		$art = $self->{DB}->select_match_limit1("art", 'pkey', int($art));
 		if (!$art) { return ''; }
 	}
 	my $str = join("\0", map { $art->{$_} } @DigestCols);
@@ -848,7 +813,7 @@ sub get_main_image_size {
 
 	# save
 	my $DB = $self->{DB};
-	$DB->update_match("$self->{blogid}_art", {
+	$DB->update_match("art", {
 		main_image => "$img?$w,$h"
 	}, 'pkey', $art->{pkey});
 	return $img;
@@ -994,7 +959,7 @@ POST_BODY
 # ●タグの登録とpkeyリストの取得
 #-------------------------------------------------------------------------------
 sub regist_tags {
-	my ($self, $blogid, $tags, $esc_flag) = @_;
+	my ($self, $tags, $esc_flag) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 
@@ -1013,7 +978,7 @@ sub regist_tags {
 			push(@match, $t);
 		}
 	}
-	my $db = $DB->select_match("${blogid}_tag", 'name', \@match, '*cols', ['pkey', 'name']);
+	my $db = $DB->select_match("tag", 'name', \@match, '*cols', ['pkey', 'name']);
 
 	my %name2pkey = map {$_->{'name'} => $_->{'pkey'}} @$db;
 	my @ary;
@@ -1038,7 +1003,7 @@ sub regist_tags {
 			$in{qt} = 0;
 			$in{upnode} = $up==0 ? undef : $up;
 			$in{priority} = $self->{default_tag_priority};
-			my $pkey = $DB->insert("${blogid}_tag", \%in);
+			my $pkey = $DB->insert("tag", \%in);
 			if (!$pkey) {
 				$ROBJ->error("Tag '%s' create fail", $t);
 				return -1;
@@ -1061,22 +1026,21 @@ sub update_taglist {
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 	my $blog = $self->{blog};
-	my $blogid = $blog->{blogid};
 
-	my $ary = $DB->select_match("${blogid}_tagart", 'a_enable', 1);
+	my $ary = $DB->select_match("tagart", 'a_enable', 1);
 	my %tag;
 	foreach(@$ary) {
 		$tag{ $_->{t_pkey} }+=1;
 	}
 	$DB->begin();
 	foreach(keys(%tag)) {
-		$DB->update_match("${blogid}_tag", {qt => $tag{$_}}, 'pkey', $_, '-qt', $tag{$_});
+		$DB->update_match("tag", {qt => $tag{$_}}, 'pkey', $_, '-qt', $tag{$_});
 	}
-	$DB->update_match("${blogid}_tag", {qt => 0}, '-pkey', [ keys(%tag) ], '-qt', 0);
+	$DB->update_match("tag", {qt => 0}, '-pkey', [ keys(%tag) ], '-qt', 0);
 	$DB->commit();
 
 	# タグツリーと、タグキャッシュ生成
-	my $tree = $self->generate_tag_tree($blogid);
+	my $tree = $self->generate_tag_tree();
 
 	# JSONの生成
 	my $json = $self->generate_json($tree->{children}, ['sname', 'pkey', 'qt', 'children'], {sname=>'title', pkey=>'key'});
@@ -1093,21 +1057,21 @@ sub update_taglist {
 # ●タグリストの生成
 #-------------------------------------------------------------------------------
 sub generate_tag_tree {
-	my ($self, $blogid) = @_;
+	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 
 	# 記事のpkeyリスト
 	my @tagarts;
 	{
-		my $ary = $DB->select("${blogid}_tagart");
+		my $ary = $DB->select("tagart");
 		foreach(@$ary) {
 			push(@{ $tagarts[ $_->{t_pkey} ] ||= [] }, $_->{a_pkey});
 		}
 	}
 
 	# 情報ファイルの生成
-	my $tree = $self->load_tag_tree($blogid);
+	my $tree = $self->load_tag_tree();
 	my $all  = $tree->{_all};
 	my @tags;
 	foreach (@$all) {
@@ -1119,7 +1083,7 @@ sub generate_tag_tree {
 				. "\t$_->{priority}\t$children\t$arts\t$_->{name}\n";
 	}
 	@tags = map { defined $_  ? $_ : "\n" } @tags;
-	$ROBJ->fwrite_lines($self->blog_dir($blogid) . "tag_cache.txt", \@tags);
+	$ROBJ->fwrite_lines($self->blog_dir() . "tag_cache.txt", \@tags);
 
 	return $tree;
 }
@@ -1128,10 +1092,10 @@ sub generate_tag_tree {
 # ●タグツリーの取得
 #-------------------------------------------------------------------------------
 sub load_tag_tree {
-	my ($self, $blogid) = @_;
+	my $self = shift;
 	my $DB = $self->{DB};
 
-	my $taglist = $DB->select("${blogid}_tag", { sort=>['priority', 'pkey'] });
+	my $taglist = $DB->select("tag", { sort=>['priority', 'pkey'] });
 	my %tree = map { $_->{pkey} => $_ } @$taglist;
 	$tree{0} = { children => [], _all=>$taglist, root=>1 };	# root node
 
@@ -1166,10 +1130,9 @@ sub update_contents_list {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 
 	# 情報のロード
-	my ($tree, $arts, $pkey_max) = $self->load_contents_tree($blogid);
+	my ($tree, $arts, $pkey_max) = $self->load_contents_tree();
 
 	# キャッシュ保存ディレクトリ
 	my $dir = $self->{blog_dir} . 'arts/';
@@ -1234,7 +1197,7 @@ sub update_contents_list {
 #-------------------------------------------------------------------------------
 # ●参照元の更新
 #-------------------------------------------------------------------------------
-# 本文のリンクを${blogid}_linkに入れ直し、リンク先の記事の参照元のHTML（_art.backlinks）
+# 本文のリンクをlinkテーブルに入れ直し、リンク先の記事の参照元のHTML（_art.backlinks）
 # を作り直す。表示のときはbacklinksを読むだけ（dea_backlinks）。
 # ・$pkeysが配列refなら、その記事のリンクと、その記事が関わる参照元だけを作り直す
 #   それ以外（引数なし、件数が渡されたとき）は、全記事を作り直す
@@ -1244,8 +1207,7 @@ sub update_backlinks {
 	my $self  = shift;
 	my $pkeys = shift;
 	my $DB    = $self->{DB};
-	my $blogid = $self->{blogid};
-	my $table  = "${blogid}_link";
+	my $table  = "link";
 
 	my $all = !ref($pkeys);
 	if (!$all && !@$pkeys) { return 0; }
@@ -1253,10 +1215,10 @@ sub update_backlinks {
 	#-------------------------------------------------------------
 	# リンクの入れ直し
 	#-------------------------------------------------------------
-	my $keys = $DB->select_match("${blogid}_art", '*cols', ['link_key']);
+	my $keys = $DB->select_match("art", '*cols', ['link_key']);
 	my %exists = map { $_->{link_key} => 1 } @$keys;
 
-	my $arts = $DB->select_match("${blogid}_art", ($all ? () : ('pkey', $pkeys)), '*cols', ['pkey', 'link_key', 'text']);
+	my $arts = $DB->select_match("art", ($all ? () : ('pkey', $pkeys)), '*cols', ['pkey', 'link_key', 'text']);
 	my %targets;	# 参照元を作り直す記事のlink_key
 	if ($all) {
 		%targets = %exists;
@@ -1290,21 +1252,21 @@ sub update_backlinks {
 	my @keys = grep { $exists{$_} } keys(%targets);
 	if (!@keys) { return $r; }
 
-	my $dsts  = $DB->select_match("${blogid}_art", 'link_key', \@keys, '*cols', ['pkey', 'link_key', 'ctype', 'backlinks']);
+	my $dsts  = $DB->select_match("art", 'link_key', \@keys, '*cols', ['pkey', 'link_key', 'ctype', 'backlinks']);
 	my $links = $DB->select_match($table, 'link_key', \@keys, '*cols', ['a_pkey', 'link_key']);
 	my %from;	# link_key => { リンク元のpkey => 1 }
 	foreach(@$links) {
 		$from{ $_->{link_key} }->{ $_->{a_pkey} } = 1;
 	}
 	my %src = map { $_->{a_pkey} => 1 } @$links;
-	my $srcs = %src ? $DB->select("${blogid}_art", {
+	my $srcs = %src ? $DB->select("art", {
 		match    => { pkey => [ keys(%src) ], enable => 1, ctype => '' },
 		cols     => ['pkey', 'link_key', 'title', 'yyyymmdd', 'tm'],
 		sort     => ['yyyymmdd', 'tm'],
 		sort_rev => [1, 1]
 	}) : [];
 
-	my $path = $self->get_blog_path( $blogid );
+	my $path = $self->{myself2};
 	foreach(@$srcs) {
 		$self->post_process_link_key( $_ );
 		$_->{html} = "<li><a href=\"$path$_->{elink_key}\">$_->{title}</a></li>\n";
@@ -1315,7 +1277,7 @@ sub update_backlinks {
 		my $from = $from{ $dst->{link_key} } || {};
 		my $html = $dst->{ctype} ne '' ? '' : join('', map { $_->{html} } grep { $from->{ $_->{pkey} } } @$srcs);
 		if ($html eq $dst->{backlinks}) { next; }
-		$DB->update_match("${blogid}_art", { backlinks => $html }, 'pkey', $dst->{pkey});
+		$DB->update_match("art", { backlinks => $html }, 'pkey', $dst->{pkey});
 	}
 	$r += $DB->commit();
 	return $r;
@@ -1328,7 +1290,7 @@ sub update_backlinks {
 #		これ以外は、まだ無いブログ記事のlink_key（"0"+pkey）の形のものだけ残す
 sub extract_link_keys {
 	my ($self, $text, $exists) = @_;
-	my $path = $self->get_blog_path( $self->{blogid} );
+	my $path = $self->{myself2};
 	my @base = ($path);
 	if ($path =~ m|^/|) { unshift(@base, $self->{ROBJ}->{ServerURL} . $path); }
 
@@ -1380,13 +1342,13 @@ sub generate_blog_json {
 # ●コンテンツツリーの取得
 #-------------------------------------------------------------------------------
 sub load_contents_tree {
-	my ($self, $blogid) = @_;
+	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blog = $self->load_blogset($blogid);
+	my $blog = $self->load_blogset();
 
 	# 全記事を取得
-	my $ary = $DB->select_match("${blogid}_art",
+	my $ary = $DB->select_match("art",
 		'enable', 1,
 		'*sort', 'yyyymmdd',
 		'*sort', 'tm',
@@ -1419,7 +1381,7 @@ sub load_contents_tree {
 	foreach(qw(FrontPage top index)) {
 		if ($lkeys{$_}) { $fp=$_; last; }
 	}
-	$self->update_blogset($blogid, 'frontpage', $fp);
+	$self->update_blogset($blog, 'frontpage', $fp);
 
 	# 前後リンクの生成
 	my @cons;
@@ -1466,7 +1428,6 @@ sub generate_rss {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $blog = $self->{blog};
-	my $blogid = $self->{blogid};
 
 	# 文字コード変換
 	my $jcode = $ROBJ->load_codepm();
@@ -1530,7 +1491,7 @@ sub load_arts_for_rss {
 	if ($opt->{tag}) {
 		$query->{t} = [ $opt->{tag} ];
 	}
-	my $logs = $self->load_articles( $self->{blogid}, '', $query, $opt );
+	my $logs = $self->load_articles( '', $query, $opt );
 
 	#---------------------------------------------------
 	# RSSのタグエスケーパー
@@ -1584,7 +1545,6 @@ sub post_comment {
 	my $ROBJ = $self->{ROBJ};
 	my $auth = $ROBJ->{Auth};
 	my $blog = $self->{blog};
-	my $blogid = $self->{blogid};
 	if (! $self->{allow_com}) { $ROBJ->message('Operation not permitted'); return 5; }
 
 	# 記事を確認
@@ -1618,7 +1578,7 @@ sub post_comment {
 		my $reason;
 		($reason, $hold) = $self->check_comment_spam($form, $a_pkey);
 		if ($reason) {
-			warn "コメントに失敗しました（$reason）: blog=$blogid, a_pkey=$a_pkey, ip=$ENV{REMOTE_ADDR}\n";
+			warn "コメントに失敗しました（$reason）: a_pkey=$a_pkey, ip=$ENV{REMOTE_ADDR}\n";
 			$ROBJ->message('Comment post failed. Please reload the page and try again later.');
 			return 9;
 		}
@@ -1647,14 +1607,14 @@ sub post_comment {
 	if ($er) { return $er; }
 
 	# コメントの登録
-	my ($r,$pkey) = $self->regist_comment($blogid, $form, $art);
+	my ($r,$pkey) = $self->regist_comment($form, $art);
 	if ($r) {
 		return $r;	# error
 	}
 	$form->{pkey} = $pkey;
 
 	# コメント数記録
-	$self->calc_comments($blogid, $a_pkey);
+	$self->calc_comments($a_pkey);
 
 	# コメント投稿後イベント
 	$self->call_event('COMMENT_AFTER', $form, $art);
@@ -1725,7 +1685,7 @@ sub check_comment_spam {
 		if ($self->match_ip_rules($ip, $blog->{com_block_ips})) { return 'blocked_ip'; }
 
 		if ($s{com_rate_count}) {
-			my $coms = $DB->select("$self->{blogid}_com", {
+			my $coms = $DB->select("com", {
 				match => { ip => $ip },
 				min   => { tm => $ROBJ->{TM} - $s{com_rate_min}*60 },
 				cols  => ['pkey']
@@ -1924,7 +1884,7 @@ sub normalize_comment_spam_setting {
 # 以下に信頼できない情報が入力されないように注意すること。
 #
 sub regist_comment {
-	my ($self, $blogid, $form, $art, $opt) = @_;
+	my ($self, $form, $art, $opt) = @_;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 
@@ -1954,7 +1914,7 @@ sub regist_comment {
 
 	# 記事情報がなければロード
 	if (!$art) {
-		my $art = $self->load_article($blogid, "0" . int($art->{a_pkey}));
+		my $art = $self->load_article("0" . int($art->{a_pkey}));
 		if (!$art) {
 			$ROBJ->message('a_pkey', "Article '0%d' not found", int($art->{a_pkey}));
 			return 11;
@@ -1998,7 +1958,7 @@ sub regist_comment {
 		if ($pkey) { $com{pkey} = $pkey; }
 	}
 
-	my $com_pkey = $DB->insert("${blogid}_com", \%com);
+	my $com_pkey = $DB->insert("com", \%com);
 	if (!$com_pkey) {
 		$ROBJ->message('Comment post failed');
 		return 20;
@@ -2010,27 +1970,27 @@ sub regist_comment {
 # ●コメント数を計算し記録（コメント番号も設定）
 #-------------------------------------------------------------------------------
 sub calc_comments {
-	my ($self, $blogid, $a_pkey) = @_;
+	my ($self, $a_pkey) = @_;
 	my $DB = $self->{DB};
 
 	my %h;
 	$h{match} = {a_pkey => $a_pkey};
 	$h{cols}  = ['pkey', 'enable', 'num'];
 	$h{sort}  = ['pkey'];
-	my $com = $DB->select("${blogid}_com", \%h);
+	my $com = $DB->select("com", \%h);
 	my $c = 0;
 	my $num=0;
 	foreach(@$com) {
 		if ($_->{enable}) { $c++; }
 		if ($_->{num}) { $num=$_->{num}; next; }
 		# コメント番号が未定義
-		$DB->update_match("${blogid}_com", {num => ++$num}, 'pkey', $_->{pkey});
+		$DB->update_match("com", {num => ++$num}, 'pkey', $_->{pkey});
 	}
 
 	my %update;
 	$update{coms}     = $c;
 	$update{coms_all} = $#$com + 1;
-	return $DB->update_match("${blogid}_art", \%update, 'pkey', $a_pkey);
+	return $DB->update_match("art", \%update, 'pkey', $a_pkey);
 }
 
 #-------------------------------------------------------------------------------
@@ -2063,34 +2023,21 @@ sub remove_newcom_flag {
 #-------------------------------------------------------------------------------
 sub update_bloginfo_article {
 	my $self = shift;
-	my $blogid = $self->{blogid};
 	my $DB = $self->{DB};
 
-	my ($ary,$hits) = $DB->select("${blogid}_art",{
+	my ($ary,$hits) = $DB->select("art",{
 		flag     => { enable => 1 },
-		cols     => [ 'title', 'tm' ],
-		sort     => [ 'yyyymmdd', 'tm' ],
-		sort_rev => [ 1, 1 ],
+		cols     => [ 'pkey' ],
 		limit    => 1
 	});
 
-	my $darts = $DB->select_by_group("${blogid}_art", {
+	my $darts = $DB->select_by_group("art", {
 		flag     => { enable => 0 }
 	});
 
-	my %up;
-	if ($ary && @$ary) {
-		$up{newest_title} = $ary->[0]->{title};
-		$up{arts}   = $hits;
-		$up{art_tm} = $ary->[0]->{tm};
-	} else {
-		$up{newest_title} = undef;
-		$up{arts}   = 0;
-		$up{art_tm} = 0;
-	}
-	$self->update_blogset($blogid, 'arts',  $up{arts} );
-	$self->update_blogset($blogid, 'darts', $darts->[0]->{_count});
-	$self->update_bloginfo($blogid, \%up);
+	my $blog = $self->load_blogset();
+	$self->update_blogset($blog, 'arts',  ($ary && @$ary) ? $hits : 0);
+	$self->update_blogset($blog, 'darts', $darts->[0]->{_count});
 }
 
 #-------------------------------------------------------------------------------
@@ -2098,48 +2045,22 @@ sub update_bloginfo_article {
 #-------------------------------------------------------------------------------
 sub update_bloginfo_comment {
 	my $self = shift;
-	my $blogid = $self->{blogid};
 	my $DB = $self->{DB};
 
-	my ($ary,$hits) = $DB->select("${blogid}_com",{
+	my ($ary,$hits) = $DB->select("com",{
 		flag     => { enable => 1 },
-		cols     => [ 'tm' ],
-		sort     => 'tm',
-		sort_rev => 1,
+		cols     => [ 'pkey' ],
 		limit    => 1
 	});
-
-	my %up;
-	if ($ary && @$ary) {
-		$up{coms}   = $hits;
-		$up{com_tm} = $ary->[0]->{tm};
-	} else {
-		$up{coms}   = 0;
-		$up{com_tm} = 0;
-	}
-	$self->update_blogset($blogid, 'coms', $up{coms});
-	$self->update_bloginfo($blogid, \%up);
-}
-
-#-------------------------------------------------------------------------------
-# ●ブログ管理テーブルの更新
-#-------------------------------------------------------------------------------
-sub update_bloginfo {
-	my ($self, $blogid, $update) = @_;
-	my $ROBJ = $self->{ROBJ};
-
-	$update->{tm} = $ROBJ->{TM};
-	my $r  = $self->{DB}->update_match($self->{bloglist_table}, $update, 'id', $blogid);
-	if (!$r) { return 2; }	# Fail
-	return 0;		# Success
+	$self->update_blogset($self->load_blogset(), 'coms', ($ary && @$ary) ? $hits : 0);
 }
 
 #-------------------------------------------------------------------------------
 # ●ブログの設定の変更
 #-------------------------------------------------------------------------------
 sub update_blogset {
-	my ($self, $blogid, $k, $v) = @_;
-	my $blog = ref($blogid) ? $blogid : $self->load_blogset($blogid);
+	my ($self, $blog, $k, $v) = @_;
+	$blog = $self->load_blogset() if (!ref($blog));
 	$self->update_hash( $blog, $k, $v );
 	$blog->{_update}=1;
 }
@@ -2163,7 +2084,6 @@ sub update_plgset {
 	foreach(keys(%$h)) {
 		$up{"$head:$_"} = $h->{$_};
 	}
-	delete $up{_blogid};
 	$self->update_cur_blogset(\%up);
 }
 
@@ -2282,7 +2202,7 @@ sub check_view_pass {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $pass = $self->{view_pass};
-	my $ckey = 'view-pass-' . $self->{blogid};
+	my $ckey = 'view-pass';
 
 	# cookie
 	my $cpass = $ROBJ->get_cookie()->{$ckey};
@@ -2321,7 +2241,7 @@ sub mainte_mode {
 		$ROBJ->set_status(503);
 		$self->{skeleton} = '_sub/maintenance_msg';
 	} else {
-		$self->set_and_select_blog_force('');
+		$self->unselect_blog();
 	}
 	return;
 }
@@ -2378,11 +2298,10 @@ sub load_parser {
 	my $name = shift;
 	if ($name =~ /\W/) { return; }
 
-	my $cid = $self->{blogid} . $name;
 	my $cache = $self->{__parser_cache} ||= {};
-	if ($cache->{$cid}) { return $cache->{$cid}; }
+	if ($cache->{$name}) { return $cache->{$name}; }
 
-	return ($cache->{$cid} = $self->{ROBJ}->call( '_parser/' . $name ));
+	return ($cache->{$name} = $self->{ROBJ}->call( '_parser/' . $name ));
 }
 
 #-------------------------------------------------------------------------------

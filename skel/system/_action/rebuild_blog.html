@@ -1,11 +1,11 @@
 <@20>
 <$ifbreak(! Auth.isadmin)>
 
-<$action_return = v.remake_all_custom_css()>
+<$action_return = v.rebuild_blog()>
 
 POST成功時の処理
 <$ifexec(action_return eq '0', begin)>
-	<$message('すべてのブログのカスタムCSSを再生成しました')>
+	<$message('全記事を再構築しました')>
 	<$url = v.myself .'?'. v.query0>
 	<$jump('_sub/reload_message', url)>
 <$end>

@@ -9,7 +9,7 @@ sub {
 	my $DB   = $self->{DB};
 
 	if ($self->{event_name} ne 'CONTENT_STATE_CHANGE') {
-		$root = $self->load_contents_tree( $self->{blogid} );
+		$root = $self->load_contents_tree();
 	}
 
 	# コンテンツキーの加工

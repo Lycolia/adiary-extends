@@ -6,7 +6,6 @@ sub {
 	my $name = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 
 	my $num = $self->load_plgset($name, 'displays') || 5;
 	my $blog_only  = $self->load_plgset($name, 'blog_only');
@@ -21,7 +20,7 @@ sub {
 	if ($self->{blog}->{separate_blog}) {
 		$h->{match} = { priority => 0 };
 	}
-	my $ary = $DB->select("${blogid}_art", $h);
+	my $ary = $DB->select("art", $h);
 
 	foreach(@$ary) {
 		$self->post_process_article($_);

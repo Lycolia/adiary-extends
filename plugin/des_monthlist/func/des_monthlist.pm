@@ -6,7 +6,6 @@ sub {
 	my $name = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
-	my $blogid = $self->{blogid};
 
 	my $h = {
 		flag     => { enable => 1 },
@@ -15,7 +14,7 @@ sub {
 	if ($self->{blog}->{separate_blog}) {
 		$h->{match} = { priority => 0 };
 	}
-	my $ary = $DB->select("${blogid}_art", $h);
+	my $ary = $DB->select("art", $h);
 
 	my %yyyymm;
 	foreach(@$ary) {

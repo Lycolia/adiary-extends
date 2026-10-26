@@ -83,108 +83,35 @@ sub _ajax_self_change_pass {
 #-------------------------------------------------------------------------------
 # ●ブログを作る
 #-------------------------------------------------------------------------------
+# ブログは1つだけ。まだ無いときに、システム管理者だけが作れる
 sub blog_create {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
-	my $DB   = $self->{DB};
 	my $auth = $ROBJ->{Auth};
-	my $id   = shift;
-	my $opt  = shift;
-	my $copy_id = $opt->{copy_id};
 
 	if (! $auth->{ok}) { $ROBJ->message('Not login'); return 1; }
-	if ($self->{sys}->{blog_create_root_only} && ! $auth->{isadmin}) {
+	if (! $auth->{isadmin}) {
 		$ROBJ->message('Operation not permitted');
 		return 5;
 	}
-	if (! $auth->{isadmin}) {
-		$id = $auth->{id};
-		$copy_id = undef;
-	}
-	if ($copy_id && !$self->find_blog($copy_id)) {
-		$ROBJ->message("Can't find copy blog id '%s'", $copy_id);
-		return 20;
-	}
-	# blogidの確認
-	if (! $auth->{isadmin}) {
-		$id = $auth->{id};
-	} elsif ($id =~ /[^a-z0-9_]/ || $id !~ /^[a-z]/) {
-		$ROBJ->message("Can't allow character used");
-		return 9;
-	}
-	if ($self->find_blog($id)) {
-		$ROBJ->message('Blog `%s` already existed',$id);
+	if ($self->exists_blog()) {
+		$ROBJ->message('Blog already existed');
 		return 10;
 	}
 
 	# データベーステーブル生成
-	my $r = $self->create_tables($id);
+	my $r = $self->create_tables();
 	if ($r) {
 		$ROBJ->message('Blog create failed');
-		$self->drop_tables($id);
-	} else {
-		# ディレクトリの作成
-		$ROBJ->mkdir( "$self->{data_dir}blog/" );
-		if (!$copy_id) {
-			$ROBJ->mkdir( $self->blog_dir   ( $id ) );
-			$ROBJ->mkdir( $self->blogpub_dir( $id ) );
-		}
-		# キャッシュ除去
-		delete $self->{_cache_find_blog}->{$id};
+		$self->drop_tables();
+		return $r;
 	}
-
-	if ($r || !$copy_id) { return $r; }
-
-	# ブログデータのコピー
-	$ROBJ->dir_copy( $self->blog_dir   ( $copy_id ), $self->blog_dir   ( $id ) );
-	$ROBJ->dir_copy( $self->blogpub_dir( $copy_id ), $self->blogpub_dir( $id ) );
-
-	# データコピーはプラグインインストール後に
-	my $current = $self->{blogid};
-	my $blog    = $self->set_and_select_blog( $id );
-	if ($blog->{private}) {
-		my $postfix = $self->change_blogpub_dir_postfix( $id );
-		if ($postfix) {
-			$self->update_blogset($blog, 'blogpub_dir_postfix', $postfix);
-			$self->{blogpub_dir} = $self->blogpub_dir();
-		}
-	}
-	
-	# アルバム初期化
-	if ($opt->{clear_image}) {
-		my $imgdir = $self->blogimg_dir();
-		$ROBJ->dir_delete($imgdir);
-	}
-
-	# 再構築
-	$self->copy_tables($copy_id, $id);
-	$self->save_blogset($blog, $id);
-	$self->reinstall_plugins();
-	$self->rebuild_blog();
-
-	$self->set_and_select_blog_force( $current );
-	return $r;
-}
-
-#-------------------------------------------------------------------------------
-# ●ブログの削除
-#-------------------------------------------------------------------------------
-sub blog_drop {
-	my ($self) = @_;
-	my $ROBJ   = $self->{ROBJ};
-	my $blogid = $self->{blogid};
-	if (! $self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
-
-	my $r = $self->drop_tables($blogid);
-	if ($r) { $ROBJ->message('Blog delete failed'); return $r; }
-
-	# 内部変数の初期化
-	delete $self->{_cache_find_blog}->{$blogid};
-	$self->set_and_select_blog('');
-
-	# ユーザーディレクトリの消去
-	$ROBJ->dir_delete($self->blog_dir   ($blogid));
-	$ROBJ->dir_delete($self->blogpub_dir($blogid));
+	# ディレクトリの作成
+	$ROBJ->mkdir( $self->blog_dir() );
+	$ROBJ->mkdir( $self->blogpub_dir() );
+	# キャッシュ除去して選択
+	delete $self->{_cache_exists_blog};
+	$self->select_blog();
 
 	return 0;
 }
@@ -196,14 +123,13 @@ sub blog_clear {
 	my ($self) = @_;
 	my $ROBJ   = $self->{ROBJ};
 	my $DB     = $self->{DB};
-	my $blogid = $self->{blogid};
 	if (! $self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
 
 	# テーブルから記事などの削除
-	$DB->delete_match("${blogid}_com");
-	$DB->delete_match("${blogid}_tagart");
-	$DB->delete_match("${blogid}_tag");
-	$DB->delete_match("${blogid}_art");
+	$DB->delete_match("com");
+	$DB->delete_match("tagart");
+	$DB->delete_match("tag");
+	$DB->delete_match("art");
 
 	# イベント処理
 	$self->call_event('BLOG_CLEAR');
@@ -227,20 +153,7 @@ sub rebuild_blog {
 	my $DB   = $self->{DB};
 	if (! $self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
 
-	my $blogid = $self->{blogid};
-
-	# trust_mode解除処理
-	my $t = $self->{trust_mode};
-	local($self->{trust_mode}) = $t;
-	if ($self->{admin_trust_mode} && $t) {
-		my $auth = $ROBJ->{Auth};
-		my $user = $auth->sudo('load_user_info', $blogid);
-		if ($user && !$user->{isadmin}) {
-			$self->{trust_mode} = 0;
-		}
-	}
-
-	my $arts = $opt->{logs} || $DB->select_match("${blogid}_art", '*cols', ['pkey', '_text', 'parser', 'yyyymmdd', 'tm', 'link_key']);
+	my $arts = $opt->{logs} || $DB->select_match("art", '*cols', ['pkey', '_text', 'parser', 'yyyymmdd', 'tm', 'link_key']);
 	my $filter = $opt->{filter};
 	my %update;
 	my $r=0;
@@ -261,7 +174,7 @@ sub rebuild_blog {
 
 		# パース準備
 		$self->post_process_link_key( $_ );
-		$parser->{thisurl}  = $self->get_blog_path( $blogid ) . $_->{elink_key};
+		$parser->{thisurl}  = $self->{myself2} . $_->{elink_key};
 		$parser->{thispkey} = $_->{pkey};
 		my ($text, $text_s) = $parser->parse( $_->{_text} );
 		if ($text eq $text_s) { $text_s=""; }
@@ -289,7 +202,7 @@ sub rebuild_blog {
 	#---------------------------------------------------
 	$DB->begin();
 	foreach(keys(%update)) {
-		$DB->update_match("${blogid}_art", $update{$_}, 'pkey', $_);
+		$DB->update_match("art", $update{$_}, 'pkey', $_);
 	}
 	$r += $DB->commit();
 
@@ -332,21 +245,20 @@ sub tagart_rebuild {
 	my $DB   = $self->{DB};
 	if (!$self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
 
-	my $blogid = $self->{blogid};
-	my $ary = $DB->select_match("${blogid}_art",
+	my $ary = $DB->select_match("art",
 			'*cols', ['pkey', 'enable', 'tags']
 		);
 
 	$DB->begin();
-	$DB->delete_match("${blogid}_tagart");
+	$DB->delete_match("tagart");
 	foreach my $art (@$ary) {
 		my $tag = $art->{tags};
 		if ($tag eq '') { next; }
 
-		my $pkeys = $self->regist_tags($blogid, [split(',', $tag)]);
+		my $pkeys = $self->regist_tags([split(',', $tag)]);
 		$pkeys = ref($pkeys) ? $pkeys : [];
 		foreach(@$pkeys) {
-			$DB->insert("${blogid}_tagart", {
+			$DB->insert("tagart", {
 				'a_pkey'   => $art->{pkey},
 				'a_enable' => $art->{enable},
 				't_pkey'   => $_
@@ -502,81 +414,6 @@ sub remake_theme_custom_css {
 }
 
 ################################################################################
-# ■全ブログに対する処理
-################################################################################
-#-------------------------------------------------------------------------------
-# 全ブログの再構築
-#-------------------------------------------------------------------------------
-sub rebuild_all_blogs {
-	my $self = shift;
-	return $self->do_all_blogs('rebuild_blog', @_);
-}
-
-#-------------------------------------------------------------------------------
-# 全ブログ付加情報の再構築
-#-------------------------------------------------------------------------------
-sub rebuild_all_blogs_info {
-	my $self = shift;
-	return $self->do_all_blogs('blog_info_rebuild');
-}
-
-#-------------------------------------------------------------------------------
-# 全ブログの全プラグインを再インストール
-#-------------------------------------------------------------------------------
-sub reinstall_all_plugins {
-	my $self = shift;
-
-	$self->{stop_plugin_install_msg} = 1;
-	my $r = $self->do_all_blogs('reinstall_plugins');
-	$self->{stop_plugin_install_msg} = 0;
-
-	return $r;
-}
-
-#-------------------------------------------------------------------------------
-# 全ブログのカスタムCSS再設定
-#-------------------------------------------------------------------------------
-sub remake_all_custom_css {
-	my $self = shift;
-	return $self->do_all_blogs('remake_theme_custom_css');
-}
-
-#-------------------------------------------------------------------------------
-# ●全ブログに対する処理
-#-------------------------------------------------------------------------------
-sub do_all_blogs {
-	my $self = shift;
-	my $func = shift;
-	my $ROBJ = $self->{ROBJ};
-	my $auth = $ROBJ->{Auth};
-	if (! $auth->{isadmin} ) { $ROBJ->message('Operation not permitted'); return 5; }
-
-	my $blogs = $self->load_all_blogid();
-	my $cur_blogid = $self->{blogid};
-	foreach(@$blogs) {
-		$self->set_and_select_blog($_);
-		if (ref($func)) {
-			&$func($self, @_);
-		} else {
-			$self->$func(@_);
-		}
-	}
-	$self->set_and_select_blog($cur_blogid);
-	return 0;
-}
-
-#-------------------------------------------------------------------------------
-# ●全ブログidのロード
-#-------------------------------------------------------------------------------
-sub load_all_blogid {
-	my $self = shift;
-	my $DB   = $self->{DB};
-	my $blogs = $DB->select_match($self->{bloglist_table}, '*cols', 'id');
-	$blogs = [ map { $_->{id} } @$blogs ];
-	return $blogs;
-}
-
-################################################################################
 # ■HTMLキャッシュ処理
 ################################################################################
 my %CACHE;
@@ -664,12 +501,12 @@ sub clear_cache {
 # ●ブログテーブルの作成
 #-------------------------------------------------------------------------------
 sub create_tables {
-	my ($self, $table) = @_;
+	my $self = shift;
 	my $DB = $self->{DB};
 	my $r=0;
 
   { # 記事テーブル
-	$r = $DB->create_table_wrapper("${table}_art", $self->art_table_info($table));
+	$r = $DB->create_table_wrapper("art", $self->art_table_info());
 	if ($r) { return 100 + $r; }
   }
 
@@ -680,8 +517,8 @@ sub create_tables {
 	$info{idx}     = [ qw(name qt upnode priority) ];
 	$info{unique}  = [ qw(name) ];
 	$info{notnull} = [ qw(name qt priority) ];
-	$info{ref}     = { upnode => "${table}_tag.pkey" };
-	$r = $DB->create_table_wrapper("${table}_tag", \%info);
+	$info{ref}     = { upnode => "tag.pkey" };
+	$r = $DB->create_table_wrapper("tag", \%info);
 	if ($r) { return 200 + $r; }
   }
 
@@ -691,30 +528,27 @@ sub create_tables {
 	$info{flag}    = [ qw(a_enable) ];
 	$info{idx}     = [ qw(a_pkey t_pkey a_enable) ];
 	$info{notnull} = [ qw(a_pkey t_pkey a_enable) ];
-	$info{ref}     = { a_pkey => "${table}_art.pkey", t_pkey => "${table}_tag.pkey"  };
-	$r = $DB->create_table_wrapper("${table}_tagart", \%info);
+	$info{ref}     = { a_pkey => "art.pkey", t_pkey => "tag.pkey"  };
+	$r = $DB->create_table_wrapper("tagart", \%info);
 	if ($r) { return 300 + $r; }
   }
 
   { # コメントテーブル
-	$r = $DB->create_table_wrapper("${table}_com", $self->com_table_info($table));
+	$r = $DB->create_table_wrapper("com", $self->com_table_info());
 	if ($r) { return 800 + $r; }
   }
 
 	# 記事の更新履歴テーブル
-	$r = $self->create_rev_table($table);
+	$r = $self->create_rev_table();
 	if ($r) { return 900 + $r; }
 
 	# 記事のリンクテーブル
-	$r = $self->create_link_table($table);
+	$r = $self->create_link_table();
 	if ($r) { return 1100 + $r; }
 
 	# ゴミ箱テーブル
-	$r = $self->create_trash_tables($table);
+	$r = $self->create_trash_tables();
 	if ($r) { return 1000 + $r; }
-
-	# ブログリストに登録
-	$self->insert_bloglist($table);
 
 	return 0;
 } # End of create_table
@@ -726,7 +560,7 @@ sub create_tables {
 #   既存ブログにカラムを追加するとき（sys_update_* の add_column）は、
 #   ゴミ箱テーブル（_trash, _trashcom）にも同じカラムを追加すること。
 sub art_table_info {
-	my ($self, $table) = @_;
+	my $self = shift;
 	my %info;
 	$info{text}    = [ qw(title parser tags name id ip host agent link_key ctype main_image description backlinks) ];
 	$info{ltext}   = [ qw(text text_s _text) ];
@@ -736,11 +570,11 @@ sub art_table_info {
 	$info{idx_tdb} = [ qw(title tags) ];
 	$info{unique}  = [ qw(link_key) ];
 	$info{notnull} = [ qw(enable com_ok hcom_ok coms coms_all yyyymmdd link_key) ];
-	$info{ref}     = { };	# upnode => "${table}_art.pkey" をすると記事が削除できなくなる
+	$info{ref}     = { };	# upnode => "art.pkey" をすると記事が削除できなくなる
 	return \%info;
 }
 sub com_table_info {
-	my ($self, $table) = @_;
+	my $self = shift;
 	my %info;
 	$info{text}    = [ qw(text email url name id ip host agent a_title a_elink_key) ];
 	$info{int}     = [ qw(tm num a_pkey a_yyyymmdd) ];
@@ -749,7 +583,7 @@ sub com_table_info {
 	$info{idx_tdb} = [ qw(ip num a_yyyymmdd hidden) ];
 	$info{unique}  = [ ];
 	$info{notnull} = [ qw(enable hidden text tm a_pkey a_yyyymmdd) ];
-	$info{ref}     = { a_pkey => "${table}_art.pkey" };
+	$info{ref}     = { a_pkey => "art.pkey" };
 	return \%info;
 }
 # 定義からカラム名の一覧を得る
@@ -764,10 +598,10 @@ sub table_info_cols {
 # 記事テーブル、コメントテーブルと同じカラム構成。pkeyは元の記事/コメントのpkey。
 # 同じcontent keyの記事を複数入れられるよう、unique制約や参照制約は付けない。
 sub create_trash_tables {
-	my ($self, $table) = @_;
+	my $self = shift;
 	my $DB = $self->{DB};
 
-	my $art = $self->art_table_info($table);
+	my $art = $self->art_table_info();
 	push(@{ $art->{int}  }, 'deleted_tm');	# 削除日時
 	push(@{ $art->{text} }, 'deleted_id');	# 削除したユーザー
 	$art->{idx}     = [ qw(id deleted_tm) ];
@@ -775,16 +609,16 @@ sub create_trash_tables {
 	$art->{unique}  = [ ];
 	$art->{notnull} = [ ];
 	$art->{ref}     = { };
-	my $r = $DB->create_table_wrapper("${table}_trash", $art);
+	my $r = $DB->create_table_wrapper("trash", $art);
 	if ($r) { return 10 + $r; }
 
-	my $com = $self->com_table_info($table);
+	my $com = $self->com_table_info();
 	$com->{idx}     = [ qw(a_pkey) ];
 	$com->{idx_tdb} = [ ];
 	$com->{unique}  = [ ];
 	$com->{notnull} = [ ];
 	$com->{ref}     = { };
-	$r = $DB->create_table_wrapper("${table}_trashcom", $com);
+	$r = $DB->create_table_wrapper("trashcom", $com);
 	if ($r) { return 20 + $r; }
 	return 0;
 }
@@ -796,7 +630,7 @@ sub create_trash_tables {
 # update_tm その版が保存された日時
 # ※記事を削除しても履歴は残す（ゴミ箱から戻すため）ので、記事pkeyへの参照は張らない
 sub create_rev_table {
-	my ($self, $table) = @_;
+	my $self = shift;
 	my %info;
 	$info{text}    = [ qw(title) ];
 	$info{ltext}   = [ qw(_text) ];
@@ -804,7 +638,7 @@ sub create_rev_table {
 	$info{idx}     = [ qw(a_pkey tm) ];
 	$info{notnull} = [ qw(a_pkey tm) ];
 	$info{ref}     = { };
-	return $self->{DB}->create_table_wrapper("${table}_rev", \%info);
+	return $self->{DB}->create_table_wrapper("rev", \%info);
 }
 
 #-------------------------------------------------------------------------------
@@ -814,118 +648,35 @@ sub create_rev_table {
 # link_key  リンク先の記事のlink_key（まだ無い記事も持っておく）
 # ※参照元の生成に使う（update_backlinks）。記事を削除した後に消すので、参照は張らない
 sub create_link_table {
-	my ($self, $table) = @_;
+	my $self = shift;
 	my %info;
 	$info{text}    = [ qw(link_key) ];
 	$info{int}     = [ qw(a_pkey) ];
 	$info{idx}     = [ qw(a_pkey link_key) ];
 	$info{notnull} = [ qw(a_pkey link_key) ];
 	$info{ref}     = { };
-	return $self->{DB}->create_table_wrapper("${table}_link", \%info);
+	return $self->{DB}->create_table_wrapper("link", \%info);
 }
 
 #-------------------------------------------------------------------------------
 # ●ブログテーブルの削除
 #-------------------------------------------------------------------------------
 sub drop_tables {
-	my ($self, $table) = @_;
+	my $self = shift;
 	my $DB = $self->{DB};
 
-	my $r = 0;	# blog_create の copy も変更するの忘れず
-	$r += $DB->drop_table("${table}_link");
-	$r += $DB->drop_table("${table}_trashcom");
-	$r += $DB->drop_table("${table}_trash");
-	$r += $DB->drop_table("${table}_rev");
-	$r += $DB->drop_table("${table}_com");
-	$r += $DB->drop_table("${table}_tagart");
-	$r += $DB->drop_table("${table}_tag");
-	$r += $DB->drop_table("${table}_art");
+	my $r = 0;
+	$r += $DB->drop_table("link");
+	$r += $DB->drop_table("trashcom");
+	$r += $DB->drop_table("trash");
+	$r += $DB->drop_table("rev");
+	$r += $DB->drop_table("com");
+	$r += $DB->drop_table("tagart");
+	$r += $DB->drop_table("tag");
+	$r += $DB->drop_table("art");
 
-	# ブログリストから削除
-	$self->delete_bloglist($table);
 
 	return $r;
-}
-
-#-------------------------------------------------------------------------------
-# ●ブログテーブルのコピー
-#-------------------------------------------------------------------------------
-sub copy_tables {
-	my ($self, $src, $des) = @_;
-	my $DB = $self->{DB};
-
-	my @tables = qw(_art _tag _tagart _com _rev _trash _trashcom);
-	$DB->begin();
-	foreach my $table (@tables) {
-		my $items = $DB->select("${src}$table");
-		foreach(@$items) {
-			$DB->insert("${des}$table", $_);
-		}
-	}
-	$DB->commit();
-}
-
-################################################################################
-# ■ブログ管理テーブル
-################################################################################
-#-------------------------------------------------------------------------------
-# ●ブログ管理テーブルへ追加
-#-------------------------------------------------------------------------------
-sub insert_bloglist {
-	my ($self, $blogid) = @_;
-	my $DB = $self->{DB};
-
-	if (!$DB->find_table($self->{bloglist_table})) {
-		my $r = $self->create_bloglist_table();
-		if ($r) { return 1; }		# error
-	}
-
-	my $ROBJ = $self->{ROBJ};
-	my $auth = $ROBJ->{Auth};
-	my %h;
-	$h{tm}        = $ROBJ->{TM};
-	$h{create_tm} = $ROBJ->{TM};
-	$h{id}        = $blogid;
-
-	# 初期値 = 0
-	$h{arts}   = $h{coms}   = 0;
-	$h{art_tm} = $h{com_tm} = 0;
-	$h{private} = 0;
-
-	# ディフォルトのブログ情報の取得
-	my $blog = $self->load_blogset('*');
-	$h{blog_name} = $blog->{blog_name};
-	$h{private}   = $blog->{private};
-	my $r  = $DB->insert($self->{bloglist_table}, \%h);
-
-	if (!$r) { return 2; }
-	return 0;		# 成功
-}
-
-#-------------------------------------------------------------------------------
-# ●ブログ管理テーブルから削除
-#-------------------------------------------------------------------------------
-sub delete_bloglist {
-	my ($self, $blogid) = @_;
-	my $DB = $self->{DB};
-	return $DB->delete_match($self->{bloglist_table}, 'id', $blogid);
-}
-
-#-------------------------------------------------------------------------------
-# ●ブログ管理テーブルの作成
-#-------------------------------------------------------------------------------
-sub create_bloglist_table {
-	my ($self) = @_;
-	my $DB = $self->{DB};
-
-	my %cols;
-	$cols{text}    = [ qw(id blog_name newest_title) ];
-	$cols{int}     = [ qw(arts coms art_tm com_tm tm create_tm) ];
-	$cols{flag}    = [ qw(private) ];
-	$cols{idx}     = [ qw(id arts coms art_tm com_tm tm private) ];
-	$cols{unique}  = [ qw(id) ];
-	$cols{notnull} = [ qw(id tm) ];
-	return $DB->create_table_wrapper($self->{bloglist_table}, \%cols);
 }
 
 ################################################################################
@@ -936,7 +687,6 @@ sub art_import {
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 	if (! $self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
-	my $blogid = $self->{blogid};
 
 	#-------------------------------------------------------------
 	# セッション開始
@@ -998,7 +748,7 @@ sub art_import {
 	# キー重複チェック用
 	{
 		my $cols = ['pkey', 'link_key'];
-		my $data = $DB->select("${blogid}_art", {cols => $cols});
+		my $data = $DB->select("art", {cols => $cols});
 		$opt{unique_pkeys} = { map { $_->{pkey}     => 1 } @$data };
 	}
 
@@ -1026,7 +776,7 @@ sub art_import {
 	}
 
 	# upnode対応処理
-	$self->import_build_tree($DB, $blogid, \%opt);
+	$self->import_build_tree($DB, \%opt);
 
 	if ($tr) {
 		if ($DB->commit()) {
@@ -1061,14 +811,13 @@ sub art_import {
 sub import_build_tree {
 	my $self = shift;
 	my $DB   = shift;
-	my $id   = shift;
 	my $opt  = shift;
 	my $p2p = $opt->{pkey2pkey};
 	foreach(@{$opt->{upnodes}}) {
 		my $pkey    = $_->{pkey};
 		my $up_pkey = $p2p->{ $_->{upnode} };
 		if ($up_pkey) {
-			$DB->update_match("${id}_art", {upnode => $up_pkey}, 'pkey', $pkey);
+			$DB->update_match("art", {upnode => $up_pkey}, 'pkey', $pkey);
 		}
 	}
 }
@@ -1149,7 +898,6 @@ sub save_article {
 	my $auth = $ROBJ->{Auth};
 
 	my $blog   = $self->{blog};
-	my $blogid = $self->{blogid};
 	if (! $self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
 
 	# コメントをインポートしない？
@@ -1249,7 +997,7 @@ sub save_article {
 			agent => $art->{agent}
 		};
 		$op{tm} = $art->{tm};
-		my $ret = $self->regist_article( $self->{blogid}, $art, \%op );
+		my $ret = $self->regist_article( $art, \%op );
 		if (!ref($ret)) {
 			$session && $session->msg("Save article failed(%d) : %s", $ret, $art->{title} );
 			return 11;
@@ -1328,7 +1076,7 @@ sub save_article {
 		#-----------------------------------------------------
 		# 投稿処理
 		#-----------------------------------------------------
-		my ($r,$c_pkey) = $self->regist_comment( $blogid, $_, $art, \%op );
+		my ($r,$c_pkey) = $self->regist_comment( $_, $art, \%op );
 		if ($r) {
 			my $type = $_->{_tb} ? 'Trackback' : 'Comment';
 			$session && $session->msg("$type import failed(%d) : %s", $r, "$art->{yyyymmdd} - $pkey");
@@ -1341,7 +1089,7 @@ sub save_article {
 
 	if ($com_flag) {
 		# 記事のコメント数キャッシュを書き換え
-		$self->calc_comments($blogid, $art->{pkey});
+		$self->calc_comments($art->{pkey});
 	}
 
 	return 0;
@@ -1373,13 +1121,11 @@ sub import_img_init {
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 	if (! $self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
-	my $blogid = $self->{blogid};
 
 	#-------------------------------------------------------------
 	# 取得する記事の条件生成
 	#-------------------------------------------------------------
 	my %q;
-	my $filename = $self->{blogid};
 	if ($form->{enable_only}) {
 		$q{flag} = {enable => 1};
 	}
@@ -1387,7 +1133,7 @@ sub import_img_init {
 		#---------------------------------
 		# タグ指定
 		#---------------------------------
-		my $taglist = $self->load_tag_cache($blogid);
+		my $taglist = $self->load_tag_cache();
 		my $name2pkey = $taglist->[0];
 		my $tag = $taglist->[ $name2pkey->{ $form->{tag} } ];
 
@@ -1402,7 +1148,7 @@ sub import_img_init {
 	$q{sort} = ['yyyymmdd', 'tm'];	# ソート
 	$q{cols} = ['pkey', 'yyyymmdd', 'tm', 'title', 'parser'];
 
-	my $logs = $DB->select("${blogid}_art", \%q);
+	my $logs = $DB->select("art", \%q);
 
 	if ($form->{html_only}) {
 		$logs = [ grep { $_->{parser} =~ /^simple/  } @$logs ];
@@ -1419,10 +1165,9 @@ sub import_img {
 	my $DB   = $self->{DB};
 	if (! $self->{blog_admin}) { $ROBJ->message('Operation not permitted'); return 5; }
 
-	my $blogid = $self->{blogid};
 	my $pkey = int($form->{pkey});
 
-	my $log = $DB->select_match_limit1("${blogid}_art", 'pkey', $pkey);
+	my $log = $DB->select_match_limit1("art", 'pkey', $pkey);
 	if (!$log) { return $ROBJ->message('Article not found.(pkey=%d)', $pkey); return 21; }
 
 	my $tag   = $self->load_tag_escaper();
@@ -1612,7 +1357,6 @@ sub art_export {
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 	if (! $self->{blog_admin} ) { $ROBJ->message('Operation not permitted'); return 5; }
-	my $blogid = $self->{blogid};
 
 	# 出力形式確認
 	my $skel = $form->{file};
@@ -1644,7 +1388,7 @@ sub art_export {
 	# 取得する記事の条件生成
 	#-------------------------------------------------------------
 	my %q;
-	my $filename = $self->{blogid};
+	my $filename = 'adiary';
 	if ($opt{enable_only}) {
 		$q{flag} = {enable => 1};
 	}
@@ -1673,7 +1417,7 @@ sub art_export {
 		#---------------------------------
 		# タグ指定
 		#---------------------------------
-		my $taglist = $self->load_tag_cache($blogid);
+		my $taglist = $self->load_tag_cache();
 		my $name2pkey = $taglist->[0];
 		my $tag = $taglist->[ $name2pkey->{ $opt{tag} } ];
 
@@ -1692,7 +1436,7 @@ sub art_export {
 	#-------------------------------------------------------------
 	$q{sort} = ['yyyymmdd', 'tm'];	# ソート
 
-	my $logs = $DB->select("${blogid}_art", \%q);
+	my $logs = $DB->select("art", \%q);
 	if ($#$logs == -1) {
 		$ROBJ->message('Not exists article');
 		return 12;
