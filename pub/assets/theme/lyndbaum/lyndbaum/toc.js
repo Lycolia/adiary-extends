@@ -15,7 +15,7 @@
 	button.className = 'toc-float-button';
 	button.setAttribute('aria-controls', 'toc-float-panel');
 	button.setAttribute('aria-expanded', 'false');
-	button.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>目次';
+	button.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 5.333h2.667V8H4zM9.333 5.333H20V8H9.333zM4 10.667h2.667v2.666H4zM9.333 10.667H20v2.666H9.333zM4 16h2.667v2.667H4zM9.333 16H20v2.667H9.333z"/></svg>目次';
 	var panel = document.createElement('nav');
 	panel.className = 'toc-float-panel';
 	panel.id = 'toc-float-panel';
