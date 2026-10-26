@@ -52,8 +52,9 @@ my @update_versions = (
 		'\[(?:mj|icon|pubdist)[:\]]'				# pub-dist/ のパスを出す記法
 	]},
 	{ ver => 4.12, plugin=>1, func => 'sys_update_412', system=>1 },	# 記事一覧とコメント一覧を管理画面に移した。デザインに残るリンクを作り直して消す
-	{ ver => 4.13, plugin=>1, rebuild_cond=>[	# 動画と音声に preload="none" を付けた。テーマのスケルトンのJSに更新日時を付けた
-		'\[(?:video|audio|file:(?:mp4|m4v|webm|ogv|wav|wave|ogg|oga|mp3|aac|m4a)):'
+	{ ver => 4.13, plugin=>1, rebuild_cond=>[	# テーマのスケルトンのJSに更新日時を付けた
+		'\[(?:video|audio|file:(?:mp4|m4v|webm|ogv|wav|wave|ogg|oga|mp3|aac|m4a)):',	# 動画と音声に preload="none" を付けた
+		'\[image:'								# 画像に width と height を書くようにした
 	]}
 );
 #-------------------------------------------------------------------------------

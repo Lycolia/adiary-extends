@@ -234,6 +234,10 @@ article figure,
 	box-sizing:	border-box;
 	text-indent:	0;
 }
+/* 記事の画像には width と height を書くので、幅が縮んだときに縦も合わせて縮める */
+.main img[width][height] {
+	height:		auto;
+}
 
 /* ブロック中のpタグ */
 blockquote p:first-child {
