@@ -1,0 +1,37 @@
+<@7>
+<@local(url,rtime)>
+<@>
+<@> 公開画面の処理結果（コメントの投稿の後）
+<@> 管理画面の _sub/reload_message と同じく、結果を出してから元のページに戻す。
+<@> 違いは、システムモードにしないこと。テーマの見た目のまま出す
+<@>
+<@>	argv#0	戻る先のURL
+<@>
+<$url = argv#0 || v.myself>
+<$no_robots = 1>
+<$v.title    = v.blog.blog_name>
+<$v.subtitle = '処理結果'>
+
+<@> アクションファイルから呼ばれるので、このファイルを本文の代わりにする
+<$v.action_is_main = 1>
+<$rtime = v.sys.reload_time>
+
+<script-defer><!--
+	function back() {
+		location.href = "<@url>";
+	};
+	$('#body').keydown(function(evt) {
+		if (evt.keyCode == 13) back();	// Enterで戻る
+	});
+<@ifexec(rtime, begin)>
+	setTimeout(back, <@rtime>000);
+<$end>
+--></script-defer>
+
+<article class="article system message">
+<h2>処理結果</h2>
+<div class="body">
+	<div class="messages"><@join("\n", Message)></div>
+	<p><a href="<@url>"><@if(rtime, "<@rtime>秒後に記事に戻ります", '記事に戻る')></a></p>
+</div>
+</article>

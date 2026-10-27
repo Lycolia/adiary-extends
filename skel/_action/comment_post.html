@@ -11,10 +11,15 @@
 <@>
 <@> POST成功時の処理
 <@>
+<@> 公開画面なので、管理画面の「処理結果」の画面（_sub/reload_message）ではなく、
+<@> テーマの見た目のままの画面（_sub/reload_message_public）を出し、記事のページに戻す
+<@> ※戻る先に #com などを付けない。今の画面（POSTした先）と # の後ろだけが違うURLだと、
+<@>   ブラウザーは読み込み直さずにページの中を移るだけなので、記事に戻らない
+<@>
 <$ifexec(action_return eq '0', begin)>
 	<$message('コメントを書き込みました')>
 	<$ifmessage( Form.hidden, 'このコメントは管理者にのみ表示されます')>
 	<$ifmessage(!Form.hidden && !Form.enable, 'このコメントは確認後表示されます')>
-	
-	<$jump('_sub/reload_message', v.thisurl)>
+
+	<$jump('_sub/reload_message_public', v.thisurl)>
 <$end>
