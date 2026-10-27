@@ -42,13 +42,12 @@ Perl標準モジュールのほかに、使い方によって次のモジュー�
 
 # 著作権表示(Copyright)
 
-Copyright (C)2013-2025 nabe@abk.
+- Copyright (C)2013-2025 nabe@abk.
+- Copyright (C)2024-2026 Lycolia.
 
 本プログラム（システム）はフリーソフトウェアです。
 
-AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3 または
-それ以降のバージョンの下で本プログラム（システム）を再配布
-することが可能です。
+AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3またはそれ以降のバージョンの下で本プログラム（システム）を再配布することが可能です。
 
 # 利用著作物
 
@@ -64,6 +63,12 @@ AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3 または
 - [Prism.js](https://prismjs.com/) (MIT)
 
 ## Perl
+
+`lib/Digest/`に同梱しています。
+
+- Digest::SHA::PurePerl (Perl)
+- Digest::HMAC (Perl)
+- Digest::HMAC_MD5 (Perl)
 
 ## プラグインとテーマ
 
