@@ -25,7 +25,7 @@
 	--admin-warning:	#dba617;
 	--admin-success:	#00a32a;
 	--admin-focus-bg:	#fffbe5;
-	--admin-bar-height:	2.5rem;
+	--admin-bar-height:	2rem;
 	--admin-nav-width:	12.5rem;
 }
 
@@ -90,6 +90,16 @@ body.admin *::after {
 	color:			var(--admin-nav-fg);
 	white-space:		nowrap;
 }
+/* 高さは公開画面の管理バー（base.css の --admin-bar-h）にそろえる。
+   スマホの表示（狭い画面と、スマホ用のテーマ）では、公開画面と同じく太くする（32px → 46px） */
+@media (max-width: 40rem) {
+	body.admin:not(.admin-popup) {
+		--admin-bar-height:	2.875rem;
+	}
+}
+body.admin.sp:not(.admin-popup) {
+	--admin-bar-height:	2.875rem;
+}
 #admin-bar a, #admin-bar a:link, #admin-bar a:visited {
 	color:			var(--admin-nav-fg);
 	text-decoration:	none;
@@ -107,6 +117,12 @@ body.admin *::after {
 	font-weight:		normal;
 	font-size:		85%;
 	color:			var(--admin-nav-sub-fg);
+}
+/* 書く、ログアウトのアイコン（形は base.css の admin-bar-icon） */
+#admin-bar .admin-bar-edit,
+#admin-bar .admin-bar-logout {
+	display:		inline-flex;
+	align-items:		center;
 }
 #admin-bar .admin-bar-links {
 	display:		flex;
