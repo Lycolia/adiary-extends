@@ -1,9 +1,10 @@
 ######################################################################
 title=参照元の記事
-version=1.00
+version=1.01
 ######################################################################
 author=Lycolia Rizzim
-license=WTFPL
+url=https://lycolia.info/?plugin/modules
+license=AGPLv3
 
 adiary_version=4.08
 module_type=article
