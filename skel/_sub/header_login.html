@@ -1,0 +1,29 @@
+<@7>
+<@local(name)>
+<$name = argv#0>
+<@>
+<@> ヘッダーのログインの欄。HTMLはここだけに書く（docs/仕様/スケルトン.md）
+<@>	呼び出し元：plugin/deh_login/module.html
+<@>	           雛形の既定の中身（skel/ と、テーマの _skel/ の同じ名前のスケルトン）
+<@>	テーマで変えたいときは、テーマの _skel/_sub/ に同じ名前で置く
+<@>
+<@>	argv#0	モジュール名（data-module-name。設定もこの名前で読む）
+<@>
+<nav id="nav-header" data-module-name="<@name>" data-fix="1">
+	<@ifexec(Auth.ok, begin)><span class="welcome"><a href="<@myself>" class="welcome-prefix">ようこそ</a><a href="<@myself>" class="welcome-name"><@Auth.name></a><span class="welcome-postfix">さん</span></span><$end>
+
+	<span class="admin-links">
+	<@ifexec(v.allow_edit, begin)>
+		<a class="adminmenu edit" href="<@v.myself>?edit">書く</a>
+	<$end>
+	<@ifexec(Auth.ok, begin, begin)>
+		<a class="adminmenu admin<@if(v.allow_edit && v.blog.newcom_flag,' newcom')>" href="<@v.myself>?menu">管理</a>
+		<a class="adminmenu logout" href="<@v.thisurl>?logout">ログアウト</a>
+	<$else>
+		<@ifexec(v.load_plgset(name, 'erase_login'), begin, begin)>
+		<a class="adminmenu login erase-login" href="<@v.thisurl>?login" rel="nofollow">&emsp;</a>
+		<$else>
+		<a class="adminmenu login" href="<@v.thisurl>?login" rel="nofollow">ログイン</a>
+		<$end>
+	<$end>	</span>
+</nav>

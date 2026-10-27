@@ -42,23 +42,8 @@
 
 <@>$HEADER:END$----------------------------------------------------------------
 
-<@><!--========================================================================-->
-<$node = if(t.ctype, v.load_content_node(t.pkey), v.load_art_node(t.pkey))>
-<@ifexec(node.prev || node.next || node.upnode || page_nav_force, begin.page)>
-<nav class="page-nav art-nav" data-module-name="dem_page-nav,1">
-<@page_nav = page_nav_force || exec(begin.function)>
-<@ifexec(node.prev && node.prev != node.upnode, begin)>
-<a href="<@v.myself2><@if(node.prev.link_key, node.prev.elink_key, "0<@node.prev.pkey>")>" class="prev-page" rel="prev"><@node.prev.title></a>
-<$end>
-<@ifexec(node.upnode, begin)>
-<a href="<@v.myself2><@node.upnode.elink_key>" class="upnode-page"><@node.upnode.title></a>
-<$end>
-<@ifexec(node.next, begin)>
-<a href="<@v.myself2><@if(node.next.link_key, node.next.elink_key, "0<@node.next.pkey>")>" class="next-page" rel="next"><@node.next.title></a>
-<$end>
-<$end.function>
-</nav>
-<$end.page>
+<@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
+<@call('_sub/page_nav_article', 'dem_page-nav,1', t)>
 <@>$ARTICLE$-------------------------------------------------------------------
 <@>$ARTICLE_TOP$---------------------------------------------------------------
 
@@ -70,18 +55,9 @@
 <div class="body" id="s<@t.pkey>">
 <div class="body-header">
 <@>$ARTICLE_TOP:END$-----------------------------------------------------------
-	<$ps = v.load_plgset('dea_art-info')>
-	<div class="art-info" data-module-name="dea_art-info" data-fix="1">
-		<@ifexec(ps.hatena_bicon, begin)>
-		<a class="http-bookmark" href="https://b.hatena.ne.jp/entry/<@url>"><img src="//b.st-hatena.com/entry/image/<@url>" alt="はてブ数"></a>
-		<$end>
-		<$x = if(t.priority, ps.wiki_tm, ps.tmdate)>
-		<@ifexec(x==3,      begin)><span class="write-date"><@t.year>/<@t.mon>/<@t.day></span><$end>
-		<@ifexec(x!=3 && x, begin)><span class="write-date"><@print_tmf('%Y/%m/%d %H:%M ', if(x==1, t.tm, t.update_tm))></span><$end>
-		<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
-		<@ifexec(ps.author, begin)><span class="author"><@t.name></span><$end>
-		<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
-	</div>
+
+<@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
+	<@call('_sub/art_info', 'dea_art-info', t)>
 <@>$ARTICLE_MIDDLE$------------------------------------------------------------
 </div><!-- body-header -->
 <div class="body-main">
@@ -94,25 +70,9 @@
 </div><!-- body-main -->
 <div class="body-footer">
 <@>$ARTICLE_MIDDLE:END$--------------------------------------------------------
-<@>記事リスト・関連記事
-<div data-module-name="dea_node-list">
-<@ifexec(node.children, begin)>
-<h3>記事リスト</h3>
-<ul class="art-list art-children">
-<@forexec(t2, node.children, begin)>
-	<li><a href="<@v.myself2><@t2.elink_key>"><@t2.title></a></li>
-<$end>
-</ul>
-<$end>
-<@ifexec(!node.children && node.family, begin)>
-<h3>関連記事</h3>
-<ul class="art-list art-family">
-<@forexec(t2, v.load_from_ary(node.family, 5), begin)>
-	<li><a href="<@v.myself2><@t2.elink_key>"><@t2.title></a></li>
-<$end>
-</ul>
-<$end>
-</div>
+
+<@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
+<@call('_sub/node_list', 'dea_node-list', t)>
 <@>$ARTICLE_BOTTOM$------------------------------------------------------------
 </div> <!-- body-footer -->
 </div> <!-- body -->
@@ -191,15 +151,10 @@
 <$end>
 </div> <!-- article-box -->
 <@>$COMMENT_BOTTOM:END$--------------------------------------------------------
+
+<@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
+<@call('_sub/page_nav_article', 'dem_page-nav,2', t)>
 <@>$ARTICLE:END$---------------------------------------------------------------
-
-
-<@ifexec(page_nav, begin.page)>
-<nav class="page-nav art-nav" data-module-name="dem_page-nav,2">
-<@page_nav>
-</nav>
-<$end.page>
-
 <@>$FOOTER$--------------------------------------------------------------------
 <@>save to global for view event
 <$permalink_ = permalink>

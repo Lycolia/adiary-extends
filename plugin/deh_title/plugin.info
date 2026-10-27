@@ -1,13 +1,13 @@
 ######################################################################
 title=ページタイトル（標準）
-version=1.01
+version=1.02
 #					(C)2015 nabe@abk
 ######################################################################
 author=nabe@abk
 url=https://twitter.com/nabe_abk
 license=WTFPL
 
-adiary_version=2.941
+adiary_version=4.16
 module_type=header
 
 module_id=page-title
@@ -20,8 +20,6 @@ HTML
 
 
 *module_html=<<HTML
-<h1 id="<@id>" data-module-name="<@this>">
-	<a href="<@v.myself>"><@if(v.title_h1, v.title_h1, v.title)></a>
-</h1>
+<@call('_sub/header_title', '<@this>', '<@id>')>
 HTML
 

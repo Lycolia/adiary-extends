@@ -1,13 +1,13 @@
 ######################################################################
 title=コメント数の表示
-version=1.00
+version=1.01
 #					(C)2015 nabe@abk
 ######################################################################
 author=nabe@abk
 url=https://twitter.com/nabe_abk
 license=WTFPL
 
-adiary_version=2.97
+adiary_version=4.16
 module_type=article
 
 *sample_html=<<HTML
@@ -17,10 +17,5 @@ module_type=article
 HTML
 
 *module_html=<<HTML
-<$coms = if(v.allow_edit, t.coms_all, t.coms)>
-<@ifexec(t.com_ok || coms, begin)>
-<div class="com-count" data-module-name="<@this>">
-	<span class="element com-caption"><a href="<@v.myself2><@t.elink_key>#com"><span class="com-title">コメント</span><span class="com-num">（<span class="num"><@coms></span>件）</span></a></span>
-</div>
-<$end>
+<@call('_sub/com_count', '<@this>', t)>
 HTML

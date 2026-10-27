@@ -1,0 +1,31 @@
+<@7>
+<@local(name,t,ps,permalink,url)>
+<$name = argv#0>
+<$t = argv#1>
+<@>
+<@> 記事の情報（投稿日、タグ、編集のリンクなど）。HTMLはここだけに書く（docs/仕様/スケルトン.md）
+<@>	呼び出し元：plugin/dea_art-info/module.html
+<@>	           雛形の既定の中身（skel/ と、テーマの _skel/ の同じ名前のスケルトン）
+<@>	テーマで変えたいときは、テーマの _skel/_sub/ に同じ名前で置く
+<@>
+<@>	argv#0	モジュール名（data-module-name。設定もこの名前で読む）
+<@>	argv#1	記事
+<@>
+<$permalink = if(t.link_key eq v.blog.frontpage, v.myself, "<@v.myself2><@t.elink_key>")>
+<$url = ServerURL . permalink>
+<$encode_uricom(url)>
+	<$ps = v.load_plgset(name)>
+	<div class="art-info" data-module-name="<@name>" data-fix="1">
+		<@ifexec(ps.hatena_bicon, begin)>
+		<a class="http-bookmark" href="https://b.hatena.ne.jp/entry/<@url>"><img src="//b.st-hatena.com/entry/image/<@url>" alt="はてブ数"></a>
+		<$end>
+		<div>
+			<@ifexec(t.shown_upd_date==1, begin)><span>更新日：<time class="update-date" datetime="<@t.upd_year>-<@t.upd_mon>-<@t.upd_day>"><@t.upd_year>/<@t.upd_mon>/<@t.upd_day></time></span><br><$end>
+			<span>投稿日：<time class="write-date" datetime="<@t.year>-<@t.mon>-<@t.day>"><@t.year>/<@t.mon>/<@t.day></time></span>
+		</div>
+		<div>
+			<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
+			<@ifexec(ps.author, begin)><span class="author"><@t.name></span><$end>
+			<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
+		</div>
+	</div>

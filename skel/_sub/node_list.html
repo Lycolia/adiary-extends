@@ -1,0 +1,34 @@
+<@7>
+<@local(name,t,node,ps,t2)>
+<$name = argv#0>
+<$t = argv#1>
+<@>
+<@> 記事の下の記事リスト、関連記事。HTMLはここだけに書く（docs/仕様/スケルトン.md）
+<@>	呼び出し元：plugin/dea_node-list/module.html
+<@>	           雛形の既定の中身（skel/ と、テーマの _skel/ の同じ名前のスケルトン）
+<@>	テーマで変えたいときは、テーマの _skel/_sub/ に同じ名前で置く
+<@>
+<@>	argv#0	モジュール名（data-module-name。設定もこの名前で読む）
+<@>	argv#1	記事
+<@>
+<!-- 関連記事 -->
+<$node = if(t.ctype, v.load_content_node(t.pkey))>
+<$ps = v.load_plgset(name)>
+<div data-module-name="<@name>">
+<@ifexec(node.children, begin)>
+<h3>記事リスト</h3>
+<ul class="art-list art-children">
+<@forexec(t2, node.children, begin)>
+	<li><a href="<@v.myself2><@t2.elink_key>"><@t2.title></a></li>
+<$end>
+</ul>
+<$end>
+<@ifexec(!node.children && node.family, begin)>
+<h3>関連記事</h3>
+<ul class="art-list art-family">
+<@forexec(t2, v.load_from_ary(node.family, ps.displays || 5), begin)>
+	<li><a href="<@v.myself2><@t2.elink_key>"><@t2.title></a></li>
+<$end>
+</ul>
+<$end>
+</div>
