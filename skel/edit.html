@@ -247,6 +247,9 @@
 		<input type="checkbox" name="enable" value="1" id="enable-chk" data-on="編集して" data-off="非公開で"<@if(art.enable, ' checked')>> <@\>
 		<$end> <@\>
 		記事を公開</label><span class="help" data-help="公開設定に関わらず、下書きは公開されません">?</span></li>
+	<@ifexec(edit_pkey, begin)>
+		<li><label><input type="checkbox" name="keep_update_tm" value="1">更新日時を変えない</label><span class="help" data-help="誤字の直しなど、更新として扱いたくないときに使います。RSSや記事に出る更新日時が変わりません">?</span></li>
+	<$end>
 		<li><label><input type="checkbox" id="art-detail-sw" data-target="#art-detail" class="js-switch js-save"> <@\>
 		詳細設定</label>
 		<ul id="art-detail" class="checkbox">

@@ -407,7 +407,10 @@ sub regist_article {
 	# 時刻設定と記事の初公開判定
 	#-------------------------------------------------------------
 	my $first_visible;
-	$art{update_tm} = $ROBJ->{TM};	# 最終更新日時
+	# 最終更新日時。既存の記事で「更新日時を変えない」なら変えない（誤字の直しなど、更新として扱いたくないとき。Lyndbaumと同じ）
+	if (!$edit_pkey || !$form->{keep_update_tm}) {
+		$art{update_tm} = $ROBJ->{TM};
+	}
 
 	if ($form->{draft}) {
 		$art{enable} = 0;
