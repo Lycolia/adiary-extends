@@ -748,6 +748,44 @@ html:has(body.sp .admin-bar) {
 }
 
 /*--------------------------------------------------------------------
+●脚注と注釈のポップアップ（adiary.js）
+--------------------------------------------------------------------*/
+/* テーマの色によらず読めるように、地と文字の色をここで決める。管理バー（z-index: 300）より下に出す */
+.fn-popup {
+	position:		absolute;
+	z-index:		250;
+	box-sizing:		border-box;
+	width:			max-content;
+	max-width:		min(24rem, calc(100vw - 16px));
+	padding:		0.6em 0.8em;
+	border:			1px solid #aaa;
+	border-radius:		4px;
+	background-color:	#fff;
+	color:			#222;
+	box-shadow:		0 2px 10px rgba(0,0,0,0.25);
+	font-size:		90%;
+	line-height:		1.6;
+	text-align:		left;
+	overflow-wrap:		anywhere;
+}
+.fn-popup p {
+	margin:			0;
+}
+.fn-popup p + p {
+	margin-top:		0.5em;
+}
+.fn-popup a, .fn-popup a:link {
+	color:			#0a58ca;
+}
+.fn-popup a:visited {
+	color:			#6f42c1;
+}
+.fn-popup-jump {
+	text-align:		right;
+	font-size:		90%;
+}
+
+/*--------------------------------------------------------------------
 ●記事の情報の、コメント欄と参照元へのリンク（skel/_sub/art_info.html）
 --------------------------------------------------------------------*/
 .art-jump a + a {

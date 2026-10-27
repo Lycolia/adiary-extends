@@ -553,6 +553,126 @@ $$.init( function(){
 });
 
 ////////////////////////////////////////////////////////////////////////////////
+//●脚注と注釈のポップアップ
+////////////////////////////////////////////////////////////////////////////////
+// 本文の脚注（Markdownの[^id]）と注釈（((注釈))）の番号に、注の中身をその場で出す（Wikipediaの参照のポップアップと同じ）。
+//   マウスで操作できる端末：番号にマウスを乗せると出す。押すと今までどおり注へ移動する
+//   タッチの端末：番号を押すと、移動せずに出す。もう一度押すか、外を押すと閉じる
+// 注の中身は、番号と同じ記事（<article>）の中から探す（一覧では、記事ごとに同じidが出るため）。
+// 中身がページに無いとき（「続きを読む」で隠れているときなど）は、今までどおりのリンクにする
+$$.init( function(){
+	const refs = document.querySelectorAll('sup[id^="fnref-"] > a[href*="#fn-"], span.footnote > a[href*="#fn-"]');
+	if (!refs.length) return;
+
+	const hover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+	let popup;		// 出しているポップアップ
+	let current;		// ポップアップを出している番号
+	let hide_timer;
+
+	// 注の中身を写す。戻るリンク（↩）と、注釈の「*1 : 」は除く
+	function note_html(ref) {
+		const hash = decodeURIComponent(ref.hash.substr(1));
+		const scope = ref.closest('article') || document;
+		let note = scope.querySelector('[id="' + hash.replace(/["\\]/g, '\\$&') + '"]');
+		if (!note) return;
+		// 注釈は、一覧の番号のリンク（<a id="fn-fn1">*1</a>）に id があるので、その段落ごと写す
+		const p = note.closest('p.footnote');
+		if (p) note = p;
+		const box = note.cloneNode(true);
+		box.removeAttribute('id');
+		box.querySelectorAll('a[href*="#fnref-"]').forEach(function(a) { a.remove(); });
+		if (box.matches('p.footnote')) {
+			const num = box.querySelector('a');
+			if (num) num.remove();
+			if (box.firstChild && box.firstChild.nodeType == Node.TEXT_NODE)
+				box.firstChild.nodeValue = box.firstChild.nodeValue.replace(/^\s*:\s*/, '');
+		}
+		box.querySelectorAll('[id]').forEach(function(x) { x.removeAttribute('id'); });
+		return box.innerHTML;
+	}
+
+	function close() {
+		clearTimeout(hide_timer);
+		if (popup) popup.remove();
+		popup   = null;
+		current = null;
+	}
+
+	function open(ref, html) {
+		close();
+		current = ref;
+		popup = document.createElement('div');
+		popup.className = 'fn-popup';
+		popup.setAttribute('role', 'note');
+		popup.innerHTML = html;
+		if (!hover) {
+			// タッチの端末では、押しても移動しないので、注へ移動するリンクを付ける
+			const p = document.createElement('p');
+			p.className = 'fn-popup-jump';
+			const a = document.createElement('a');
+			a.href = ref.href;
+			a.textContent = '注へ移動';
+			a.addEventListener('click', close);
+			p.appendChild(a);
+			popup.appendChild(p);
+		}
+		document.body.appendChild(popup);
+
+		// 番号の下に出す。下に入らなければ上に出す。左右は画面からはみ出さないようにする
+		const r   = ref.getBoundingClientRect();
+		const w   = popup.offsetWidth;
+		const h   = popup.offsetHeight;
+		const gap = 6;
+		let left = r.left + r.width/2 - w/2;
+		left = Math.max(8, Math.min(left, document.documentElement.clientWidth - w - 8));
+		let top = r.bottom + gap;
+		if (top + h > window.innerHeight && r.top - gap - h > 0) top = r.top - gap - h;
+		popup.style.left = (left + window.scrollX) + 'px';
+		popup.style.top  = (top  + window.scrollY) + 'px';
+
+		if (hover) {
+			popup.addEventListener('mouseenter', function(){ clearTimeout(hide_timer); });
+			popup.addEventListener('mouseleave', hide_later);
+		}
+	}
+	function hide_later() {
+		clearTimeout(hide_timer);
+		hide_timer = setTimeout(close, 300);
+	}
+
+	refs.forEach(function(ref) {
+		const html = note_html(ref);
+		if (html === undefined) return;
+		ref.removeAttribute('title');	// 注釈のツールチップと二重に出さない
+		if (hover) {
+			ref.addEventListener('mouseenter', function(){
+				clearTimeout(hide_timer);
+				if (current !== ref) open(ref, html);
+			});
+			ref.addEventListener('mouseleave', hide_later);
+			ref.addEventListener('focus', function(){ if (current !== ref) open(ref, html); });
+			ref.addEventListener('blur',  hide_later);
+		} else {
+			ref.addEventListener('click', function(evt){
+				evt.preventDefault();
+				if (current === ref) return close();
+				open(ref, html);
+			});
+		}
+	});
+
+	// 外を押すか、Escキーで閉じる
+	document.addEventListener('click', function(evt){
+		if (!popup || popup.contains(evt.target) || evt.target.closest('a') === current) return;
+		close();
+	});
+	document.addEventListener('keydown', function(evt){
+		if (evt.key === 'Escape') close();
+	});
+	window.addEventListener('resize', close);
+});
+
+////////////////////////////////////////////////////////////////////////////////
 //●記事の情報の、参照元へのリンク
 ////////////////////////////////////////////////////////////////////////////////
 // 参照元は、テーマの雛形か、参照元のモジュール（dea_backlinks）を置いたときだけ出るので、
