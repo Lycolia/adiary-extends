@@ -8,7 +8,7 @@
 			<option value="0"<@if(x==0, ' selected')>>表示しない</option>
 			<option value="1"<@if(x==1, ' selected')>>投稿日時を表示</option>
 			<option value="2"<@if(x==2, ' selected')>>更新日時を表示</option>
-		</select><span class="help-text">記事が最初に公開された日時を表示します</span></td>
+		</select></td>
 	</tr>
 	<tr><th>コンテンツの日時</th>
 		<td><select name="wiki_tm"><$x = ps.wiki_tm>
@@ -27,7 +27,6 @@
 	<tr><th>はてなブックマーク数</th>
 		<td colspan="2">
 			<label><input type="checkbox" name="hatena_bicon" value="1"<@if(ps.hatena_bicon, ' checked')>>表示する</label>
-			<span class="help-text">はてなブックマーク数（赤字数字アイコン）を表示します。ひとつもブックマークされてないときは何も表示されません。</span>
 		</td>
 	</tr>
 	</tbody>
