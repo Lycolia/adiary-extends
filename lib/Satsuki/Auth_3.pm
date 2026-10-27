@@ -107,7 +107,7 @@ sub change_user_info {
 	if (! $self->{ok}) { return { ret=>1, msg => $ROBJ->translate('No login') }; }
 	if ($self->{auto}) { return { ret=>2, msg => $ROBJ->translate("Can't execute with 'root*'") }; }
 
-	my %update;
+	my %update = (id => $self->{id});
 
 	my $ary = $self->allow_user_change_columns();
 	foreach(@$ary) {
