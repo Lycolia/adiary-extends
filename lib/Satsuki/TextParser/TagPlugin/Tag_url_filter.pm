@@ -28,6 +28,7 @@ sub new {
 
 	#---begin_plugin_info
 	$tags->{'filter'}->{data} = \&filter;
+	$tags->{'youtube'}->{data} = \&youtube;
 	#---end
 
 	return ;
@@ -45,6 +46,43 @@ sub filter {
 	return $r;
 }
 
+#-------------------------------------------------------------------------------
+# ●youtube記法
+#-------------------------------------------------------------------------------
+# [youtube:動画ID]、[youtube:動画ID:small]、[youtube:動画ID:large]
+sub youtube {
+	my ($pobj, $tag, $cmd, $ary) = @_;
+	my $vid = $ary->[0];
+	if ($vid !~ /^[\w\-]+$/) { return ''; }
+	return &youtube_module($pobj, $vid, $ary->[1], '');
+}
+
+#-------------------------------------------------------------------------------
+# ●YouTubeのモジュール
+#-------------------------------------------------------------------------------
+# 画像ビューアー（Lythumb-viewer）があれば、サムネイルだけを出し、押すとビューアーで再生する。
+# グループ名は記事の画像と同じにして、画像と一緒にめくれるようにする（docs/仕様/動画のサムネイル.md）
+# ビューアーが無ければ、今までどおりプレーヤーを埋め込む
+#
+sub youtube_module {
+	my ($pobj, $vid, $size, $opt) = @_;
+	my $w = 480;
+	my $h = 270;
+	if ($size eq 'small') { $w=320; $h=180; }
+	if ($size eq 'large') { $w=640; $h=360; }
+
+	my $group;
+	if ($pobj->{image_attr} =~ /data-lythumb="([^"]*)"/) {
+		$group = $1;
+		$group =~ s/%k/$pobj->{thispkey}/g;
+	}
+	if (!defined $group) {
+		return "<module name=\"youtube\" vid=\"$vid\" width=\"$w\" height=\"$h\" opt=\"$opt\">";
+	}
+	my $query = $opt ne '' ? "&$opt" : '';
+	return "<module name=\"youtube-thumb\" vid=\"$vid\" width=\"$w\" height=\"$h\" query=\"$query\" group=\"$group\">";
+}
+
 sub _filter {
 	my ($pobj, $tag, $cmd, $ary) = @_;
 	my $ROBJ = $pobj->{ROBJ};
@@ -59,13 +97,9 @@ sub _filter {
 	#-------------------------------------------------------------
 	if ($url =~ m|^https?://www\.youtube\.com/watch\?v=([\w\-]+)((?:&\w+=\w+)*)|) {
 		my $vid = $1;
-		my $w = 480;
-		my $h = 270;
-		if ($ary->[0] eq 'small') { $w=320; $h=180; }
-		if ($ary->[0] eq 'large') { $w=640; $h=360; }
 		my $opt= $2 ? substr($2,1) : '';
 		$opt =~ s/(^|&)t=(\d+)s?/${1}start=$2/g;
-		return "<module name=\"youtube\" vid=\"$vid\" width=\"$w\" height=\"$h\" opt=\"$opt\">";
+		return &youtube_module($pobj, $vid, $ary->[0], $opt);
 	}
 
 	#-------------------------------------------------------------

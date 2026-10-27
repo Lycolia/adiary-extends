@@ -1036,6 +1036,13 @@ function upload_files_insert(data, opt) {
 		class:   opt.class,
 		files: files
 	});
+
+	// 動画のサムネイルを作る（docs/仕様/動画のサムネイル.md）。作り終わる前に保存しても、作り終わったときに記事を作り直す
+	const videos = ary.filter(function(file){ return file.isVideo }).map(function(file){
+		return { folder: opt.folder, name: file.name };
+	});
+	if (videos.length)
+		adiary.make_video_thumbnails(videos, adiary.Basepath + $('#image-dir').text());
 }
 
 //------------------------------------------------------------------------------

@@ -1,0 +1,12 @@
+<@7>
+<$ifbreak(!v.allow_edit)>
+<@>
+<@> 動画のサムネイルを受け取る（ブラウザーで作ったもの。docs/仕様/動画のサムネイル.md）
+<$action_return = v.upload_video_thumbnail( Form )>
+<@>
+<$v.action_is_main=1>
+<$v.frame_skeleton=''>
+<$set_content_type('application/json')>
+{ "ret": <@action_return> }
+<@>
+<@ifcall(Develop, '_sub/ajax_debug')>

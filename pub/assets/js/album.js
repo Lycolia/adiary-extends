@@ -1173,7 +1173,42 @@ $('#album-actions').change( function(evt){
 	if (val == 'select-exifjpeg')    select_exifjpeg(evt);
 	if (val == 'album-move-files')   album_move_files(evt);
 	if (val == 'album-delete-files') album_delete_files(evt);
+	if (val == 'make-video-thumbnail') make_selected_video_thumbnails(evt);
 });
+
+////////////////////////////////////////////////////////////////////////////////
+// ●動画のサムネイルを作る（docs/仕様/動画のサムネイル.md）
+////////////////////////////////////////////////////////////////////////////////
+function make_selected_video_thumbnails(){
+	var files = load_selected_files();
+	if (!files) return;
+	make_video_thumbnails(cur_folder, files);
+}
+
+// folder の videos（ファイル名）の中の動画のサムネイルを、ブラウザーで作って送る
+function make_video_thumbnails(folder, videos) {
+	folder = (folder == '/') ? '' : folder.replace(/^\/+/, '');
+	var files = videos.filter(function(name){
+		return /\.(?:mp4|m4v|webm|ogv)$/i.test(name);
+	}).map(function(name){
+		return { folder: folder, name: name };
+	});
+	if (!files.length) return;
+
+	var $msg = $('<div>').addClass('message');
+	message.append( $msg );
+	message.showDelay();
+	adiary.make_video_thumbnails(files, path, $('#thumbnail-size').val(), function(i){
+		$msg.text( $('#msg-making-video-thumbnail').text() + ' ' + (i+1) + ' / ' + files.length );
+	}).then(function(fail){
+		if (fail) {
+			$msg.addClass('error').text( $('#msg-fail-video-thumbnail').text().replace('%n', fail) );
+		} else {
+			$msg.text( $('#msg-made-video-thumbnail').text() );
+		}
+		update_view(true);	// サムネイルを読み直す
+	});
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // ●サムネイルの再生成
@@ -1414,6 +1449,13 @@ function upload_post_process(text) {
 	var ary = text.split(/[\r\n]/);
 	var ret = ary.shift();
 	var reg = ret.match(/^ret=(\d*)/);
+	// アップロードした動画（video=名前。名前はHTMLのエスケープ済み）
+	var videos = [];
+	ary = ary.filter(function(line){
+		var m = line.match(/^video=(.+)$/);
+		if (m) videos.push( $('<div>').html(m[1]).text() );
+		return !m;
+	});
 	if (reg) {
 		ret = reg[0];
 		message.html( ary.join("\n") );
@@ -1424,6 +1466,9 @@ function upload_post_process(text) {
 
 	// アルバムツリーのリロード
 	tree_reload();
+
+	// 続けて動画のサムネイルを作る
+	make_video_thumbnails(upfolder.val(), videos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

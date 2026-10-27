@@ -1,5 +1,5 @@
 <@7>
-<@local(s,err,t)>
+<@local(s,err,t,videos)>
 <$err=FormError>
 
 <!--=========================================================================-->
@@ -26,6 +26,23 @@
 
 	<button type="submit" name="action" value="<@v.skel_dir>update" value="1"<@if(!v.require_update, ' disabled')>>アップデート処理を行う</button><span class="help" data-help="必要な時だけボタンがonになります">?</span>
 	</form>
+
+	<@>
+	<@> 動画のサムネイルはブラウザーで作る（docs/仕様/動画のサムネイル.md）。アップデート処理の後は続けて作る
+	<$videos = if(v.blog, v.load_videos_without_thumbnail())>
+	<@ifexec(videos && ##videos>=0, begin)>
+	<h3>動画のサムネイル</h3>
+	<div id="video-thumbnail" data-url="<@Basepath><@v.blogimg_dir()>" data-size="120"<@if(Query.video_thumbnail, ' data-auto="1"')>
+	 data-msg-done="サムネイルを作りました" data-msg-fail="%n本の動画はサムネイルを作れませんでした（このブラウザーで再生できない形式など）">
+	<p>サムネイルの無い動画が<@##videos+1>本あります。記事には、サムネイルを作るまで今までどおりプレーヤーで表示されます。
+	<button type="button" class="make">サムネイルを作る</button> <span class="status"></span></p>
+	<ul class="small">
+	<@forexec(t, videos, begin)>
+		<li data-folder="<@esc(t.folder)>" data-name="<@esc(t.name)>"><@esc(t.folder)><@esc(t.name)></li>
+	<$end>
+	</ul>
+	</div>
+	<$end>
 </div>
 </article>
 

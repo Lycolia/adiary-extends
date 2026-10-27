@@ -686,6 +686,40 @@ span.highlight4	{ background-color: #f6f; }
 	background-color:	#333;
 }
 
+/* 動画とYouTubeのサムネイル。押すと画像ビューアー（Lythumb-viewer）で再生する。
+   再生の印は画像のファイルを使わず、CSSで重ねる（docs/仕様/動画のサムネイル.md） */
+a.video-thumb {
+	position:		relative;
+	display:		inline-block;
+	max-width:		100%;
+	vertical-align:		top;
+}
+a.video-thumb img {
+	display:		block;
+	max-width:		100%;
+	height:			auto;
+}
+/* YouTubeのサムネイル（hqdefault.jpg）は4:3で上下に黒い帯があるので、16:9に切り取る */
+a.video-thumb.youtube img {
+	aspect-ratio:		16 / 9;
+	object-fit:		cover;
+}
+a.video-thumb::after {
+	content:		"";
+	position:		absolute;
+	left:			50%;
+	top:			50%;
+	width:			56px;
+	height:			56px;
+	margin:			-28px 0 0 -28px;
+	border-radius:		50%;
+	background:		rgba(0,0,0,0.6) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M8 5v14l11-7z'/%3E%3C/svg%3E") no-repeat 55% center / 28px 28px;
+	pointer-events:		none;
+}
+a.video-thumb:hover::after, a.video-thumb:focus-visible::after {
+	background-color:	rgba(0,0,0,0.8);
+}
+
 /* 記事貼り付け */
 figure {
 	display:		inline-block;

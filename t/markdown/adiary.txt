@@ -63,16 +63,17 @@
 <p><a href="pub/attachments/posts/2026/10/a.pdf" class="tag-file" title="ファイル">a.pdf</a> <a href="pub/attachments/posts/2026/10/demo.zip" class="tag-file" title="ファイル">デモ一式</a></p>
 
 === YouTube
+# 画像ビューアーがあるので、サムネイルだけを出すモジュールにする（docs/仕様/動画のサムネイル.md）
 --- input
 [youtube:abc-DEF_123]
 --- expected
-<p><module name="youtube" vid="abc-DEF_123"></p>
+<p><module name="youtube-thumb" vid="abc-DEF_123" width="480" height="270" query="" group="k1"></p>
 
 === URLの埋め込み（YouTube）
 --- input
 [&https://www.youtube.com/watch?v=n_D__CT5-H0&t=4279s]
 --- expected
-<p><module name="youtube" vid="n_D__CT5-H0" width="480" height="270" opt="start=4279"></p>
+<p><module name="youtube-thumb" vid="n_D__CT5-H0" width="480" height="270" query="&start=4279" group="k1"></p>
 
 === バナー
 # バナーだけの段落は <p> で囲まない

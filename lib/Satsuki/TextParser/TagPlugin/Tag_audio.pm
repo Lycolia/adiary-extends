@@ -92,11 +92,49 @@ sub audio_video {
 	}
 	if (!$src) { return''; }
 
+	# 動画にサムネイルがあれば、サムネイルだけを出す。押すと画像ビューアー（Lythumb-viewer）で再生する
+	if ($tname eq 'video' && $pobj->{image_attr} ne '') {
+		my $thumb = &video_thumbnail($pobj, $url0, $width, $height);
+		if ($thumb ne '') { return $thumb; }
+	}
+
 	$width  = $width  ?  " width=\"$width\""  : ' width="480"';
 	$height = $height ? " height=\"$height\"" : ' height="270"';
 
 	# 再生するまで読み込まない（ページを開いただけで動画を全部読み込まないように）
 	return "<$tname$width$height controls preload=\"none\">$src(Browser not support $tname tag) <a class=\"$tname\" href=\"$url0\">$url0</a></$tname>";
+}
+
+#-------------------------------------------------------------------------------
+# ●動画のサムネイル
+#-------------------------------------------------------------------------------
+# 画像アルバムの動画に、管理画面で作ったサムネイル（.thumbnail/動画名.poster.jpg）があれば、
+# サムネイルの画像を動画へのリンクにして返す。無ければ空（docs/仕様/動画のサムネイル.md）
+# 大きさの指定が無ければ、長い辺を<video>やYouTubeの幅と同じ480pxに収める（縦長の動画が長くならないように）。
+# サムネイルのファイルは大きめ（長い辺1280px）なので、高解像度の画面でもぼやけない
+#
+my $VIDEO_THUMB_SIZE = 480;
+
+sub video_thumbnail {
+	my ($pobj, $url, $width, $height) = @_;
+	my $poster = $url;
+	$poster =~ s/[?#].*//;
+	if ($poster !~ s|^(.*/)?([^/]+)$|$1.thumbnail/$2.poster.jpg|) { return ''; }
+
+	# サイトの中のファイルだけを読む（外のサイトや読めないファイルなら空）
+	require Satsuki::TextParser::TagPlugin::Tag_image;
+	my $size = Satsuki::TextParser::TagPlugin::Tag_image::image_size_attr($pobj->{ROBJ}, $poster);
+	if ($size eq '') { return ''; }
+	if ($width || $height) {
+		$size = ($width ? " width=\"$width\"" : '') . ($height ? " height=\"$height\"" : '');
+	} elsif ($size =~ /width="(\d+)" height="(\d+)"/ && ($VIDEO_THUMB_SIZE < $1 || $VIDEO_THUMB_SIZE < $2)) {
+		my $r = $VIDEO_THUMB_SIZE / ($1 < $2 ? $2 : $1);
+		$size = ' width="' . int($1*$r + 0.5) . '" height="' . int($2*$r + 0.5) . '"';
+	}
+
+	my $attr = $pobj->{image_attr};
+	$attr =~ s/%k/$pobj->{thispkey}/g;
+	return "<a href=\"$url\" class=\"video-thumb\" $attr><img alt=\"\"$size src=\"$poster\"></a>";
 }
 
 1;
