@@ -1048,7 +1048,7 @@ function upload_files_insert(data, opt) {
 //------------------------------------------------------------------------------
 // ●アップロード処理
 //------------------------------------------------------------------------------
-function ajax_upload( form_dom, files, option ) {
+function get_upload_folder() {
 	var date = $('#edit-date').val().toString() || '';
 	var year;
 	var mon;
@@ -1062,7 +1062,11 @@ function ajax_upload( form_dom, files, option ) {
 	}
 	var folder = $fileup.data('folder');
 	if (folder == '') folder='posts/%y/';
-	folder = folder.replace('%y', year).replace('%m', mon).replace(/^\/+/, '');
+	return folder.replace('%y', year).replace('%m', mon).replace(/^\/+/, '');
+}
+
+function ajax_upload( form_dom, files, option ) {
+	var folder = get_upload_folder();
 
 	// FormData生成
 	var fd = new FormData( form_dom );
@@ -1149,18 +1153,7 @@ $edit.on("drop", function(evt) {
 //------------------------------------------------------------------------------
 
 const uploadFile = (file, successCb, errorCb) => {
-	let date = $('#edit-date').val().toString() || '';
-	let year;
-	let month;
-	if (date.match(/^\d\d\d\d[\-\/]\d\d/)) {
-		year = date.substr(0,4);
-		month  = date.substr(5,2);
-	} else {
-		let d = new Date();
-		year = d.getFullYear();
-		month  = (101 + d.getMonth()).toString().substr(1);
-	};
-	const folder = `adiary/${year}/${month}/`;
+	const folder = get_upload_folder();
 
 	const fd = new FormData();
 
@@ -1200,7 +1193,7 @@ window.onload = () => {
 			const file = new File([pasteFile], `paste-image-${timestamp}.${ext}`, { type: pasteFile.type });
 			uploadFile(file, (data, folder) => {
 				upload_files_insert(data, {
-					folder:		folder, // TODO: 突っ込むフォルダ：どっかで既定値を設定したい
+					folder:		folder,
 					thumbnail:	true, // TODO: サムネ：どっかで既定値を設定したい
 					caption:	'',
 					exif:		false, // TODO: 回り込み指定：どっかで既定値を設定したい
