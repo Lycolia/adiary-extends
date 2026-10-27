@@ -177,14 +177,11 @@ body:not(.admin-logged-in) #admin-frame {
 	color:			#fff;
 	background-color:	var(--admin-error);
 }
-/* 設定（子の項目） */
+/* 設定（子の項目は常に開いておき、設定の画面にいるときは「設定」を強調する） */
 #admin-nav .admin-nav-group.open > a.admin-nav-caption {
 	color:			#fff;
 	font-weight:		bold;
 	background-color:	var(--admin-accent);
-}
-#admin-nav .admin-nav-group:not(.open) > ul {
-	display:		none;
 }
 #admin-nav .admin-nav-group ul {
 	padding-bottom:		0.5rem;
@@ -194,6 +191,11 @@ body:not(.admin-logged-in) #admin-frame {
 	padding:		0.3rem 1rem 0.3rem 1.5rem;
 	color:			var(--admin-nav-sub-fg);
 	font-size:		95%;
+}
+/* 子の項目は背景がホバーの色と同じなので、ナビの地の色に戻して分かるようにする */
+#admin-nav .admin-nav-group li a:hover, #admin-nav .admin-nav-group li a:focus {
+	color:			var(--admin-nav-hover);
+	background-color:	var(--admin-nav-bg);
 }
 #admin-nav .admin-nav-group li.current > a {
 	color:			#fff;
@@ -974,7 +976,7 @@ div.popup-help {
 	#admin-nav a, #admin-nav a:link, #admin-nav a:visited {
 		padding:		0.4rem 0.7rem;
 	}
-	/* 「設定」はほかの項目と同じに並べ、開いているときは子の項目を次の行に出す */
+	/* 「設定」はほかの項目と同じに並べ、子の項目は次の行に出す */
 	#admin-nav .admin-nav-group {
 		display:		contents;
 	}
