@@ -168,7 +168,9 @@ body:not(.admin-logged-in) #admin-frame {
 	color:			#fff;
 	background-color:	var(--admin-accent);
 }
-#admin-nav .admin-nav-new {
+/* 新着の印。管理画面のナビ、ダッシュボード、lyndbaumの管理バーで、同じ赤い地に白い字にそろえる */
+#admin-nav .admin-nav-new,
+.admin-new-badge {
 	display:		inline-block;
 	margin-left:		0.4em;
 	padding:		0 0.4em;
@@ -176,6 +178,10 @@ body:not(.admin-logged-in) #admin-frame {
 	line-height:		1.5;
 	color:			#fff;
 	background-color:	var(--admin-error);
+}
+/* ダッシュボードなどでは文の頭に置くので、左を空けない */
+.admin-new-badge {
+	margin-left:		0;
 }
 /* 設定（子の項目は常に開いておき、設定の画面にいるときは「設定」を強調する） */
 #admin-nav .admin-nav-group.open > a.admin-nav-caption {

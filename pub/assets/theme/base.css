@@ -608,6 +608,146 @@ span.highlight4	{ background-color: #f6f; }
 }
 
 /*--------------------------------------------------------------------
+●管理バー（skel/_sub/admin_bar.html）
+--------------------------------------------------------------------*/
+/* ログイン中に、公開画面の上に貼り付ける。WordPressの管理バーと同じく、テーマの色によらず暗い地にする。
+   1行に収めて高さを --admin-bar-h に決め打ちにし、その分だけページを下げる（margin-top）。
+   アンカーで飛んだ先も、バーの裏に入らないよう下げる（scroll-padding-top）。
+   テーマが画面の上に貼り付けるもの（lyndbaumのサイドバーのボタンなど）は、--admin-bar-h の分だけ下げる */
+html:has(.admin-bar) {
+	--admin-bar-h:		2rem;
+	margin-top:		var(--admin-bar-h);
+	scroll-padding-top:	var(--admin-bar-h);
+}
+.admin-bar {
+	position:		fixed;
+	top:			0;
+	left:			0;
+	right:			0;
+	z-index:		300;
+	display:		flex;
+	align-items:		center;
+	gap:			1em;
+	box-sizing:		border-box;
+	height:			var(--admin-bar-h);
+	padding:		0 0.75rem;
+	overflow:		hidden;
+	white-space:		nowrap;
+	background-color:	#1d2327;
+	color:			#f0f0f1;
+	font-size:		0.85rem;
+	line-height:		1.5;
+	text-align:		left;
+}
+.admin-bar a, .admin-bar a:link, .admin-bar a:visited {
+	color:			#f0f0f1;
+	text-decoration:	none;
+}
+.admin-bar a:hover, .admin-bar a:focus-visible {
+	color:			#72aee6;
+	text-decoration:	underline;
+}
+/* 名前が長いときは、名前を省いて1行に収める。overflow: hidden で字の上が切れないよう、バーの行の高さは 1 にしない */
+.admin-bar .welcome {
+	min-width:		0;
+	overflow:		hidden;
+	text-overflow:		ellipsis;
+}
+.admin-bar .adminmenu {
+	flex:			none;
+	display:		inline-flex;
+	align-items:		center;
+}
+/* 項目のアイコン（線で描いたSVG。色は文字と同じ） */
+.admin-bar-icon {
+	flex:			none;
+	width:			1.15em;
+	height:			1.15em;
+	margin-right:		0.3em;
+	vertical-align:		-0.2em;
+	fill:			none;
+	stroke:			currentColor;
+	stroke-width:		2;
+	stroke-linecap:		round;
+	stroke-linejoin:	round;
+}
+.admin-bar .logout {
+	margin-left:		auto;
+}
+/* 新着のコメントの印（押すとコメント一覧）。「ようこそ○○さん」（管理画面へのリンク）のすぐ後ろに付ける。
+   色は管理画面の新着の印（admin.css の admin-new-badge）にそろえる */
+.admin-bar .admin-bar-new,
+.admin-bar .admin-bar-new:link,
+.admin-bar .admin-bar-new:visited {
+	flex:			none;
+	padding:		0.1em 0.35em;
+	background-color:	#d63638;
+	color:			#fff;
+	font-size:		0.75rem;
+}
+
+/* スマホの表示（狭い画面と、スマホ用のテーマ）では、WordPressと同じく、バーを太くし（32px → 46px）、
+   どの項目もアイコンだけにして、押せる範囲（リンク）をバーの高さいっぱいに広げる。
+   幅は、adiary.js がスマホとして扱う幅（640px）に合わせる */
+@media (max-width: 40rem) {
+	html:has(.admin-bar) {
+		--admin-bar-h:		2.875rem;
+	}
+	.admin-bar {
+		gap:			0;
+		padding:		0 0.25rem;
+	}
+	.admin-bar .admin-bar-label,
+	.admin-bar .welcome > span {
+		display:		none;
+	}
+	.admin-bar > a {
+		align-self:		stretch;
+		display:		inline-flex;
+		align-items:		center;
+		padding:		0 0.6rem;
+	}
+	/* 「ようこそ」のリンクの右の余白（0.6rem）から少しだけ引き寄せ、隙間をPCの表示と同じくらいにする */
+	.admin-bar .admin-bar-new,
+	.admin-bar .admin-bar-new:link,
+	.admin-bar .admin-bar-new:visited {
+		align-self:		center;
+	}
+	.admin-bar .admin-bar-icon {
+		margin-right:		0;
+		width:			1.6em;
+		height:			1.6em;
+	}
+}
+html:has(body.sp .admin-bar) {
+	--admin-bar-h:		2.875rem;
+}
+.sp .admin-bar {
+	gap:			0;
+	padding:		0 0.25rem;
+}
+.sp .admin-bar .admin-bar-label,
+.sp .admin-bar .welcome > span {
+	display:		none;
+}
+.sp .admin-bar > a {
+	align-self:		stretch;
+	display:		inline-flex;
+	align-items:		center;
+	padding:		0 0.6rem;
+}
+.sp .admin-bar .admin-bar-new,
+.sp .admin-bar .admin-bar-new:link,
+.sp .admin-bar .admin-bar-new:visited {
+	align-self:		center;
+}
+.sp .admin-bar .admin-bar-icon {
+	margin-right:		0;
+	width:			1.6em;
+	height:			1.6em;
+}
+
+/*--------------------------------------------------------------------
 ●記事の情報の、コメント欄と参照元へのリンク（skel/_sub/art_info.html）
 --------------------------------------------------------------------*/
 .art-jump a + a {
