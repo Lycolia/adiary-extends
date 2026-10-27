@@ -260,6 +260,7 @@ sub regist_article {
 	$art{enable} = $form->{enable}  ? 1 : 0;
 	$art{com_ok} = $form->{com_ok}  ? 1 : 0;
 	$art{hcom_ok}= $form->{hcom_ok} ? 1 : 0;
+	$art{nsfw}   = $form->{nsfw}    ? 1 : 0;
 
 	#-------------------------------------------------------------
 	# 日付
@@ -750,7 +751,7 @@ sub json_long_text {
 # ほかの画面（別のタブや端末）で先に保存されていないかを見る。
 # 記事一覧やコンテンツの編集はupdate_tmを変えずに書き換えるので、中身で比べる。
 # コメント数や変換後の本文は、記事を書き換えなくても変わるので入れない。
-my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok
+my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok nsfw
 		    ctype link_key upnode priority main_image description);
 sub article_digest {
 	my ($self, $art) = @_;

@@ -1088,7 +1088,7 @@ sub load_articles {
 	# フラグのオーバーライド確認
 	#-------------------------------------------------------------
 	if (!$opt->{no_override}) {
-		foreach my $flag (qw(com_ok hcom_ok)) {
+		foreach my $flag (qw(com_ok hcom_ok nsfw)) {
 			if ($blog->{"${flag}_force"} ne '') {
 				my $ow = $blog->{"${flag}_force"};
 				foreach(@$logs) {

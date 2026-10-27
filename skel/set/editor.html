@@ -55,6 +55,14 @@
 		</td>
 	</tr>
 	<tr>
+		<td>
+			<label><input type="checkbox" name="nsfw" value="1"<@if(s.nsfw, ' checked')>>NSFW（年齢確認を出す）</label>
+		</td>
+		<td>
+			<label><input type="checkbox" name="nsfw_force" value="1"<@if(s.nsfw_force, ' checked')>>強制ON（ブログ全体をNSFWにする）</label>
+		</td>
+	</tr>
+	<tr>
 		<td colspan="2">
 			<label><input type="checkbox" name="ping" value="1"<@if(s.ping, ' checked')>>更新通知Pingを送信する</label>
 		</td>

@@ -608,6 +608,99 @@ span.highlight4	{ background-color: #f6f; }
 }
 
 /*--------------------------------------------------------------------
+●NSFWの年齢確認（skel/_sub/nsfw_gate.html）
+--------------------------------------------------------------------*/
+/* 年齢確認を済ませるまで、中身をぼかして年齢確認を重ねる。ぼかす中身は、
+     NSFWの記事        .nsfw の中の .nsfw-content（本文）
+     ブログ全体        画面全体。年齢確認を画面全体に重ね、その下を backdrop-filter でぼかす。
+                       中身に filter をかけると、中の position: fixed（テーマの引き出しのサイドバーなど）が
+                       画面でなく中身に付いてはみ出し、スマホで画面の幅が広がるため、中身はそのままにする
+   済ませたところには nsfw-open が付く。確認を覚えていると、html に nsfw-ok が付く（_frame.html、adiary.js） */
+.nsfw .body-main {
+	position:		relative;
+}
+/* 中身が短くても、年齢確認が収まるようにする */
+.nsfw .nsfw-content {
+	min-height:		14em;
+}
+.nsfw .nsfw-content {
+	filter:			blur(16px);
+	pointer-events:		none;
+	user-select:		none;
+}
+.nsfw-gate {
+	position:		absolute;
+	top:			0;
+	left:			0;
+	right:			0;
+	bottom:			0;
+	z-index:		2;
+	padding:		2em 1em;
+}
+.nsfw-site > .nsfw-gate {
+	position:		fixed;
+	z-index:		1000;
+	padding-top:		20vh;
+	background-color:	rgba(0,0,0,0.3);
+	-webkit-backdrop-filter:	blur(16px);
+	backdrop-filter:	blur(16px);
+}
+/* ぼかせないブラウザーでは、下を見えなくする */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.nsfw-site > .nsfw-gate {
+		background-color:	rgba(0,0,0,0.9);
+	}
+}
+/* テーマの色によらず読めるように、地と文字の色をここで決める。
+   位置は中身の長さによらず、上からの位置で決める（長い本文では、スクロールしても見えるところに残す） */
+.nsfw-gate-box {
+	position:		sticky;
+	top:			2em;
+	box-sizing:		border-box;
+	max-width:		28em;
+	margin:			0 auto;
+	padding:		1em 1.5em;
+	border:			1px solid #888;
+	border-radius:		8px;
+	background-color:	#fff;
+	color:			#222;
+	box-shadow:		0 2px 12px rgba(0,0,0,0.4);
+	text-align:		center;
+}
+.nsfw-gate-box p {
+	margin:			0.5em 0;
+}
+.nsfw-gate-box label {
+	color:			#222;
+}
+.nsfw-gate-msg {
+	font-weight:		bold;
+}
+html.nsfw-ok .nsfw .nsfw-content,
+.nsfw.nsfw-open .nsfw-content {
+	filter:			none;
+	pointer-events:		auto;
+	user-select:		auto;
+}
+html.nsfw-ok .nsfw .nsfw-content,
+.nsfw.nsfw-open .nsfw-content {
+	min-height:		0;
+}
+html.nsfw-ok .nsfw-gate,
+.nsfw.nsfw-open .nsfw-gate {
+	display:		none;
+}
+/* 覚えているときだけ出す */
+.nsfw-remembered {
+	display:		none;
+	margin:			0 0 0.5em 0;
+	font-size:		90%;
+}
+html.nsfw-ok .nsfw-remembered {
+	display:		block;
+}
+
+/*--------------------------------------------------------------------
 ●ソーシャルボタン
 --------------------------------------------------------------------*/
 /* X、Facebook、はてなブックマーク、汎用の共有は、それぞれのサービスの色の地に、ロゴと文字をCSSで出す（4.09）。

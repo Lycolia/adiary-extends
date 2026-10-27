@@ -37,8 +37,9 @@
 <$end>
 		<pubDate><@t.rfc_date></pubDate>
 		<dc:creator><@t.name></dc:creator>
-		<description><![CDATA[<@t.description>
-<@ifexec(!opt.no_comment && t.coms, begin.comment)>
+<@>		NSFWの記事は、本文とコメントを出さない（RSSリーダーでは年齢確認を出せないため）
+		<description><![CDATA[<@if(t.nsfw, '<p>この記事には年齢確認があります。続きはブログで読んでください。</p>', t.description)>
+<@ifexec(!opt.no_comment && t.coms && !t.nsfw, begin.comment)>
 <hr>
 <h4><a href="<@url>#com">■コメント（<@t.coms>件）</a><@if(5 < t.coms, ' - 古いコメントが省略されています')></h4>
 <div style="margin-left: 1em;">

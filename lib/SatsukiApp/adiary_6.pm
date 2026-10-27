@@ -58,7 +58,7 @@ my @update_versions = (
 	]},
 	{ ver => 4.14, info=>1 },	# RSSをRSS 2.0の仕様に合わせた。ブログ付加情報の再構築で書き出し直す
 	{ ver => 4.15, plugin=>1, func => 'sys_update_415' },	# WebPushを削除した。デザインに残る登録ボタンは、デザインの作り直しで取り除く
-	{ ver => 4.16, plugin=>1, rebuild_cond=>[	# ソーシャルボタンに汎用の共有ボタンを足した
+	{ ver => 4.16, plugin=>1, func => 'sys_update_416', rebuild_cond=>[	# ソーシャルボタンに汎用の共有ボタンを足した。記事にNSFWのフラグを足した
 		'\[youtube:', 'youtube\.com/watch'	# YouTubeはサムネイルだけを出す。動画は、アップデートの後にブラウザーでサムネイルを作ったときに作り直す
 	]}
 );
@@ -397,6 +397,21 @@ sub sys_update_415 {
 		$self->update_blogset($blog, $_, undef);
 	}
 	$ROBJ->file_delete($self->{blog_dir} . 'webpush.dat');
+}
+
+#-------------------------------------------------------------------------------
+# ●システムアップデート for Ver4.16
+#-------------------------------------------------------------------------------
+# 記事とゴミ箱のテーブルに、NSFWのフラグ（年齢確認を出す）のカラムを足す
+# ※記事のスケルトンも変えたので、プラグインの再インストールでデザインのスケルトンも作り直す
+sub sys_update_416 {
+	my $self = shift;
+	my $DB   = $self->{DB};
+	my $ROBJ = $self->{ROBJ};
+	my $r = 0;
+	$r += $DB->add_column("art",   {name=>'nsfw', type=>'flag'});
+	$r += $DB->add_column("trash", {name=>'nsfw', type=>'flag'});
+	if ($r) { $ROBJ->message("Blog database error(%s)", $r); }
 }
 
 #-------------------------------------------------------------------------------

@@ -567,7 +567,7 @@ sub art_table_info {
 	$info{text}    = [ qw(title parser tags name id ip host agent link_key ctype main_image description backlinks) ];
 	$info{ltext}   = [ qw(text text_s _text) ];
 	$info{int}     = [ qw(yyyymmdd tm update_tm coms coms_all upnode priority) ];
-	$info{flag}    = [ qw(enable com_ok hcom_ok) ];
+	$info{flag}    = [ qw(enable com_ok hcom_ok nsfw) ];
 	$info{idx}     = [ qw(name id link_key ctype upnode yyyymmdd tm update_tm coms coms_all enable priority) ];
 	$info{idx_tdb} = [ qw(title tags) ];
 	$info{unique}  = [ qw(link_key) ];

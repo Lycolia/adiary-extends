@@ -553,6 +553,47 @@ $$.init( function(){
 });
 
 ////////////////////////////////////////////////////////////////////////////////
+//●NSFWの記事の年齢確認
+////////////////////////////////////////////////////////////////////////////////
+// 「表示する」を押したら、その年齢確認を重ねた先（記事、ブログ全体）だけぼかしを外す。
+// 「今後確認しない」も付けていたらブラウザーに覚え（localStorage）、このページのNSFWのぼかしをすべて外す。
+// ブログ全体の確認には「今後確認しない」が無く、ブラウザーを閉じるまで覚える（sessionStorage）。
+// 覚えたブラウザーでは、_frame.htmlが本文を描く前にぼかしを外す。
+// 「確認を元に戻す」を押したら忘れ、このページのNSFWをまたぼかす
+$$.init( function(){
+	const root = document.documentElement;
+	document.querySelectorAll('.nsfw-gate-ok').forEach(function(btn) {
+		btn.addEventListener('click', function() {
+			const gate = btn.closest('.nsfw-gate');
+			const art  = btn.closest('.nsfw');
+			if (art) art.classList.add('nsfw-open');
+
+			const chk = gate && gate.querySelector('.nsfw-remember');
+			const remember = chk && chk.checked;
+			const site     = art && art.classList.contains('nsfw-site');
+			if (!remember && !site) return;
+			try {
+				(remember ? localStorage : sessionStorage).setItem('adiary-nsfw-ok', '1');
+			} catch(e) {}
+			root.classList.add('nsfw-ok');
+		});
+	});
+	document.querySelectorAll('.nsfw-forget').forEach(function(btn) {
+		btn.addEventListener('click', function() {
+			try { localStorage.removeItem('adiary-nsfw-ok'); } catch(e) {}
+			try { sessionStorage.removeItem('adiary-nsfw-ok'); } catch(e) {}
+			root.classList.remove('nsfw-ok');
+			document.querySelectorAll('.nsfw.nsfw-open').forEach(function(art) {
+				art.classList.remove('nsfw-open');
+			});
+			document.querySelectorAll('.nsfw-remember').forEach(function(chk) {
+				chk.checked = false;
+			});
+		});
+	});
+});
+
+////////////////////////////////////////////////////////////////////////////////
 //●月別過去ログリストのリロード
 ////////////////////////////////////////////////////////////////////////////////
 $$.init( function(){
