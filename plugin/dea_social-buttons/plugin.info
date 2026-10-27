@@ -1,6 +1,6 @@
 ######################################################################
 title=ソーシャルボタン
-version=1.12
+version=1.13
 #					(C)2015 nabe@abk
 ######################################################################
 author=nabe@abk
@@ -23,6 +23,9 @@ load_module_html_in_edit=0
 	</span>
 	<span class="social-button hatena-share">
 		<a class="share" href="#" title="はてなブックマークに追加"><span class="hidden-text">ブックマーク</span></a><a class="count" href="#">0</a>
+	</span>
+	<span class="social-button web-share">
+		<a class="share" href="#" title="共有、またはURLをコピー">共有</a>
 	</span>
 </div>
 HTML

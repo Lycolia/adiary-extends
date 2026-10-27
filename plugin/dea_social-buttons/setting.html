@@ -30,5 +30,10 @@
 			<label><input type="checkbox" name="hatena" value="1"<@if(ps.hatena ne '0', ' checked')>>表示する</label><span class="help" data-help="ブックマークの画面へのリンクと、ブックマーク数を出します">?</span>
 		</td>
 	</tr>
+	<tr><th>汎用の共有</th>
+		<td colspan="2">
+			<label><input type="checkbox" name="web_share" value="1"<@if(ps.web_share ne '0', ' checked')>>表示する</label><span class="help" data-help="OSの共有の画面を出すボタンを出します。共有の画面を出せないブラウザでは、記事のURLをコピーします">?</span>
+		</td>
+	</tr>
 	</tbody>
 	</table>

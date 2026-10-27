@@ -513,6 +513,46 @@ $$.init( function(){
 });
 
 ////////////////////////////////////////////////////////////////////////////////
+//●汎用の共有ボタン
+////////////////////////////////////////////////////////////////////////////////
+// OSの共有の画面を出し、出せなければ記事のURLをコピーする
+
+$$.init( function(){
+  $('.social-button.web-share').each(function(idx,dom) {
+	const obj = $(dom);
+	const url_orig = obj.data('url') || '';
+	if (!url_orig.match(/^https?:\/\//i)) return;
+
+	// data-urlはencode_uricom済みなので戻す
+	let url;
+	try { url = decodeURIComponent(url_orig); }
+	catch(e) { url = url_orig; }
+	const title = obj.data('title') || document.title;
+
+	const btn = obj.children('a.share');
+	btn.on('click', function(evt) {
+		evt.preventDefault();
+		if (navigator.share) {
+			// 共有の画面を閉じたとき（AbortError）も失敗になるので、何もしない
+			navigator.share({ title: title, url: url }).catch(function(){});
+			return;
+		}
+		if (!navigator.clipboard) {	// httpのページなど
+			window.prompt('記事のURL', url);
+			return;
+		}
+		navigator.clipboard.writeText(url).then(function(){
+			const text = btn.text();
+			btn.text('コピーしました');
+			setTimeout(function(){ btn.text(text); }, 2000);
+		}, function(){
+			window.prompt('記事のURL', url);
+		});
+	});
+  });
+});
+
+////////////////////////////////////////////////////////////////////////////////
 //●月別過去ログリストのリロード
 ////////////////////////////////////////////////////////////////////////////////
 $$.init( function(){

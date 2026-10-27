@@ -35,5 +35,14 @@
 	</span>
 	<$end>
 	<@>
+	<@>#################################################
+	<@> 汎用の共有（js/adiary.jsが、OSの共有の画面を出す。出せないブラウザでは記事のURLをコピーする）
+	<@>#################################################
+	<@ifexec(ps.web_share ne '0', begin)>
+	<span class="social-button web-share" data-url="<@url>" data-title="<@t.title> - <@s.blog_name>">
+		<a class="share" href="#" rel="nofollow" title="共有、またはURLをコピー">共有</a>
+	</span>
+	<$end>
+	<@>
 	<@>#####################################################################
 	</div>
