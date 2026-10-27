@@ -1,0 +1,19 @@
+<@7>
+<@local(name,t,coms)>
+<$name = argv#0>
+<$t = argv#1>
+<@>
+<@> 記事の一覧のコメント数。HTMLはここだけに書く（docs/仕様/スケルトン.md）
+<@>	呼び出し元：plugin/dea_com-count/plugin.info
+<@>	           雛形の既定の中身（skel/ と、テーマの _skel/ の同じ名前のスケルトン）
+<@>	テーマで変えたいときは、テーマの _skel/_sub/ に同じ名前で置く
+<@>
+<@>	argv#0	モジュール名（data-module-name。設定もこの名前で読む）
+<@>	argv#1	記事
+<@>
+<$coms = if(v.allow_edit, t.coms_all, t.coms)>
+<@ifexec(t.com_ok || coms, begin)>
+<div class="com-count" data-module-name="<@name>">
+	<span class="element com-caption"><a href="<@v.myself2><@t.elink_key>#com"><span class="com-title">コメント</span><span class="com-num">（<span class="num"><@coms></span>件）</span></a></span>
+</div>
+<$end>

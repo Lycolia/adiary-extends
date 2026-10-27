@@ -30,10 +30,11 @@
 		</td>
 	</tr>
 	<tr>
-		<th>枠線の表示<span class="help" data-help="全体を枠線で囲みます。">?</span></th>
+		<th>枠線の表示</th>
 		<td>
 			太さ   <input type="number" class="int w50" name="border_w" value="<@ps.border_w || 0>" min="0" max="99" id="border-w">px &ensp;
 			丸め量 <input type="number" class="int w50" name="border_r" value="<@ps.border_r || 0>" min="0" max="99" id="border-r">px
+			<span class="help-text">全体を枠線で囲みます。</span>
 		</td>
 	</tr>
 	<tr>
@@ -55,11 +56,12 @@
 		</td>
 	</tr>
 	<tr>
-		<th>固定位置で表示<span class="help" data-help="ヘッダ等の領域内で固定された位置に表示します。">?</span></th>
+		<th>固定位置で表示</th>
 		<td>
 			上から<input type="number" class="int w50" name="abs_y" value="<@ps.abs_y || 0>" min="0" max="999" id="abs-y">px 
 			左から<input type="number" class="int w50" name="abs_x" value="<@ps.abs_x || 0>" min="0" max="999" id="abs-x">px &ensp;
 			<label><input type="checkbox" class="js-enable" data-target="#abs-x,#abs-y"<@if(ps.abs_x ne '',' checked')>>固定位置で表示する</label>
+			<span class="help-text">ヘッダ等の領域内で固定された位置に表示します。</span>
 		</td>
 	</tr>
 	<tr>
@@ -77,13 +79,14 @@
 		</td>
 	</tr>
 	<tr>
-		<th>マージン<span class="help" data-help="表示位置の調整などに使用します。テーマによって左右マージンが効かないことがあります。">?</span></th>
+		<th>マージン</th>
 		<td>
 			上<input type="number" class="int w50" name="margin0" value="<@ps.margin0 || 0>" min="-999" max="999" id="margin0"> 
 			右<input type="number" class="int w50" name="margin1" value="<@ps.margin1 || 0>" min="-999" max="999" id="margin1"> 
 			下<input type="number" class="int w50" name="margin2" value="<@ps.margin2 || 0>" min="-999" max="999" id="margin2"> 
 			左<input type="number" class="int w50" name="margin3" value="<@ps.margin3 || 0>" min="-999" max="999" id="margin3"> &ensp;
 			<label><input type="checkbox" class="js-disable" data-target="#margin0,#margin1,#margin2,#margin3"<@if(ps.margin0 eq '',' checked')>>変更しない</label>
+			<span class="help-text">表示位置の調整などに使用します。テーマによって左右マージンが効かないことがあります。</span>
 		</td>
 	</tr>
 	<tr>

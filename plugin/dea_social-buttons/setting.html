@@ -5,29 +5,34 @@
 	<tbody>
 	<tr><th rowspan=4>X</th>
 		<td colspan="2">
-			<label><input type="checkbox" name="twitter" value="1"<@if(ps.twitter ne '0', ' checked')>>表示する</label><span class="help" data-help="Xの投稿画面へのリンクを出します。ポスト数は表示されません">?</span>
+			<label><input type="checkbox" name="twitter" value="1"<@if(ps.twitter ne '0', ' checked')>>表示する</label><span class="help-text">Xの投稿画面へのリンクを出します。ポスト数は表示されません</span>
 		</td>
 	</tr>
 	<tr>
-		<td>via<span class="help" data-help="ポストに「@ID」として含めるIDを指定します">?</span></td>
-		<td><em><span class="mono">＠</span></em><input type="text" class="w100" name="twitter_id" value="<@ps.twitter_id>"></td>
+		<td>via</td>
+		<td><em><span class="mono">＠</span></em><input type="text" class="w100" name="twitter_id" value="<@ps.twitter_id>"><span class="help-text">ポストに「@ID」として含めるIDを指定します</span></td>
 	</tr>
 	<tr>
-		<td>フォロー推奨ID<span class="help" data-help="ポストの後に、このIDのフォローを勧めます">?</span></td>
-		<td><em><span class="mono">＠</span></em><input type="text" class="w100" name="twitter_follow" value="<@ps.twitter_follow>"></td>
+		<td>フォロー推奨ID</td>
+		<td><em><span class="mono">＠</span></em><input type="text" class="w100" name="twitter_follow" value="<@ps.twitter_follow>"><span class="help-text">ポストの後に、このIDのフォローを勧めます</span></td>
 	</tr>
 	<tr>
-		<td>ハッシュタグ<span class="help" data-help="ポストに含めるハッシュタグ(#)を指定します">?</span></td>
-		<td><em><span class="mono">＃</span></em><input type="text" class="w100" name="twitter_hash" value="<@ps.twitter_hash>"></td>
+		<td>ハッシュタグ</td>
+		<td><em><span class="mono">＃</span></em><input type="text" class="w100" name="twitter_hash" value="<@ps.twitter_hash>"><span class="help-text">ポストに含めるハッシュタグ(#)を指定します</span></td>
 	</tr>
 	<tr><th>Facebook</th>
 		<td colspan="2">
-			<label><input type="checkbox" name="facebook" value="1"<@if(ps.facebook ne '0', ' checked')>>表示する</label><span class="help" data-help="シェアの画面へのリンクを出します。シェア数は表示されません">?</span>
+			<label><input type="checkbox" name="facebook" value="1"<@if(ps.facebook ne '0', ' checked')>>表示する</label><span class="help-text">シェアの画面へのリンクを出します。シェア数は表示されません</span>
 		</td>
 	</tr>
 	<tr><th>はてなブックマーク</th>
 		<td colspan="2">
-			<label><input type="checkbox" name="hatena" value="1"<@if(ps.hatena ne '0', ' checked')>>表示する</label><span class="help" data-help="ブックマークの画面へのリンクと、ブックマーク数を出します">?</span>
+			<label><input type="checkbox" name="hatena" value="1"<@if(ps.hatena ne '0', ' checked')>>表示する</label><span class="help-text">ブックマークの画面へのリンクと、ブックマーク数を出します</span>
+		</td>
+	</tr>
+	<tr><th>汎用の共有</th>
+		<td colspan="2">
+			<label><input type="checkbox" name="web_share" value="1"<@if(ps.web_share ne '0', ' checked')>>表示する</label><span class="help-text">OSの共有の画面を出すボタンを出します。共有の画面を出せないブラウザでは、記事のURLをコピーします</span>
 		</td>
 	</tr>
 	</tbody>

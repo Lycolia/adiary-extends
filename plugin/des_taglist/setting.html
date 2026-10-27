@@ -4,15 +4,16 @@
 	<table class="blog-ps.tting">
 	<tbody>
 	<tr>
-		<th>モジュールタイトル<span class="help" data-help="表示ノードに「root」を指定した時に表示されるタイトルです。">?</span></th>
-		<td><input type="text" class="w160" name="title" value="<@ps.title || 'タグ'>" maxlength="64"></td>
+		<th>モジュールタイトル</th>
+		<td><input type="text" class="w160" name="title" value="<@ps.title || 'タグ'>" maxlength="64"><span class="help-text">表示ノードに「root」を指定した時に表示されるタイトルです。</span></td>
 	</tr>
 	<tr>
-		<th>表示開始ノード<span class="help" data-help="指定したノードから下をリスト表示します。">?</span></th>
+		<th>表示開始ノード</th>
 		<td>
 			<select name="node" id="tag-select" data-default="<@ps.node>" data-url="<@Basepath><@v.blogpub_dir>taglist.json?<@v.blog.json_tm>">
 				<option value="">*すべて(root)</option>
 			</select>
+			<span class="help-text">指定したノードから下をリスト表示します。</span>
 		</td>
 	</tr>
 	<tr>
@@ -29,11 +30,12 @@
 		</td>
 	</tr>
 	<tr>
-		<th>折り畳みスイッチ<span class="help" data-help="ノード開閉スイッチを表示するか指定します。">?</span></th>
+		<th>折り畳みスイッチ</th>
 		<td>
 			<label><input type="checkbox" name="switch" value="1"<@if(ps.switch, ' checked')>
 			 class="js-enable" data-target="#des-taglist-nclose">表示する</label>
 			&emsp;<label><input type="checkbox" name="nclose" id="des-taglist-nclose" value="1"<@if(ps.nclose, ' checked')>>標準で閉じる</label>
+			<span class="help-text">ノード開閉スイッチを表示するか指定します。</span>
 		</td>
 	</tr>
 	</tbody>

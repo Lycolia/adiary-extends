@@ -25,7 +25,7 @@
 <$cur.system   = (dir eq 'system/')>
 <$setting = cur.set || cur.set2 || cur.plugin || cur.design || cur.mainte || cur.personal || cur.user || cur.system>
 <@>
-<@> 設定の子の項目は、設定の画面にいるときだけ開く。「設定」は出せる最初の項目へのリンクにする
+<@> 設定の子の項目は常に開いておく（open は設定の画面にいるときの強調）。「設定」は出せる最初の項目へのリンクにする
 <$first = if(s && v.blog_admin, 'set/', if(s && v.allow_edit, 'set2/', if(!Auth.auto, 'personal/', 'user/')))>
 <@>
 <nav id="admin-nav" aria-label="管理画面のナビ">

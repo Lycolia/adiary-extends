@@ -24,52 +24,72 @@ function sp_view360(){
 	me.target = -1;
 	me.mouseStatus =  {x: 0, y: 0, s: 0};
 
+// 要素のページの中の位置（jQueryの offset() と同じ）
+	me.offset = function(elem){
+		var r = elem.getBoundingClientRect();
+		return {left: r.left + window.scrollX, top: r.top + window.scrollY};
+	}
+
 // 初期化
 	me.init = function(){
 		// 360度画像の要素を探す。[image:360:…]の記法（tag-image-360）か、view360のクラスを付けたリンクの画像
 		// ※以前はファイル名の末尾が「-360」「_360」の画像も対象にしていたが、
 		//   貼り付けた画像の名前（時刻のミリ秒が360）とぶつかるのでやめた
-		$("a.tag-image-360 img, a.view360 img").each(me.make);
+		document.querySelectorAll("a.tag-image-360 img, a.view360 img").forEach(function(elem, idx){
+			me.make(idx, elem);
+		});
 
 		// ドキュメントのマウスイベントに登録
-		$(document).on("mousemove", me.onMouseMove);
-		$(document).on("mouseup", me.onMouseUp);
-		$(document).on("mouseleave", me.onMouseUp); // たぶん発生しないイベント
-		$(document).on("touchmove", me.onTouchMove);
-		$(document).on("touchend", me.onMouseUp);   //mouseと同じ
-		$(document).on("touchcancel", me.onMouseUp);//mouseと同じ
+		document.addEventListener("mousemove", me.onMouseMove);
+		document.addEventListener("mouseup", me.onMouseUp);
+		document.addEventListener("mouseleave", me.onMouseUp); // たぶん発生しないイベント
+		document.addEventListener("touchmove", me.onTouchMove);
+		document.addEventListener("touchend", me.onMouseUp);   //mouseと同じ
+		document.addEventListener("touchcancel", me.onMouseUp);//mouseと同じ
 
 	}// init
 
 	me.make = function(idx, elem){
-		$(elem).on('load', function(){
+		// three.min.js を読むのを待つ間に、画像を読み終えていることがある（キャッシュなど）。
+		// そのときは load が起きないので、すぐに作る
+		if (elem.complete && elem.naturalWidth) return me._make(elem);
+		elem.addEventListener('load', function(){
 			me._make(elem);
 		});
 	}
 	me._make = function(elem){
-		var i = $(elem);
-		i.wrap("<span style=\"display: inline-block; width: "+i.width()+"px; height:"+i.height()+"px; position: relative: baseline: bottom\" />");
-		me.elem.push($(i.parent()));
+		var width  = elem.width;
+		var height = elem.height;
+		var span   = document.createElement('span');
+		span.setAttribute('style', "display: inline-block; width: "+width+"px; height:"+height+"px; position: relative: baseline: bottom");
+		elem.parentNode.insertBefore(span, elem);
+		span.appendChild(elem);
+		me.elem.push(span);
 		var idx = me.lastid;
 		me.lastid++;
 
 		// ドラッグイベント(兼 情報表示)用canvas
-		me.canvas.push($("<canvas id=\"sp_view360_"+idx+"\" width="+(i.width())+" height="+(i.height())+" style='position: absolute; width: "+i.width()+"px; height:"+i.height()+"px; background-color:rgba(0,0,0,0)'></canvas>"));
-		me.elem[idx].append(me.canvas[idx]);
+		var canvas = document.createElement('canvas');
+		canvas.id     = "sp_view360_"+idx;
+		canvas.width  = width;
+		canvas.height = height;
+		canvas.setAttribute('style', "position: absolute; width: "+width+"px; height:"+height+"px; background-color:rgba(0,0,0,0)");
+		me.canvas.push(canvas);
+		me.elem[idx].appendChild(me.canvas[idx]);
 
 		// 基本オブジェクトの生成と登録
 		me.scene.push(new THREE.Scene());
-		me.camera.push(new THREE.PerspectiveCamera(70, i.width() / i.height(), 0.1, 1000));
+		me.camera.push(new THREE.PerspectiveCamera(70, width / height, 0.1, 1000));
 		me.camera[idx].rotation.order = "YXZ";
 		me.angle.push({lon: 0, lat: 0});
 		me.renderer.push(new THREE.WebGLRenderer(/*{antialias: true}*/));
 		me.renderer[idx].setPixelRatio(window.devicePixelRatio);
-		me.renderer[idx].setSize(i.width(), i.height());
+		me.renderer[idx].setSize(width, height);
 
 		// 画像をtextureとして読み込み
-//console.log("LoadTexture: "+i.attr("src"));
+//console.log("LoadTexture: "+elem.getAttribute("src"));
 		var textureLoader = new THREE.TextureLoader();
-		textureLoader.load(i.attr("src"), (function(k){
+		textureLoader.load(elem.getAttribute("src"), (function(k){
 			var idx = k;
 			return function(texture){
 				// textureの初期設定
@@ -83,16 +103,16 @@ function sp_view360(){
 				me.scene[idx].add(mesh);
 
 				// 読みだしたら元画像とキャンバスを入れ替えて描画
-				$("img", me.elem[idx]).css('display', 'none');
-				me.elem[idx].append(me.renderer[idx].domElement);
+				me.elem[idx].querySelectorAll("img").forEach(function(img){ img.style.display = 'none'; });
+				me.elem[idx].appendChild(me.renderer[idx].domElement);
 				me.render(idx);
 
 				// マウスイベントの登録
-				me.canvas[idx].on("mousedown", me.onMouseDown);
-				me.canvas[idx].on("touchstart", me.onTouchStart);
+				me.canvas[idx].addEventListener("mousedown", me.onMouseDown);
+				me.canvas[idx].addEventListener("touchstart", me.onTouchStart);
 
 				// Dragした場合はclickイベントを止める
-				me.canvas[idx].on("click", function(e){
+				me.canvas[idx].addEventListener("click", function(e){
 					if (!me.drag) return;
 					e.preventDefault();
 					e.stopPropagation();
@@ -125,8 +145,8 @@ function sp_view360(){
 		me.target = idx;
 
 		// 基準座標の記録
-		me.mouseStatus.x = (x - me.elem[idx].offset().left);
-		me.mouseStatus.y = (y - me.elem[idx].offset().top);
+		me.mouseStatus.x = (x - me.offset(me.elem[idx]).left);
+		me.mouseStatus.y = (y - me.offset(me.elem[idx]).top);
 	}
 	// ドラッグちう
 	me.onMouseMove = function(e){ me._dragging(e, e.pageX, e.pageY); }
@@ -137,13 +157,13 @@ function sp_view360(){
 		var idx = me.target;
 
 		// 移動した分だけ画面を動かす
-		me.angle[idx].lon = me.angle[idx].lon + (me.mouseStatus.x - (x - me.elem[idx].offset().left)) * me.speed;
-		me.angle[idx].lat = me.angle[idx].lat + (me.mouseStatus.y - (y - me.elem[idx].offset().top)) * me.speed;
+		me.angle[idx].lon = me.angle[idx].lon + (me.mouseStatus.x - (x - me.offset(me.elem[idx]).left)) * me.speed;
+		me.angle[idx].lat = me.angle[idx].lat + (me.mouseStatus.y - (y - me.offset(me.elem[idx]).top)) * me.speed;
 		me.angle[idx].lat = Math.max(-80, Math.min(80, me.angle[idx].lat)); // 上下に制限をかける
 
 		// 基準座標の更新
-		me.mouseStatus.x = x - me.elem[idx].offset().left;
-		me.mouseStatus.y = y - me.elem[idx].offset().top;
+		me.mouseStatus.x = x - me.offset(me.elem[idx]).left;
+		me.mouseStatus.y = y - me.offset(me.elem[idx]).top;
 
 		// 画面の更新
 		me.render(idx);

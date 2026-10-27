@@ -1,0 +1,42 @@
+<@7>
+<@local(name,t,ps,permalink,url,coms)>
+<$name = argv#0>
+<$t = argv#1>
+<@>
+<@> 記事の情報（投稿日、タグ、編集のリンクなど）。HTMLはここだけに書く（docs/仕様/スケルトン.md）
+<@>	呼び出し元：plugin/dea_art-info/module.html
+<@>	           雛形の既定の中身（skel/ と、テーマの _skel/ の同じ名前のスケルトン）
+<@>	テーマで変えたいときは、テーマの _skel/_sub/ に同じ名前で置く
+<@>
+<@>	argv#0	モジュール名（data-module-name。設定もこの名前で読む）
+<@>	argv#1	記事
+<@>
+<@>	記事のページでは、投稿日やタグの下の行に、参照元（#backlinks）とコメント欄（#com）へ飛ぶリンクも出す（長い記事で下まで送らずに済むように）
+<@>	コメント欄は、_article と同じく、受け付けているか、コメントがあるときに出る
+<@>	参照元は、置いた先（テーマの雛形か、dea_backlinks）が無ければ adiary.js が消す
+<@>
+<$permalink = if(t.link_key eq v.blog.frontpage, v.myself, "<@v.myself2><@t.elink_key>")>
+<$url = ServerURL . permalink>
+<$encode_uricom(url)>
+<$coms = if(v.allow_edit, t.coms_all, t.coms)>
+	<$ps = v.load_plgset(name)>
+	<div class="art-info" data-module-name="<@name>" data-fix="1">
+		<@ifexec(ps.hatena_bicon, begin)>
+		<a class="http-bookmark" href="https://b.hatena.ne.jp/entry/<@url>"><img src="//b.st-hatena.com/entry/image/<@url>" alt="はてブ数"></a>
+		<$end>
+		<div>
+			<span>投稿：<time class="write-date" datetime="<@t.year>-<@t.mon>-<@t.day>"><@t.year>/<@t.mon>/<@t.day></time></span>
+			<@ifexec(t.shown_upd_date==1, begin)><span>更新：<time class="update-date" datetime="<@t.upd_year>-<@t.upd_mon>-<@t.upd_day>"><@t.upd_year>/<@t.upd_mon>/<@t.upd_day></time></span><br><$end>
+		</div>
+		<div>
+			<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
+			<@ifexec(ps.author, begin)><span class="author"><@t.name></span><$end>
+			<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
+		</div>
+		<@ifexec(v.view_event eq '_article' && (t.com_ok || coms || t.backlinks), begin)>
+		<div class="art-jump"><@\>
+			<@if(t.com_ok || coms, #'<a href="#com" class="jump-com">コメント（<@coms>件）</a>')><@\>
+			<@if(t.backlinks, '<a href="#backlinks" class="jump-backlinks">参照元</a>')><@\>
+		</div>
+		<$end>
+	</div>

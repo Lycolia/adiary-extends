@@ -131,6 +131,10 @@ _module_start
 <iframe class="youtube-player" style="width:#{width|480}px; height:#{height|270}px;" src="https://www.youtube.com/embed/${vid}?${opt}" frameborder="0">
 </iframe>
 
+# サムネイルだけを出し、押すと画像ビューアー（Lythumb-viewer）で再生する（Tag_url_filter.pm）
+*youtube-thumb
+<a class="video-thumb youtube" href="https://www.youtube.com/watch?v=${vid}${query}" data-lythumb="#{group}"><img alt="" width="#{width|480}" height="#{height|270}" src="https://i.ytimg.com/vi/${vid}/hqdefault.jpg"></a>
+
 #------------------------------------------------------------------------------
 # Twitterのツイート表示モジュール
 #------------------------------------------------------------------------------

@@ -4,19 +4,20 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr>
-		<th>モジュールタイトル<span class="help" data-help="表示ノードに「root」を指定した時に表示されるタイトルです。">?</span></th>
-		<td><input type="text" class="w160" name="title" value="<@ps.title || 'コンテンツ'>" maxlength="64"></td>
+		<th>モジュールタイトル</th>
+		<td><input type="text" class="w160" name="title" value="<@ps.title || 'コンテンツ'>" maxlength="64"><span class="help-text">表示ノードに「root」を指定した時に表示されるタイトルです。</span></td>
 	</tr>
 	<tr>
-		<th>表示開始ノード<span class="help" data-help="指定したノードから下をリスト表示します。">?</span></th>
+		<th>表示開始ノード</th>
 		<td>
 			<select name="node" id="node-select" data-default="<@ps.node>" data-url="<@Basepath><@v.blogpub_dir>contents.json?<@v.blog.json_tm>">
 				<option value="0">*すべて(root)</option>
 			</select>
+			<span class="help-text">指定したノードから下をリスト表示します。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>表示階層<span class="help" data-help="指定したノードからどれくらい深くのノードまで表示するか指定します。">?</span></th>
+		<th>表示階層</th>
 		<td>
 			<$x=ps.depth || 3>
 			<select name="depth" class="int">
@@ -31,14 +32,16 @@
 				<option value="9" <@if(x == 9, ' selected')>>9</option>
 				<option value="10"<@if(x ==10, ' selected')>>10</option>
 			</select>階層まで表示
+			<span class="help-text">指定したノードからどれくらい深くのノードまで表示するか指定します。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>折り畳みスイッチ<span class="help" data-help="ノードを開閉スイッチを表示するか指定します。">?</span></th>
+		<th>折り畳みスイッチ</th>
 		<td>
 			<label><input type="checkbox" name="switch" value="1"<@if(ps.switch, ' checked')>
 			 class="js-enable" data-target="#des-conlist-nclose">表示する</label>
 			&emsp;<label><input type="checkbox" name="nclose" id="des-conlist-nclose" value="1"<@if(ps.nclose, ' checked')>>標準で閉じる</label>
+			<span class="help-text">ノードを開閉スイッチを表示するか指定します。</span>
 		</td>
 	</tr>
 	</tbody>

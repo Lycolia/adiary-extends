@@ -8,19 +8,21 @@
 		<td><input type="text" class="w160" name="title" value="<@ps.title || '（タイトル）'>" maxlength="64"></td>
 	</tr>
 	<tr>
-		<th>モジュールクラス<span class="help" data-help="モジュール全体に出力するクラスを指定します。スペース区切り。">?</span></th>
-		<td><input type="text" class="w300" name="class" value="<@if(ps.class eq '', 'hatena-module', ps.class)>"></td>
+		<th>モジュールクラス</th>
+		<td><input type="text" class="w300" name="class" value="<@if(ps.class eq '', 'hatena-module', ps.class)>"><span class="help-text">モジュール全体に出力するクラスを指定します。スペース区切り。</span></td>
 	</tr>
 	<tr>
-		<th>タイトル出力<span class="help" data-help='モジュールタイトル<div class="hatena-moduletitle">を出力しないようにします。'>?</span></th>
+		<th>タイトル出力</th>
 		<td>
 			<label><input type="checkbox" name="title_none" value="1"<@if(ps.title_none,' checked')>>出力しない</label>
+			<span class="help-text">モジュールタイトル&lt;div class="hatena-moduletitle"&gt;を出力しないようにします。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>modulebody出力<span class="help" data-help='<div class="hatena-modulebody">を出力しないようにします。'>?</span></th>
+		<th>modulebody出力</th>
 		<td>
 			<label><input type="checkbox" name="body_none" value="1"<@if(ps.body_none,' checked')>>出力しない</label>
+			<span class="help-text">&lt;div class="hatena-modulebody"&gt;を出力しないようにします。</span>
 		</td>
 	</tr>
 	<tr>

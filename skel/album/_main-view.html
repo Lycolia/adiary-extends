@@ -20,6 +20,7 @@
 		<option value="" selected>その他の操作</option>
 		<option value="album-move-files" data-select="1">ファイルの移動</option>
 		<option value="remake-thumbnail" data-select="1">サムネイル再生成</option>
+		<option value="make-video-thumbnail" data-select="1">動画のサムネイル作成</option>
 		<option value="select-exifjpeg">Exif検索</option>
 		<option value="remove-exifjpeg"  data-select="1">Exif削除</option>
 		<option value="album-delete-files"  data-select="1">ファイルの削除</option>
@@ -42,12 +43,13 @@
 	<$ifbreak(!v.allow_edit)>
 
 <div id="album-footer">
-	<h4 id="selected-files-title"><label><input type="checkbox" class="js-switch" data-target="#selected-files">選択中のファイル名を表示</label><span class="help" data-help="ファイル名を変更するには「選択ファイル名の表示」から該当ファイルをダブルクリックしてください。">?</span></h4>
+	<h4 id="selected-files-title"><label><input type="checkbox" class="js-switch" data-target="#selected-files">選択中のファイル名を表示</label></h4>
+	<span class="help-text">ファイル名を変更するには「選択ファイル名の表示」から該当ファイルをダブルクリックしてください。</span>
 	<ul id="selected-files"></ul>
 
 	<section id="album-upload">
 	<!--===========================================================================-->
-	<h4>アップロード<span class="help" data-help="ドラッグ＆ドロップでファイルをアップロードできます">?</span></h4>
+	<h4>アップロード<span class="help-text">ドラッグ＆ドロップでファイルをアップロードできます</span></h4>
 
 	<div class="messages" id="upload-messages" style="display: none;"><@join("\n", Message)></div>
 
@@ -68,7 +70,7 @@
 			<option value="640">640px</option>
 	</select>
 
-	<span id="delete-exif-box"><label><input type="checkbox" id="delete-exif" class="js-save" name="del_exif" value="1">Exifの削除</label><span class="help" data-help="アップロード時、JPEG画像に含まれるExif情報を削除します。">?</span></span>
+	<span id="delete-exif-box"><label><input type="checkbox" id="delete-exif" class="js-save" name="del_exif" value="1">Exifの削除</label><span class="help-text">アップロード時、JPEG画像に含まれるExif情報を削除します。</span></span>
 	</form>
 	</section>
 
@@ -76,7 +78,7 @@
 	<div id="upload-information">
 	<label><input type="checkbox" class="js-switch" data-target="#upload-information-view">最大サイズ、拡張子情報</label>
 	<section id="upload-information-view">
-	<div>最大サイズ : <@(v.uplaod_files_max>>20)>MB<span class="help" data-help="一回のアプロードできる、全ファイル合計のサイズです。">?</span></div>
+	<div>最大サイズ : <@(v.uplaod_files_max>>20)>MB<span class="help-text">一回のアプロードできる、全ファイル合計のサイズです。</span></div>
 	<div>画像拡張子 : <@join(' ', sort_str(keys(v.album_image_ext)))></div>
 	<$call('album/_load_extensions')>
 	<div>許可拡張子 : <@join(' ', sort_str( grep('^[^\.]', keys(v.album_allow_ext)) ))></div>

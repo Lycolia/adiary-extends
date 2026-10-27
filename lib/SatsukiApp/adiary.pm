@@ -8,9 +8,9 @@ use Satsuki::AutoLoader;
 use Fcntl;
 #-------------------------------------------------------------------------------
 # データ管理上数値しか解釈できないので文字列にしてはならない
-our $VERSION    = 4.15;
+our $VERSION    = 4.16;
 our $OUTVERSION = "$VERSION";
-our $DATA_VERSION = 4.15;
+our $DATA_VERSION = 4.16;
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -246,8 +246,8 @@ sub select_blog_and_pinfo {
 	# ブログは1つだけ。ブログが無いときも選択して内部変数を初期化すること
 	$self->select_blog();
 
-	# テーマの設定
-	my $theme = $self->{blog}->{theme};
+	# テーマの設定（$self->{blog}->{theme} と書くと、閲覧できないときに空のハッシュができる）
+	my $theme = ($self->{blog} || {})->{theme};
 	if (!$theme || $self->load_theme($theme)) {
 		$self->load_theme( $self->{default_theme} );
 	}
@@ -466,6 +466,7 @@ sub select_blog {
 
 	# ブログ情報設定
 	$self->{blog}        = $blog;
+	$self->{allow_view}  = 1;	# 表示パスワードが合わないときは、check_view_pass で外す
 	$self->{blog_dir}    = $self->blog_dir();
 	$self->{blogpub_dir} = $self->blogpub_dir();
 	# ブログ個別スケルトンの登録（プラグイン等で生成される）
@@ -496,6 +497,7 @@ sub unselect_blog {
 
 	# 内部変数初期化
 	$self->{blog}   = undef;
+	$self->{allow_view} = undef;
 	$self->{allow_edit} = undef;
 	$self->{allow_com}  = undef;
 	$self->{blog_admin} = undef;
@@ -583,26 +585,23 @@ sub save_blogset_sys {
 # ●システムモードへ
 #-------------------------------------------------------------------------------
 sub system_mode {
-	my ($self, $title, $keep_theme) = @_;
+	my ($self, $title) = @_;
 	my $ROBJ = $self->{ROBJ};
 	$self->{system_mode}    = 1;
 	$ROBJ->{no_robots}      = 1;
 	if ($title ne '') { $self->{title} = $title; }
 
 	# テーマは公開画面専用。管理画面は常に標準テーマを使う
-	# ※テーマの表示テストなど、公開画面の部品を見せるページは$keep_themeでテーマを残す
-	if (!$keep_theme) {
-		$self->load_theme( $self->{default_theme} );
-		$self->{system_theme} = 1;
+	$self->load_theme( $self->{default_theme} );
+	$self->{system_theme} = 1;
 
-		# 外フレームも管理画面用にする（フレームを使わない出力はそのまま）
-		# 管理画面は狭い画面にもCSSで合わせるので、スマホ用の処理（_sphone）は使わない
-		if ($self->{frame_skeleton}) {
-			$self->{frame_skeleton} = $self->{admin_frame_skeleton};
-			$self->stop_sphone();
-		} else {
-			$self->check_sphone_after_theme_change();
-		}
+	# 外フレームも管理画面用にする（フレームを使わない出力はそのまま）
+	# 管理画面は狭い画面にもCSSで合わせるので、スマホ用の処理（_sphone）は使わない
+	if ($self->{frame_skeleton}) {
+		$self->{frame_skeleton} = $self->{admin_frame_skeleton};
+		$self->stop_sphone();
+	} else {
+		$self->check_sphone_after_theme_change();
 	}
 }
 
@@ -734,8 +733,9 @@ sub load_articles {
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 
-	my $blog = $self->load_blogset();
-	if (! $blog) { return []; }
+	# 閲覧できない人（プライベートモード）には読まない
+	if (!$self->{allow_view}) { return []; }
+	my $blog = $self->{blog};
 
 	#-------------------------------------------------------------
 	# ●モードセレクタ
@@ -1091,7 +1091,7 @@ sub load_articles {
 	# フラグのオーバーライド確認
 	#-------------------------------------------------------------
 	if (!$opt->{no_override}) {
-		foreach my $flag (qw(com_ok hcom_ok)) {
+		foreach my $flag (qw(com_ok hcom_ok nsfw)) {
 			if ($blog->{"${flag}_force"} ne '') {
 				my $ow = $blog->{"${flag}_force"};
 				foreach(@$logs) {
@@ -1233,6 +1233,7 @@ sub load_comments {
 	my $self = shift;
 	my ($a_pkey, $opt) = @_;
 	my $DB   = $self->{DB};
+	if (!$self->{allow_view}) { return []; }	# 閲覧できない
 
 	# コメントのロード
 	my $loads  = $opt->{loads} ne '' ? int($opt->{loads}) : undef;
@@ -1509,6 +1510,7 @@ sub save_sysdat {
 sub load_tag_cache {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
+	if (!$self->{allow_view}) { return [ {} ]; }	# 閲覧できない（0番目は名前からpkeyへの表）
 
 	my $file = $self->blog_dir() . "tag_cache.txt";
 	return $ROBJ->fread_lines_cached($file, {
@@ -1662,13 +1664,15 @@ sub blog_dir {
 	my $self = shift;
 	return "$self->{data_dir}blog/";
 }
+# プライベートモードでは、推測できない名前のフォルダ（pub/private.乱数/）の下に置く（save_private_mode）
 sub blogpub_dir {
 	my $self = shift;
-	return $self->{pub_dir};
+	my $dir  = ($self->{blog} || {})->{pub_private_dir};
+	return $self->{pub_dir} . ($dir ne '' ? "$dir/" : '');
 }
 sub blogimg_dir {
 	my $self = shift;
-	return $self->{pub_dir} . 'attachments/';
+	return $self->blogpub_dir() . 'attachments/';
 }
 
 #-------------------------------------------------------------------------------

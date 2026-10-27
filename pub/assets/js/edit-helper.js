@@ -134,8 +134,9 @@ Helpers.push({
 	image:	{
 		//	%a : image attribute
 		//	%p : image_dir
-		original:	'<a href="%p%d%f"><img alt="%f" src="%p%d%f"></a>',
-		thumbnail:	'<a href="%p%d%f"><img alt="%f" src="%p%d.thumbnail/%f"></a>',
+		//	alt にはファイル名を入れない（さつき記法、Markdownと同じ。説明は挿入した後に書く）
+		original:	'<a href="%p%d%f"><img alt="" src="%p%d%f"></a>',
+		thumbnail:	'<a href="%p%d%f"><img alt="" src="%p%d.thumbnail/%f"></a>',
 		file:		'<a href="%p%d%f">%f</a>',
 		chain:		"\n",
 		exif:		false

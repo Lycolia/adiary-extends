@@ -1,13 +1,13 @@
 ######################################################################
 title=検索ボックス
-version=1.11
+version=1.12
 #					(C)2013-2015 nabe@abk
 ######################################################################
 author=nabe@abk
 url=https://twitter.com/nabe_abk
 license=WTFPL
 
-adiary_version=2.941
+adiary_version=4.16
 module_type=sidebar
 load_module_html_in_edit=1
 
@@ -30,20 +30,5 @@ module_id=side-search
 HTML
 
 *module_html=<<HTML
-<!--検索====================================================-->
-<$ps = v.load_plgset('<@this>')>
-<div class="hatena-module" id="<@id>" data-module-name="<@this>">
-<@if(!ps.title_none, '<div class="hatena-moduletitle">検索</div>')>
-<div class="hatena-modulebody">
-<form method="GET" action="<@v.myself>">
-<input type="search" class="search-box w80" name="q" value="<@tag_escape(x = Query.q)>" required>
-<button type="submit" class="search-btn">検索</button><br>
-<$ifset(exists(Query.all), all, Query.all, ps.all)>
-<span class="search-radio">
-<label><input class="search-title" type="radio" name="all" value="0" <@if(all eq '0', "checked")>>タイトル</label>
-<label><input class="search-text"  type="radio" name="all" value="1" <@if(all ne '0', "checked")>>全文</label>
-</span>
-</form>
-</div> <!-- hatena-modulebody -->
-</div> <!-- hatena-module -->
+<@call('_sub/side_search', '<@this>', '<@id>')>
 HTML

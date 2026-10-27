@@ -61,58 +61,66 @@
 	</tr>
 	<tr><th>コンテンツページの扱い</th>
 		<td>
-			<label><input type="checkbox" name="separate_blog" value="1"<@if(s.separate_blog, ' checked')>>通常記事とコンテンツページを分離して扱う</label><span class="help" data-help="この設定を行うとコンテンツページは「ページ送り」「RSS」等で表示されなくなります。検索では表示されますが、コンテンツは日付を持たないものとして扱われます。">?</span>
+			<label><input type="checkbox" name="separate_blog" value="1"<@if(s.separate_blog, ' checked')>>通常記事とコンテンツページを分離して扱う</label><span class="help-text">この設定を行うとコンテンツページは「ページ送り」「RSS」等で表示されなくなります。検索では表示されますが、コンテンツは日付を持たないものとして扱われます。</span>
 
 		</td>
 	</tr>
-	<tr><th>FrontPageのタイトル<span class="help" data-help="コンテンツのFrontPage機能を使ってトップページを固定したときに、HTMLタイトルに出力する文字列を設定します。CMSとして使用したときのサイトトップのタイトルになります。">?</span></th>
+	<tr><th>FrontPageのタイトル</th>
 		<td>
 		<input type="text" name="fp_title" class="w400"  value="<@s.fp_title>">
+		<span class="help-text">コンテンツのFrontPage機能を使ってトップページを固定したときに、HTMLタイトルに出力する文字列を設定します。CMSとして使用したときのサイトトップのタイトルになります。</span>
 		</td>
 	</tr>
 	<tr><th>コメント許可対象</th>
 		<td>
 		<label><input type="radio" class="js-enable" data-state="0" data-target="#allow-com-users" name="allow_com_sel" value="*"<@if(s.allow_com_users eq '*', ' checked')>>誰でも</label>
-		<label><input type="radio" class="js-enable" data-state="1" data-target="#allow-com-users" name="allow_com_sel" value="user*"<@if(s.allow_com_users eq 'user*', ' checked')>>ユーザーのみ</label><span class="help" data-help="ログインできる人のみに限定します">?</span>
+		<label><input type="radio" class="js-enable" data-state="1" data-target="#allow-com-users" name="allow_com_sel" value="user*"<@if(s.allow_com_users eq 'user*', ' checked')>>ユーザーのみ</label>
 		<label><input type="radio" class="js-enable" data-state="1" data-target="#allow-com-users" name="allow_com_sel" value=""<@if(s.allow_com_users ne '*' && s.allow_com_users ne 'user*', ' checked')>>ID指定（「,」区切り）</label><br>
 		<input type="text" name="allow_com_users" id="allow-com-users" class="w320"  value="<@if(s.allow_com_users ne '*' && s.allow_com_users ne 'user*', s.allow_com_users)>">
+		<span class="help-text">ユーザーのみ：ログインできる人のみに限定します</span>
 		</td>
 	</tr>
-	<tr><th>コメント保留<span class="help" data-help="コメントを確認するまで非表示にしておく機能です。">?</span></th>
+	<tr><th>コメント保留</th>
 		<td>
-		<label><input type="radio" name="defer_com" value="1"<@if( s.defer_com == 1, ' checked')>>すべて保留する</label><span class="help" data-help="ブログ管理者（と編集権限のある人）のコメントは保留されません">?</span>
-		<label><input type="radio" name="defer_com" value="2"<@if( s.defer_com == 2, ' checked')>>ユーザー以外を保留</label><span class="help" data-help="ログインしてない人を保留します">?</span>
+		<label><input type="radio" name="defer_com" value="1"<@if( s.defer_com == 1, ' checked')>>すべて保留する</label>
+		<label><input type="radio" name="defer_com" value="2"<@if( s.defer_com == 2, ' checked')>>ユーザー以外を保留</label>
 		<label><input type="radio" name="defer_com" value="0"<@if(!s.defer_com     , ' checked')>>OFF</label>
+		<span class="help-text">コメントを確認するまで非表示にしておく機能です。<br>すべて保留する：ブログ管理者（と編集権限のある人）のコメントは保留されません<br>ユーザー以外を保留：ログインしてない人を保留します</span>
 		</td>
 	</tr>
-	<tr><th>コメントのスパム対策<span class="help" data-help="ログインしている人のコメントは、承認待ちにしません。">?</span></th>
+	<tr><th>コメントのスパム対策</th>
 		<td>
 		<label><input type="checkbox" name="com_hold_url" value="1"<@if(s.com_hold_url eq '' || s.com_hold_url, ' checked')>>URLを含むコメントを承認待ちにする</label><br>
 		<label><input type="checkbox" name="com_require_ja" value="1"<@if(s.com_require_ja eq '' || s.com_require_ja, ' checked')>>日本語を含まないコメントを承認待ちにする</label>
+		<span class="help-text">ログインしている人のコメントは、承認待ちにしません。</span>
 		</td>
 	</tr>
-	<tr><th>連投の制限<span class="help" data-help="同じIPアドレスからの投稿を、期間の中でこの回数までに制限します。承認待ちのコメントも数えます。0にすると制限しません。">?</span></th>
+	<tr><th>連投の制限</th>
 		<td<@if(err.com_rate_count || err.com_rate_min, ' class="error"')>>
 			<input type="number" class="int w50" name="com_rate_min" value="<@if(s.com_rate_min eq '', 10, s.com_rate_min)>" min="1" max="1440">分に
 			<input type="number" class="int w50" name="com_rate_count" value="<@if(s.com_rate_count eq '', 3, s.com_rate_count)>" min="0" max="100">回まで
+			<span class="help-text">同じIPアドレスからの投稿を、期間の中でこの回数までに制限します。承認待ちのコメントも数えます。0にすると制限しません。</span>
 		</td>
 	</tr>
-	<tr><th>コメントの長さ<span class="help" data-help="本文の下限は、文字と数字だけを数えます（空白と記号は数えません）。ログインしている人には、本文の下限と名前の上限を適用しません。">?</span></th>
+	<tr><th>コメントの長さ</th>
 		<td<@if(err.com_name_max || err.com_body_min || err.com_body_max || err.com_body_lines, ' class="error"')>>
 			名前<input type="number" class="int w50" name="com_name_max" value="<@if(s.com_name_max eq '', 32, s.com_name_max)>" min="1" max="200">文字まで<br>
 			本文<input type="number" class="int w50" name="com_body_min" value="<@if(s.com_body_min eq '', 5, s.com_body_min)>" min="0" max="1000">文字以上、
 			<input type="number" class="int w80" name="com_body_max" value="<@if(s.com_body_max eq '', 3000, s.com_body_max)>" min="1" max="100000">文字まで、
 			<input type="number" class="int w50" name="com_body_lines" value="<@if(s.com_body_lines eq '', 100, s.com_body_lines)>" min="1" max="10000">行まで
+			<span class="help-text">本文の下限は、文字と数字だけを数えます（空白と記号は数えません）。ログインしている人には、本文の下限と名前の上限を適用しません。</span>
 		</td>
 	</tr>
-	<tr><th>NGワード<span class="help" data-help="これを含むコメントを承認待ちにします。1行に1つ書きます。全角と半角、大文字と小文字、空白の違いは区別しません。">?</span></th>
+	<tr><th>NGワード</th>
 		<td>
 		<textarea name="com_ng_words" class="w320" rows="4"><@s.com_ng_words></textarea>
+		<span class="help-text">これを含むコメントを承認待ちにします。1行に1つ書きます。全角と半角、大文字と小文字、空白の違いは区別しません。</span>
 		</td>
 	</tr>
-	<tr><th>拒否するIPアドレス<span class="help" data-help="1行に1つ書きます。192.0.2.10、192.0.2.0/24、192.0.2.（前方一致）、2001:db8::/32の形で書けます。">?</span></th>
+	<tr><th>拒否するIPアドレス</th>
 		<td<@err.c_com_block_ips>>
 		<textarea name="com_block_ips" class="w320" rows="4"><@s.com_block_ips></textarea>
+		<span class="help-text">1行に1つ書きます。192.0.2.10、192.0.2.0/24、192.0.2.（前方一致）、2001:db8::/32の形で書けます。</span>
 		</td>
 	</tr>
 	</tbody>
@@ -140,8 +148,9 @@
 		</td>
 	</tr>
 	<tr>
-		<td>タイトル<span class="help" data-help="無記入の場合は「ブログ名」。RSSリーダーでのタイトルとなるのでブログ名もわかるようにしましょう。">?</span>
+		<td>タイトル
 		<input type="text" id="rss2_title" name="rss2_title" class="w240" value="<@s.rss2_title>">
+		<span class="help-text">無記入の場合は「ブログ名」。RSSリーダーでのタイトルとなるのでブログ名もわかるようにしましょう。</span>
 		</td>
 	</tr>
 	<tr>
@@ -156,23 +165,26 @@
 
 	<table class="blog-setting">
 	<tbody>
-	<tr><th>概要の文字数<span class="help" data-help="記事の概要部分の文字数を設定します。">?</span></th>
+	<tr><th>概要の文字数</th>
 		<td<@err.c_desc_len>>
 			<input type="number" class="int w50" name="desc_len" value="<@s.desc_len || 64>" min="20" max="200">文字（全角も1文字換算）
+			<span class="help-text">記事の概要部分の文字数を設定します。</span>
 		</td>
 	</tr>
 
-	<tr><th>サイト画像の設定<span class="help" data-help="サイトページをFacebookなどでシェアした時などに表示される画像です。630x315以上の正方形の画像を推奨します（Twitterでは正方形にクロップされて表示されます）。">?</span></th>
+	<tr><th>サイト画像の設定</th>
 		<td>
 			<input type="file" name="blog_image"><br>
 			<@ifexec(s.blog_image, begin)>
 			<label><input type="checkbox" name="blog_image_void" value="1"><a data-lythumb="" href="<@Basepath><@s.blog_image>">現在使用している画像</a>を無効にする</label>
 			<$end>
+			<span class="help-text">サイトページをFacebookなどでシェアした時などに表示される画像です。630x315以上の正方形の画像を推奨します（Twitterでは正方形にクロップされて表示されます）。</span>
 		</td>
 	</tr>
-	<tr><th>Twitter ID<span class="help" data-help="Twitter上でシェアされたとき、サイトオーナーとして表示したいidを指定してください。">?</span></th>
+	<tr><th>Twitter ID</th>
 		<td>
 			<input type="text" name="tw_owner_id" class="w200" value="<@s.tw_owner_id>">（@xxx形式）
+			<span class="help-text">Twitter上でシェアされたとき、サイトオーナーとして表示したいidを指定してください。</span>
 		</td>
 	</tr>
 	</tbody>

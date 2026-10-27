@@ -55,7 +55,7 @@ gv  = >google:video
 gn  = >google:news
 tr  = >google:transit
 
-youtube = youtube,ASCII,1, <module name="youtube" vid="$1">
+# youtube は Tag_url_filter.pm（サムネイルを出すため）
 
 # 代替
 qr = QRコード生成, image, 999, https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=40&data=$0

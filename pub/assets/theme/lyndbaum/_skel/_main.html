@@ -37,13 +37,15 @@
 	<$end>
 <$end>
 
-<@ifexec(!v.blog, begin, begin)>
-	<$set_status(404)>
+<@ifexec(!v.allow_view, begin, begin)>
+	<@> 閲覧できない（プライベートモード）ときは403、ブログが無いときは404
+	<$set_status(if(v.exists_blog(), 403, 404))>
 	<$message(if(v.exists_blog(), "ブログを見る権限がありません", "ブログがまだ作られていません"))>
 	<$ifmessage(v.exists_blog() && ! Auth.ok, "閲覧を許可されている場合はログインしてください。")>
 <$else>
   <$ifexec(##logs==-1, begin)>
-	<$ifset_status(v.query ne '', 404)>
+	<@> 検索などで見つからないときと、/99 のような数字だけのURL（コンテンツの名前として探す）で無いときは404
+	<$ifset_status(v.query ne '' || v.pinfo ne '', 404)>
 	<$message("該当する記事がありません")>
   <$end>
 <$end>
@@ -167,7 +169,7 @@
 
 	<@if(Auth.isadmin && !v.exists_blog(), #'<p><a href="<@v.myself>?etc/myblog_create">ブログを作成する</a></p>')>
 
-	<@if(Auth.ok && !v.blog, #'<p><a href="<@v.myself>?menu">管理メニューに移動</a></p>')>
+	<@if(Auth.ok && !v.allow_view, #'<p><a href="<@v.myself>?menu">管理メニューに移動</a></p>')>
 	
 </div>
 </article>
@@ -178,24 +180,8 @@
 <@ifexec(!art_sample_mode, begin)>
 <@>$HEADER:END$----------------------------------------------------------------
 
-<@><!--========================================================================-->
-<@ifexec(ret.pagemode && (1<page || ret.next_page), begin.page)>
-<nav class="page-nav art-nav">
-<@page_nav = exec(begin.function)>
-<@ifexec(ret.pages, begin, begin)>
-	<a<@if(1<page, #' href="<@url>' . if(2<page, '&amp;p=' . (page-1)) . '"')> class="prev-page" rel="prev">前のページ</a>
-	<@foreach_num(x, page_max-page_offset, begin)>
-		<$t = page_offset + x>
-		<@if(t!=ret.page, #'<a href="<@url>&amp;p=<@t>"><@t></a>', "<strong><@t></strong>")> 
-	<$end>
-	<a<@if(ret.next_page, #' href="<@url>&amp;p=' . (page+1) . '"')> class="next-page" rel="next">次のページ</a>
-<$else>
-	<a<@if(1<page, #' href="<@url>' . if(2<page, '?&amp;p=' . (page-1)) . '"')> class="prev-page" rel="prev">前のページ</a> <@\>
-	<a<@if(ret.next_page, #' href="<@url>?&amp;p=' . (page+1) . '"')> class="next-page" rel="next">次のページ</a>
-<$end>
-<$end.function>
-</nav>
-<$end.page>
+<@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
+<@call('_sub/page_nav_main', 'dem_page-nav,1', ret, page, url)>
 <@>$BETWEEN_TOP$---------------------------------------------------------------
 <$end>
 <$between_c=0>
@@ -216,37 +202,28 @@
 <$url=ServerURL . permalink>
 <$encode_uricom(url)>
 <!--=========================================================================-->
-<article id="art-<@t.pkey>" class="article article-summary<@if(t.priority, " wiki")><@if(t.ctype, " art-<@t.ctype>")>">
+<article id="art-<@t.pkey>" class="article article-summary<@if(t.priority, " wiki")><@if(t.nsfw && !s.nsfw_force, " nsfw")><@if(t.ctype, " art-<@t.ctype>")>">
 <h2 class="summary-title"><a href="<@v.myself2><@t.elink_key>" class="title"><@t.title></a></h2>
 <div class="body" id="s<@t.pkey>">
 <div class="body-header article-meta">
 <@>$ARTICLE_TOP:END$-----------------------------------------------------------
-	<$ps = v.load_plgset('dea_art-info')>
-	<div class="art-info" data-module-name="dea_art-info" data-fix="1">
-		<@ifexec(ps.hatena_bicon, begin)>
-		<a class="http-bookmark" href="https://b.hatena.ne.jp/entry/<@url>"><img src="//b.st-hatena.com/entry/image/<@url>" alt="はてブ数"></a>
-		<$end>
-		<$x = if(t.priority, ps.wiki_tm, ps.tmdate)>
-		<@ifexec(x==3,      begin)><span class="write-date"><@t.year>/<@t.mon>/<@t.day></span><$end>
-		<@ifexec(x!=3 && x, begin)><span class="write-date"><@print_tmf('%Y/%m/%d %H:%M ', if(x==1, t.tm, t.update_tm))></span><$end>
-		<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
-		<@ifexec(ps.author, begin)><span class="author"><@t.name></span><$end>
-		<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
-	</div>
+
+<@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
+	<@call('_sub/art_info', 'dea_art-info', t)>
 <@>$ARTICLE_MIDDLE$------------------------------------------------------------
 </div><!-- body-header -->
 <div class="body-main article-body">
+<@> ブログ全体がNSFWのときは画面全体で確認するので、記事ごとには出さない（_frame.html）
+<@ifexec(t.nsfw && !s.nsfw_force, begin)><@call('_sub/nsfw_gate')><div class="nsfw-content"><$end>
 	<@if(! t.enable, '<div><strong class="warning">【この記事は非公開です】</strong></div>')>
 <@if(t.text_s ne '', t.text_s, t.text)>
+<@if(t.nsfw && !s.nsfw_force, '</div><!-- nsfw-content -->')>
 </div>
 <div class="body-footer">
 <@>$ARTICLE_MIDDLE:END$--------------------------------------------------------
-<$coms = if(v.allow_edit, t.coms_all, t.coms)>
-<@ifexec(t.com_ok || coms, begin)>
-<div class="com-count" data-module-name="dea_com-count">
-	<span class="element com-caption"><a href="<@v.myself2><@t.elink_key>#com"><span class="com-title">コメント</span><span class="com-num">（<span class="num"><@coms></span>件）</span></a></span>
-</div>
-<$end>
+
+<@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
+	<@call('_sub/com_count', 'dea_com-count', t)>
 <@>$ARTICLE_BOTTOM$------------------------------------------------------------
 </div> <!-- body-footer -->
 </div> <!-- end of body -->
@@ -257,16 +234,10 @@
 <$ifbreak(art_sample_mode)>
 <$url = url_bak>
 <@>$ARTICLE_BOTTOM:END$--------------------------------------------------------
+
+<@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
+<@call('_sub/page_nav_main', 'dem_page-nav,2', ret, page, url)>
 <@>$ARTICLE:END$---------------------------------------------------------------
-
-
-<@ifexec(page_nav, begin.page)>
-<nav class="page-nav art-nav">
-<@page_nav>
-</nav>
-<$end.page>
-
-
 <@>$FOOTER$--------------------------------------------------------------------
 <@>検索ワードハイライトのための処理。
 <@>直接スクリプト中に展開するとXSSの危険があるためDOMに展開する

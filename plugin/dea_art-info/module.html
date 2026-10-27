@@ -1,15 +1,1 @@
-	<$ps = v.load_plgset('<@this>')>
-	<div class="art-info" data-module-name="<@this>" data-fix="1">
-		<@ifexec(ps.hatena_bicon, begin)>
-		<a class="http-bookmark" href="https://b.hatena.ne.jp/entry/<@url>"><img src="//b.st-hatena.com/entry/image/<@url>" alt="はてブ数"></a>
-		<$end>
-		<div>
-			<@ifexec(t.shown_upd_date==1, begin)><span>更新日：<time class="update-date" datetime="<@t.upd_year>-<@t.upd_mon>-<@t.upd_day>"><@t.upd_year>/<@t.upd_mon>/<@t.upd_day></time></span><br><$end>
-			<span>投稿日：<time class="write-date" datetime="<@t.year>-<@t.mon>-<@t.day>"><@t.year>/<@t.mon>/<@t.day></time></span>
-		</div>
-		<div>
-			<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
-			<@ifexec(ps.author, begin)><span class="author"><@t.name></span><$end>
-			<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
-		</div>
-	</div>
+	<@call('_sub/art_info', '<@this>', t)>

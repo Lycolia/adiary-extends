@@ -51,6 +51,9 @@
 POST成功時の処理
 <$ifexec(action_return eq '0', begin)>
 	<$v.call_event('BLOG_SETTING')>
+	<@>RSS再生成（ブログ名と紹介はRSSにも出る）
+	<$v.generate_rss()>
+
 	<$message("設定を保存しました")>
 	<$url = v.myself .'?'. v.query0>
 	<$jump('_sub/reload_message', url)>

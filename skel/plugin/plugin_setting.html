@@ -5,7 +5,7 @@
 <$mode = Query.mode>
 <$replace_dest(name, '[^\w\-,]', '')>
 
-<@ifexec(!v.blog, begin)>
+<@ifexec(!v.allow_view, begin)>
 	<@"blog not found!">
 	<$break()>
 <$end>

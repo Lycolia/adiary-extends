@@ -32,7 +32,7 @@
 		<td><@ifexec(t.adiary_version <= v.VERSION, begin, begin)>
 			<span class="plg-title"><@t.title></span>
 		<$else>
-			<span class="plg-title"><del><@t.title></del></span><span class="help" data-help="このプラグインは「adiary Version <@t.adiary_version>」以降で使用できます。">?</span>
+			<span class="plg-title"><del><@t.title></del></span><span class="help-text">このプラグインは「adiary Version <@t.adiary_version>」以降で使用できます。</span>
 		<$end></td>
 		<td><@replace(t.module_type, ',', ', ')></td>
 <@>		<td class="c"><@t.license></td>

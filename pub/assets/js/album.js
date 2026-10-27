@@ -894,10 +894,11 @@ function update_view(flag, selected) {
 		view.removeClass('name-view');
 		view.addClass('thumb-view');
 		var file = cur_files[i];
+		var viewable = file.isImg || is_video_file(file.name);	// 画像ビューアーで開ける（画像と動画）
 		var link = $('<a>', {
 			href: encode_link( fspath + file.name )
 		});
-		if (file.isImg) {
+		if (viewable) {
 			link.attr({
 				'data-lythumb': 'roadtrip',
 				'data-caption': file.name
@@ -908,6 +909,7 @@ function update_view(flag, selected) {
 			'data-title': file.name,
 			'data-isimg': file.isImg ? 1 : 0
 		});
+		img.data('viewable', viewable);
 		if (allow_edit) {
 			img.click( img_click );
 			img.dblclick( img_dblclick );
@@ -930,10 +932,11 @@ function update_view(flag, selected) {
 		view.removeClass('thumb-view');
 		view.addClass('name-view');
 		var file = cur_files[i];
+		var viewable = file.isImg || is_video_file(file.name);	// 画像ビューアーで開ける（画像と動画）
 		var link = $('<a>', {
 			href: encode_link( fspath + file.name )
 		});
-		if (file.isImg) {
+		if (viewable) {
 			link.attr({
 				'data-lythumb': 'roadtrip',
 				'data-caption': file.name,
@@ -942,6 +945,7 @@ function update_view(flag, selected) {
 		var span = $('<span>').addClass('fileline').data({
 			title: file.name,
 			isimg: file.isImg ? 1 : 0,
+			viewable: viewable,
 			href:  link.attr('href')	// for CTRL + click
 		});
 		// ファイル名
@@ -1059,7 +1063,7 @@ function update_view(flag, selected) {
 	function img_dblclick(evt) {
 		var obj = $(evt.target);
 		if (!is_thumbview && !obj.hasClass('fileline')) obj = obj.parents('.fileline');
-		if (!obj.data('isimg')) return;
+		if (!obj.data('viewable')) return;
 		if (evt.type == 'click') return;
 		dbl_click = true;
 		obj.click();
@@ -1173,7 +1177,45 @@ $('#album-actions').change( function(evt){
 	if (val == 'select-exifjpeg')    select_exifjpeg(evt);
 	if (val == 'album-move-files')   album_move_files(evt);
 	if (val == 'album-delete-files') album_delete_files(evt);
+	if (val == 'make-video-thumbnail') make_selected_video_thumbnails(evt);
 });
+
+////////////////////////////////////////////////////////////////////////////////
+// ●動画のサムネイルを作る（docs/仕様/動画のサムネイル.md）
+////////////////////////////////////////////////////////////////////////////////
+function make_selected_video_thumbnails(){
+	var files = load_selected_files();
+	if (!files) return;
+	make_video_thumbnails(cur_folder, files);
+}
+
+// サムネイルを作れて、画像ビューアーで再生できる動画か（サーバーの is_video と同じ）
+function is_video_file(name) {
+	return /\.(?:mp4|m4v|webm|ogv)$/i.test(name);
+}
+
+// folder の videos（ファイル名）の中の動画のサムネイルを、ブラウザーで作って送る
+function make_video_thumbnails(folder, videos) {
+	folder = (folder == '/') ? '' : folder.replace(/^\/+/, '');
+	var files = videos.filter( is_video_file ).map(function(name){
+		return { folder: folder, name: name };
+	});
+	if (!files.length) return;
+
+	var $msg = $('<div>').addClass('message');
+	message.append( $msg );
+	message.showDelay();
+	adiary.make_video_thumbnails(files, path, $('#thumbnail-size').val(), function(i){
+		$msg.text( $('#msg-making-video-thumbnail').text() + ' ' + (i+1) + ' / ' + files.length );
+	}).then(function(fail){
+		if (fail) {
+			$msg.addClass('error').text( $('#msg-fail-video-thumbnail').text().replace('%n', fail) );
+		} else {
+			$msg.text( $('#msg-made-video-thumbnail').text() );
+		}
+		update_view(true);	// サムネイルを読み直す
+	});
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // ●サムネイルの再生成
@@ -1414,6 +1456,13 @@ function upload_post_process(text) {
 	var ary = text.split(/[\r\n]/);
 	var ret = ary.shift();
 	var reg = ret.match(/^ret=(\d*)/);
+	// アップロードした動画（video=名前。名前はHTMLのエスケープ済み）
+	var videos = [];
+	ary = ary.filter(function(line){
+		var m = line.match(/^video=(.+)$/);
+		if (m) videos.push( $('<div>').html(m[1]).text() );
+		return !m;
+	});
 	if (reg) {
 		ret = reg[0];
 		message.html( ary.join("\n") );
@@ -1424,6 +1473,9 @@ function upload_post_process(text) {
 
 	// アルバムツリーのリロード
 	tree_reload();
+
+	// 続けて動画のサムネイルを作る
+	make_video_thumbnails(upfolder.val(), videos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

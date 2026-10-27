@@ -1,5 +1,5 @@
 <@7>
-<@local(s,err,t)>
+<@local(s,err,t,videos)>
 <$err=FormError>
 
 <!--=========================================================================-->
@@ -14,18 +14,35 @@
 <h2><@v.title></h2>
 <div class="body">
 	<form action="<@v.myself>?<@v.skeleton>" method="POST">
-	<@ifexec(v.blog, begin)>
-	<p><button type="submit" name="action" value="<@v.skel_dir>rebuild_blog_info">付加情報の再生成</button><span class="help" data-help="アクセスURLが変わった時に必ず実行してください。">?</span></p>
+	<@ifexec(v.allow_view, begin)>
+	<p><button type="submit" name="action" value="<@v.skel_dir>rebuild_blog_info">付加情報の再生成</button><span class="help-text">アクセスURLが変わった時に必ず実行してください。</span></p>
 
-	<p><button type="submit" name="action" value="<@v.skel_dir>rebuild_blog">ブログの再構築</button><span class="help" data-help="すべての記事を再構築します。">?</span></p>
+	<p><button type="submit" name="action" value="<@v.skel_dir>rebuild_blog">全記事の再構築</button><span class="help-text">すべての記事を再構築し、HTMLを書きなおします。記法やパーサーを変更したときに使います。</span></p>
 
-	<p><button type="submit" name="action" value="<@v.skel_dir>reinstall_plugins">プラグイン再インストール</button><span class="help" data-help="プラグインを更新したときに必要です。">?</span></p>
+	<p><button type="submit" name="action" value="<@v.skel_dir>reinstall_plugins">プラグイン再インストール</button><span class="help-text">プラグインを更新したときに使います。</span></p>
 
-	<p><button type="submit" name="action" value="<@v.skel_dir>remake_custom_css">カスタムCSS再生成</button><span class="help" data-help="使用中のテーマカスタマイズ用CSSを再構築します。">?</span></p>
+	<p><button type="submit" name="action" value="<@v.skel_dir>remake_custom_css">カスタムCSS再生成</button><span class="help-text">使用中のテーマカスタマイズ用CSSを再構築します。</span></p>
 	<$end>
 
-	<button type="submit" name="action" value="<@v.skel_dir>update" value="1"<@if(!v.require_update, ' disabled')>>アップデート処理を行う</button><span class="help" data-help="必要な時だけボタンがonになります">?</span>
+	<button type="submit" name="action" value="<@v.skel_dir>update" value="1"<@if(!v.require_update, ' disabled')>>アップデート処理を行う</button><span class="help-text">バージョンを上げたときに必要な再構築処理やマイグレーション処理を走らせます。必要な時だけボタンがonになります。</span>
 	</form>
+
+	<@>
+	<@> 動画のサムネイルはブラウザーで作る（docs/仕様/動画のサムネイル.md）。アップデート処理の後は続けて作る
+	<$videos = if(v.allow_view, v.load_videos_without_thumbnail())>
+	<@ifexec(videos && ##videos>=0, begin)>
+	<h3>動画のサムネイル</h3>
+	<div id="video-thumbnail" data-url="<@Basepath><@v.blogimg_dir()>" data-size="120"<@if(Query.video_thumbnail, ' data-auto="1"')>
+	 data-msg-done="サムネイルを作りました" data-msg-fail="%n本の動画はサムネイルを作れませんでした（このブラウザーで再生できない形式など）">
+	<p>サムネイルの無い動画が<@##videos+1>本あります。記事には、サムネイルを作るまで今までどおりプレーヤーで表示されます。
+	<button type="button" class="make">サムネイルを作る</button> <span class="status"></span></p>
+	<ul class="small">
+	<@forexec(t, videos, begin)>
+		<li data-folder="<@esc(t.folder)>" data-name="<@esc(t.name)>"><@esc(t.folder)><@esc(t.name)></li>
+	<$end>
+	</ul>
+	</div>
+	<$end>
 </div>
 </article>
 

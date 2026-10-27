@@ -31,7 +31,7 @@
 	<$end>
 
 	<@ifexec(v.blog.newcom_flag, begin)>
-	<strong class="notice">新着コメントがあります</strong> &gt;<a href="<@v.myself>?comlist">コメント一覧から確認</a><br>
+	<span class="admin-new-badge">新着</span> コメントがあります &gt;<a href="<@v.myself>?comlist">コメント一覧から確認</a><br>
 	<$end>
 
 	<@ifexec(Auth.isadmin && !v.exists_blog(), begin)>
@@ -41,7 +41,7 @@
 	<$end>
 <$end>
 
-	<@ifexec(v.blog, begin)>
+	<@ifexec(v.allow_view, begin)>
 	<table class="dashboard-info">
 	<tbody>
 	<tr><th>ブログ</th><td><a href="<@v.myself>"><@v.blog.blog_name></a></td></tr>

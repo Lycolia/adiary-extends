@@ -6,6 +6,7 @@
 POST成功時の処理
 <$ifexec(action_return eq '0', begin)>
 	<$message('システムアップデートを実行しました')>
-	<$url = v.myself .'?'. v.query0>
+	<@> 続けて、動画のサムネイルをブラウザーで作る（system/update）
+	<$url = v.myself .'?'. v.query0 . '&video_thumbnail=1'>
 	<$jump('_sub/reload_message', url)>
 <$end>

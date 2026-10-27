@@ -12,10 +12,11 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr>
-		<th>表示位置<span class="help" data-help="メニューアイテム全体を左寄せで表示するか設定します。">?</span></th>
+		<th>表示位置</th>
 		<td>
 			<label><input type="checkbox" name="no_centering" value="1"<@if(ps.no_centering,' checked')>>センタリングしない（左寄せで表示）</label><br>
 			<label><input type="checkbox" name="item_left" value="1"<@if(ps.item_left,' checked')>>各項目を左寄せで表示する</label>
+			<span class="help-text">メニューアイテム全体を左寄せで表示するか設定します。</span>
 		</td>
 	</tr>
 
@@ -23,7 +24,7 @@
 		<th>項目幅</th>
 		<td>
 			1段目<input type="number" class="int w60" name="width1" value="<@ps.width1 || 110>" min="40" max="9999" id="width1">px &ensp;
-			<label><input type="checkbox" name="width1_free" value="1"<@if(ps.width1_free, ' checked')> id="width1-free" class="js-disable" data-target="#width1">フリーサイズ<span class="help" data-help="項目内容に応じてアイテム幅を可変させます。設定時は各項目のpaddingも設定してください。">?</span></label><br>
+			<label><input type="checkbox" name="width1_free" value="1"<@if(ps.width1_free, ' checked')> id="width1-free" class="js-disable" data-target="#width1">フリーサイズ<span class="help-text">項目内容に応じてアイテム幅を可変させます。設定時は各項目のpaddingも設定してください。</span></label><br>
 			2段目以降<input type="number" class="int w60" name="width2" value="<@ps.width2 || 200>" min="40" max="9999" id="width2">px &ensp;
 			<label><input type="checkbox" class="js-disable" data-target="#width1,#width1-free,#width2"<@if(ps.width2 eq '',' checked')>>変更しない</label>
 		</td>
@@ -65,20 +66,22 @@
 		</td>
 	</tr>
 	<tr>
-		<th>マージン<span class="help" data-help="表示位置はこの項目（特に「上」と「左」）で変更してください。">?</span></th>
+		<th>マージン</th>
 		<td>
 			上<input type="number" class="int w50" name="margin0" value="<@ps.margin0 || 0>" min="-999" max="999" id="margin0"> 
 			右<input type="number" class="int w50" name="margin1" value="<@ps.margin1 || 0>" min="-999" max="999" id="margin1"> 
 			下<input type="number" class="int w50" name="margin2" value="<@ps.margin2 || 0>" min="-999" max="999" id="margin2"> 
 			左<input type="number" class="int w50" name="margin3" value="<@ps.margin3 || 0>" min="-999" max="999" id="margin3"> &ensp;
 			<label><input type="checkbox" class="js-disable" data-target="#margin0,#margin1,#margin2,#margin3"<@if(ps.margin0 eq '',' checked')>>変更しない</label>
+			<span class="help-text">表示位置はこの項目（特に「上」と「左」）で変更してください。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>表示優先度<span class="help" data-help="表示優先度(z-index)を変更します。複数のドロップダウンメニューを配置するときのみ変更してください。">?</span></th>
+		<th>表示優先度</th>
 		<td>
 			<input type="number" class="int w80" name="zindex" value="<@ps.zindex || 950>" min="900" max="999" id="zindex"> &ensp;
 			<label><input type="checkbox" class="js-disable" data-target="#zindex"<@if(ps.zindex eq '',' checked')>>変更しない</label>
+			<span class="help-text">表示優先度(z-index)を変更します。複数のドロップダウンメニューを配置するときのみ変更してください。</span>
 		</td>
 	</tr>
 	</tbody>
@@ -89,13 +92,15 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr>
-		<th>全体の背景<span class="help" data-help="メニューアイテムを除いた部分の背景の設定です。">?</span></th><td>
+		<th>全体の背景</th><td>
 			<label><input type="checkbox" name="bg_trans" value="1"<@if(ps.bg_trans,' checked')>>透過にする</label>
+			<span class="help-text">メニューアイテムを除いた部分の背景の設定です。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>トップの背景<span class="help" data-help="トップアイテムの背景色のみ透過にすることができます。使用する場合は「選択中の背景」を設定することを推奨します。">?</span></th><td>
+		<th>トップの背景</th><td>
 			<label><input type="checkbox" class="js-enable" name="tbg_trans" value="1"<@if(ps.tbg_trans,' checked')>>透過にする</label>
+			<span class="help-text">トップアイテムの背景色のみ透過にすることができます。使用する場合は「選択中の背景」を設定することを推奨します。</span>
 		</td>
 	</tr>
 	<tr>
@@ -119,10 +124,11 @@
 		</td>
 	</tr>
 	<tr>
-		<th>矢印の色<span class="help" data-help="3階層目のメニューがあるときに表示される矢印の色を指定します。">?</span></th><td>
+		<th>矢印の色</th><td>
 			<input type="text" id="arrow" name="arrow" value="<@ps.arrow || '#333366'>" class="color-picker">
 
 			<label><input type="checkbox" class="js-disable" data-target="#arrow"<@if(ps.arrow eq '',' checked')>>変更しない</label>
+			<span class="help-text">3階層目のメニューがあるときに表示される矢印の色を指定します。</span>
 		</td>
 	</tr>
 	<tr>
@@ -133,8 +139,9 @@
 		</td>
 	</tr>
 	<tr>
-		<th>影を消す<span class="help" data-help="影が表示されるテーマのみ有効です。">?</span></th><td>
+		<th>影を消す</th><td>
 			<label><input type="checkbox" name="no_shadow" value="1"<@if(ps.no_shadow,' checked')>>影を消す</label>
+			<span class="help-text">影が表示されるテーマのみ有効です。</span>
 		</td>
 	</tr>
 	</tbody>

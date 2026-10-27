@@ -25,15 +25,17 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr>
-		<th>同時編集の確認<span class="help" data-help="同じ記事を複数編集したとき確認メッセージを出すシステムです。情報共有CMSなどに利用できます。使用する場合は編集状況の確認間隔（秒）を設定してください。">?</span></th>
+		<th>同時編集の確認</th>
 		<td<@err.c_reload_time>>
 			<input type="number" name="edit_lock_interval" min="0" max="300" class="w50" value="<@if(s.edit_lock_interval eq '', 0, s.edit_lock_interval)>">秒（0-9秒＝無効。推奨：30秒）
+			<span class="help-text">同じ記事を複数編集したとき確認メッセージを出すシステムです。情報共有CMSなどに利用できます。使用する場合は編集状況の確認間隔（秒）を設定してください。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>メンテナンスモード<span class="help" data-help="管理者アカウント以外では一切アクセスできなくなり、メンテナンスメッセージが表示されます。">?</span></th>
+		<th>メンテナンスモード</th>
 		<td>
 			<label><input type="checkbox" name="mainte_mode" value="1"<@if(s.mainte_mode, ' checked')>>メンテナンスモード</label>
+			<span class="help-text">管理者アカウント以外では一切アクセスできなくなり、メンテナンスメッセージが表示されます。</span>
 		</td>
 	</tr>
 	<tr>
@@ -53,9 +55,10 @@
 	<table class="blog-setting">
 	<tbody><p class="ni"><strong class="warning"></strong></p>
 	<tr>
-		<th>ページキャッシュ<span class="help" data-help="HTML出力をキャッシュし、さらに高速にレスポンスを返すことができます。通常でも十分な性能があるため無理に設定する必要はありません。\n\n※この設定を行うとアクセスごとに出力が変わる（動作する）プラグインやデザインモジュールは、正しく動作しなくなります。">?</span></th>
+		<th>ページキャッシュ</th>
 		<td>
 			<label><input type="checkbox" class="js-enable" data-target="#search_cache, #html_cache_max, #html_cache_timeout" name="html_cache" value="1"<@if(s.html_cache, ' checked')>>出力をキャッシュする</label>
+			<span class="help-text">HTML出力をキャッシュし、さらに高速にレスポンスを返すことができます。通常でも十分な性能があるため無理に設定する必要はありません。<br><br>※この設定を行うとアクセスごとに出力が変わる（動作する）プラグインやデザインモジュールは、正しく動作しなくなります。</span>
 		</td>
 	</tr>
 	<tr>
@@ -65,9 +68,10 @@
 		</td>
 	</tr>
 	<tr>
-		<th>キャッシュ件数<span class="help" data-help="設定件数を「目安」にキャッシュ件数を制御します。件数はサイト全体での件数になります。あまり大きな値を設定するとメモリを圧迫します。">?</span></th>
+		<th>キャッシュ件数</th>
 		<td<@err.html_cache_max>>
 			<input type="number" id="html_cache_max" name="html_cache_max" min="4" max="256" class="w50" value="<@s.html_cache_max || 16>">件
+			<span class="help-text">設定件数を「目安」にキャッシュ件数を制御します。件数はサイト全体での件数になります。あまり大きな値を設定するとメモリを圧迫します。</span>
 		</td>
 	</tr>
 	<tr>
@@ -91,10 +95,11 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr>
-		<th>データVersion<span class="help" data-help="自動システムアップデートで参照するシステム内データVersionです。アップデート処理をどうしてもやり直したい時などに使用します。通常は書き換えないでください。">?</span></th>
+		<th>データVersion</th>
 		<td<@err.c_VERSION>>
 			Ver <input type="number" class="w60" name="VERSION" step="0.01" min="2.90" value="<@sprintf('%.2f', s.VERSION)>">
 			 <strong class="warning">※非常時以外書き換え禁止</strong>
+			 <span class="help-text">自動システムアップデートで参照するシステム内データVersionです。アップデート処理をどうしてもやり直したい時などに使用します。通常は書き換えないでください。</span>
 		</td>
 	</tr>
 
@@ -107,22 +112,25 @@
 	</tr>
 
 	<tr>
-		<th>更新通知等のタイムアウト<span class="help" data-help="更新通知PingやTwitter通知など、外部サイトアクセス時に最大何秒まで待つかを指定します。">?</span></th>
+		<th>更新通知等のタイムアウト</th>
 		<td<@err.c_http_timeout>>
 			<input type="number" name="http_timeout" min="1" max="60" class="w50" value="<@s.http_timeout || 3>">秒（標準3秒）
+			<span class="help-text">更新通知PingやTwitter通知など、外部サイトアクセス時に最大何秒まで待つかを指定します。</span>
 		</td>
 	</tr>
 
 	<tr>
-		<th>リロードタイム<span class="help" data-help="記事編集後や設定保存後の画面で、自動リロードまでの時間を設定します。">?</span></th>
+		<th>リロードタイム</th>
 		<td<@err.c_reload_time>>
 			<input type="number" name="reload_time" min="0" max="60" class="w50" value="<@if(s.reload_time eq '', 3, s.reload_time)>">秒（0＝自動リロードしない）
+			<span class="help-text">記事編集後や設定保存後の画面で、自動リロードまでの時間を設定します。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>文末省略時の付加文字列<span class="help" data-help="長い文章などが途中で省略された場合に付加する文字列を指定します。記事本文は対象になりません。">?</span></th>
+		<th>文末省略時の付加文字列</th>
 		<td<@err.c_clip_append>>
 			<input type="text" class="w200" name="clip_append" value="<@if(s.clip_append, s.clip_append, '...')>">（最大20文字）
+			<span class="help-text">長い文章などが途中で省略された場合に付加する文字列を指定します。記事本文は対象になりません。</span>
 		</td>
 	</tr>
 	</tbody>

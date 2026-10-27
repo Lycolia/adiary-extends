@@ -1,0 +1,31 @@
+<@7>
+<@local(mode)>
+<$mode = argv#0>
+<@>
+<@> NSFWの年齢確認。ぼかした中身の上に重ねる（base.css）
+<@>	argv#0	''          NSFWの記事。記事の本文（.nsfw-content）の上に重ねる（skel/ と、テーマの _skel/ の _article、_main）
+<@>		'site'      ブログ全体がNSFWのとき。画面全体に重ねる（_frame.html）
+<@>		'remembered' 「確認を元に戻す」だけを出す（'site'のときに、ぼかす中身の側へ置く）
+<@>	テーマで変えたいときは、テーマの _skel/_sub/ に同じ名前で置く
+<@>
+<@>	「表示する」を押すと、重ねた先（.nsfw）のぼかしだけを外す（adiary.js）
+<@>	「今後確認しない」も付けて押すと、ブラウザーに覚え、どのNSFWもぼかさない
+<@>	'site'では「今後確認しない」を出さず、いつもブラウザーを閉じるまで覚える（sessionStorage。
+<@>	ブラウザーが前のセッションを戻すと、閉じても残る。それを避けられないので、チェックで選ばせない）
+<@>	覚えているときは「確認を元に戻す」を出す
+<@>	このページに成人向けのmetaを出す（_frame.html）
+<@>
+<$nsfw_page = 1>
+<@ifexec(mode ne 'site', begin)>
+<p class="nsfw-remembered">年齢確認を省略しています <button type="button" class="nsfw-forget">確認を元に戻す</button></p>
+<$end>
+<@ifexec(mode ne 'remembered', begin)>
+<div class="nsfw-gate"><div class="nsfw-gate-box">
+	<p class="nsfw-gate-msg"><@if(mode eq 'site', 'このサイト', 'この記事')>には、18歳未満の方に適さない内容が含まれています。</p>
+	<@ifexec(mode ne 'site', begin)>
+	<p class="nsfw-gate-remember"><label><input type="checkbox" class="nsfw-remember">今後確認しない</label></p>
+	<$end>
+	<p class="nsfw-gate-buttons"><button type="button" class="nsfw-gate-ok">18歳以上なので表示する</button></p>
+	<noscript><p class="nsfw-gate-msg">表示するには、JavaScriptを有効にしてください。</p></noscript>
+</div></div>
+<$end>

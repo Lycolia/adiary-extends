@@ -162,6 +162,8 @@ sub make_thumbnail {
 		my $thumb = "${dir}.thumbnail/$_.jpg";
 		# すでに存在したら生成しない
 		if (!$opt->{force} && -r $thumb) { next; }
+		# 動画のサムネイルはブラウザーで作るので、作り直しでもアイコンに戻さない
+		if ($self->is_video($_) && -r "${dir}.thumbnail/$_.poster.jpg") { next; }
 
 		my $isImage = $self->is_image($_);
 		if ($isImage) {
@@ -435,6 +437,9 @@ sub image_upload_form {
 	# フォルダリストの再生成
 	$self->genarete_imgae_dirtree();
 
+	# 動画のサムネイルは、この後にブラウザーで作る（album/_action/upload_form、edit.js）
+	$self->{uploaded_videos} = [ grep { $self->is_video($_) } @files ];
+
 	# メッセージ
 	return wantarray ? ($count_s, $count_f, \@files) : $count_f;
 }
@@ -468,7 +473,8 @@ sub do_ajax_image_upload {
 	foreach(@$files) {
 		push(@ary,{
 			name => $_,
-			isImg=> $self->is_image($_)
+			isImg=> $self->is_image($_),
+			isVideo => $self->is_video($_) ? 1 : 0
 		});
 	}
 	$h{files} = \@ary;
@@ -507,10 +513,13 @@ sub do_upload {
 	# ファイルの保存
 	my $save_file = $dir . $ROBJ->fs_encode($file_name);
 	if (-e $save_file && !$file_h->{overwrite}) {	# 同じ名前のファイルが存在する
-		# リネームして保存
-		my $timestamp = $ROBJ->time2timehash(time);
-		$file_name =~ /^(?<name>.*?)\.(?<ext>[^\.]+)$/;
-		$file_name = $+{name} . $timestamp->{year} . $timestamp->{mon} . $timestamp->{day} . $timestamp->{hour} . $timestamp->{min} . $timestamp->{sec} . "." . $+{ext};
+		# 中身が同じなら、保存せずに今あるファイルを使う（同じ画像をもう一度上げたとき）
+		if ($self->is_same_upload_file($save_file, $file_h)) {
+			$file_h->{name} = $file_name;
+			return 0;
+		}
+		# 中身が違えば、別の名前で保存する
+		$file_name = $self->unique_upload_name($dir, $file_name);
 		$save_file = $dir . $ROBJ->fs_encode($file_name);
 	}
 
@@ -529,7 +538,45 @@ sub do_upload {
 
 	# サムネイル削除
 	$ROBJ->file_delete( "${dir}.thumbnail/$file_name.jpg" );
+	$ROBJ->file_delete( "${dir}.thumbnail/$file_name.poster.jpg" );
 	return 0;	# 成功
+}
+
+#---------------------------------------------------------------------
+# ○同じ名前のファイルがあるときの別名
+#---------------------------------------------------------------------
+# photo.jpg → photo_20261027-114032.jpg。その名前もあれば photo_20261027-114032_2.jpg、_3 …
+# ※ゴミ箱に入れたときの名前（photo.#20261027-114032.jpg）とは形を変えてある
+#
+sub unique_upload_name {
+	my ($self, $dir, $file_name) = @_;
+	my $ROBJ = $self->{ROBJ};
+
+	my ($base, $ext) = $file_name =~ /^(.*)(\.[^\.]+)$/ ? ($1, $2) : ($file_name, '');
+	$base .= '_' . $ROBJ->print_tmf('%Y%m%d-%H%M%S');
+	my $name = "$base$ext";
+	for(my $i=2; -e $dir . $ROBJ->fs_encode($name); $i++) {
+		$name = "${base}_$i$ext";
+	}
+	return $name;
+}
+
+#---------------------------------------------------------------------
+# ○アップロードしたファイルと、今あるファイルの中身が同じか
+#---------------------------------------------------------------------
+sub is_same_upload_file {
+	my ($self, $file, $file_h) = @_;
+	my $size = $file_h->{tmp} ? -s $file_h->{tmp} : length($file_h->{data});
+	if ((-s $file) != $size) { return 0; }
+	if ($file_h->{tmp}) {
+		require File::Compare;
+		return File::Compare::compare($file, $file_h->{tmp}) == 0;
+	}
+	open(my $fh, '<:raw', $file) || return 0;
+	local $/;
+	my $data = <$fh>;
+	close($fh);
+	return $data eq $file_h->{data};
 }
 
 #-------------------------------------------------------------------------------
@@ -612,6 +659,103 @@ sub rebuild_arts_using_files {
 	# 編集者もサムネイルを作り直せるので、ここでは再構築を許す
 	local($self->{blog_admin}) = 1;
 	return $self->rebuild_blog({ filter => $filter });
+}
+
+#-------------------------------------------------------------------------------
+# ●動画のサムネイルを保存する
+#-------------------------------------------------------------------------------
+# サムネイルは、管理画面でブラウザーが動画の1コマから作って送る（サーバーではコマンドを動かさない）
+#   poster : 記事に出すサムネイル     → .thumbnail/動画名.poster.jpg
+#   thumb  : 画像アルバムの一覧に出す → .thumbnail/動画名.jpg
+# どちらもJPEGで、大きさが決めた範囲のものだけを保存する。保存する名前はここで決める
+#
+my $VIDEO_POSTER_MAX = 1280;	# 記事用のサムネイルの長い辺
+my $VIDEO_THUMB_MAX  = 800;	# アルバム用のサムネイルの長い辺（make_thumbnail_for_imageの上限）
+
+sub upload_video_thumbnail {
+	my $self = shift;
+	my $form = shift;
+	my $ROBJ = $self->{ROBJ};
+
+	my $dir = $self->image_folder_to_dir( $form->{folder} ); # 値check付
+	my $r   = $self->save_video_thumbnail($dir, $form->{file}, $form->{poster}, $form->{thumb});
+
+	# 送られたファイルが残っていたら消す
+	foreach($form->{poster}, $form->{thumb}) {
+		if (ref($_) && $_->{tmp}) { $ROBJ->file_delete($_->{tmp}); }
+	}
+	if ($r) { return $r; }
+
+	# 記事に<video>ではなくサムネイルを出すように、使っている記事を作り直す
+	$self->rebuild_arts_using_files([ $form->{file} ]);
+	return 0;
+}
+
+sub save_video_thumbnail {
+	my ($self, $dir, $file, $poster, $thumb) = @_;
+	my $ROBJ = $self->{ROBJ};
+	if (!$self->check_file_name($file) || !$self->is_video($file)) { return 1; }
+	$ROBJ->fs_encode(\$file);
+	if (!-f "$dir$file") { return 2; }
+	if (!ref($poster) || !ref($thumb)) { return 3; }
+
+	require Satsuki::ImageFormat;
+	$ROBJ->mkdir("${dir}.thumbnail/");
+	my @save = (
+		[ "${dir}.thumbnail/$file.poster.jpg", $poster, $VIDEO_POSTER_MAX ],
+		[ "${dir}.thumbnail/$file.jpg",        $thumb,  $VIDEO_THUMB_MAX  ]
+	);
+	# 一度 .tmp に書き、どちらもJPEGで大きさが範囲内なら置き換える
+	my $fail;
+	foreach(@save) {
+		my ($f, $h, $max) = @$_;
+		my $tmp = "$f.tmp";
+		if ($h->{tmp} ? $ROBJ->file_move($h->{tmp}, $tmp) : $ROBJ->fwrite_lines($tmp, $h->{data})) {
+			$fail = 4; last;
+		}
+		my ($w, $ht);
+		if (Satsuki::ImageFormat::detect($tmp) eq 'jpeg') {
+			($w, $ht) = Satsuki::ImageFormat::get_size($tmp);
+		}
+		if (!$w || $max < $w || $max < $ht) { $fail = 5; last; }
+	}
+	foreach(@save) {
+		my $f = $_->[0];
+		if ($fail) {
+			$ROBJ->file_delete("$f.tmp");
+		} elsif (!rename("$f.tmp", $f)) {
+			$fail = 6;
+		}
+	}
+	return $fail || 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●サムネイルの無い動画の一覧
+#-------------------------------------------------------------------------------
+# アップデート処理の後に、ブラウザーでまとめて作るときに使う。ゴミ箱は除く
+# ret : [ { folder => 'posts/2026/', name => 'clip.mp4' }, ... ]
+#
+sub load_videos_without_thumbnail {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $base = $self->blogimg_dir();
+
+	my @ary;
+	my @dirs = ('');
+	while(@dirs) {
+		my $folder = shift(@dirs);
+		my $dir    = $base . $folder;
+		foreach(@{ $ROBJ->search_files($dir, {dir=>1}) }) {
+			if (substr($_,-1) eq '/') {
+				push(@dirs, "$folder$_");
+				next;
+			}
+			if (!$self->is_video($_) || -e "${dir}.thumbnail/$_.poster.jpg") { next; }
+			push(@ary, { folder => $ROBJ->fs_decode("$folder"), name => $ROBJ->fs_decode("$_") });
+		}
+	}
+	return \@ary;
 }
 
 #-------------------------------------------------------------------------------
@@ -720,6 +864,13 @@ sub move_files {
 			# 移動失敗時はサムネイル消去
 			unlink("${from}.thumbnail/$src.jpg");
 		}
+		# 動画の記事用のサムネイル
+		if (-e "${from}.thumbnail/$src.poster.jpg") {
+			$ROBJ->mkdir("${to}.thumbnail/");
+			if (!rename("${from}.thumbnail/$src.poster.jpg", "${to}.thumbnail/$des.poster.jpg")) {
+				unlink("${from}.thumbnail/$src.poster.jpg");
+			}
+		}
 	}
 	my $f = $#fail+1;
 	return wantarray ? ($f, \@fail) : $f;
@@ -751,6 +902,14 @@ sub rename_file {
 	# 画像ファイルのみ移動を試みる
 	if ($self->is_image($old) && $self->is_image($name)) {
 		$r2 = rename("$dir.thumbnail/$old.jpg", "$dir.thumbnail/$name.jpg");
+	}
+	# 動画のサムネイル（ブラウザーで作ったもの）は、動画のままなら移す。動画でなくなれば消す
+	if ($r && -e "$dir.thumbnail/$old.poster.jpg") {
+		if ($self->is_video($name) && rename("$dir.thumbnail/$old.poster.jpg", "$dir.thumbnail/$name.poster.jpg")) {
+			$r2 = rename("$dir.thumbnail/$old.jpg", "$dir.thumbnail/$name.jpg");
+		} else {
+			$ROBJ->file_delete( "${dir}.thumbnail/$old.poster.jpg" );
+		}
 	}
 
 	if ($r && !$r2) {
@@ -786,6 +945,7 @@ sub delete_files {
 			next;
 		}
 		unlink("${dir}.thumbnail/$file.jpg");
+		unlink("${dir}.thumbnail/$file.poster.jpg");
 	}
 	my $f = $#fail + 1;
 	return wantarray ? ($f, \@fail) : $f;
@@ -883,6 +1043,14 @@ sub is_image {
 }
 
 #-------------------------------------------------------------------------------
+# ○動画ファイルか拡張子判定（サムネイルを作れる動画。Tag_audio.pmと同じ）
+#-------------------------------------------------------------------------------
+sub is_video {
+	my ($self, $f) = @_;
+	return ($f =~ m/\.(?:mp4|m4v|webm|ogv)$/i);
+}
+
+#-------------------------------------------------------------------------------
 # ○許可拡張子か判定
 #-------------------------------------------------------------------------------
 sub album_check_ext {
@@ -933,6 +1101,76 @@ sub save_blogset {
 	my $blog   = $self->{blog};
 	$self->update_blogset($blog, $new_set);
 
+	# プライベートモードチェック
+	$self->save_private_mode();
+
+	return 0;
+}
+
+#-------------------------------------------------------------------------------
+# ●プライベートモードの現在の状態保存
+#-------------------------------------------------------------------------------
+# プライベートモードでは、公開フォルダのファイル（RSS、画像など）を、
+# 推測できない名前のフォルダ（pub/private.乱数/）へ移す。外したら pub/ へ戻す。
+# 移したら、記事の中の画像のURLが変わるので、全記事を再構築する。
+#
+my @Blogpub_files = qw(attachments css css.d js static dynamic.css usercss.css
+	images.json contents.json taglist.json sitemap.xml);
+
+sub save_private_mode {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $blog = $self->{blog};
+	if (!$blog) { return; }
+
+	my $cur = $blog->{pub_private_dir};
+	my $new;
+	my $evt_name;
+	if ($blog->{private} && $cur eq '') {
+		$new = 'private.' . $ROBJ->generate_nonce(32);
+		$evt_name = 'PRIVATE_MODE_ON';
+	} elsif (!$blog->{private} && $cur ne '') {
+		$new = '';
+		$evt_name = 'PRIVATE_MODE_OFF';
+	} else {
+		return 0;	# 特に変更がなければ何もしない
+	}
+
+	my $old_dir = $self->blogpub_dir();
+	my $new_dir = $self->{pub_dir} . ($new ne '' ? "$new/" : '');
+	if ($new ne '' && !$ROBJ->mkdir($new_dir)) {
+		$ROBJ->error('Create folder failed (%s)', $new_dir);
+		return 1;
+	}
+
+	# ファイルを移す
+	my @files = (@Blogpub_files, @{ $self->load_rss_files() });
+	my @moved;
+	foreach(@files) {
+		if (!-e "$old_dir$_") { next; }
+		if (-e "$new_dir$_" || !rename("$old_dir$_", "$new_dir$_")) {
+			$ROBJ->error('Move failed (%s)', "$old_dir$_");
+			next;
+		}
+		push(@moved, $_);
+	}
+	if ($cur ne '') {
+		rmdir($old_dir) || $ROBJ->error('Remove folder failed (%s)', $old_dir);
+	}
+	$self->update_blogset($blog, 'pub_private_dir', $new);
+	$self->{blogpub_dir} = $self->blogpub_dir();
+
+	# 設定に入っているパス（ブログの画像、アイコンなど）を書き換える
+	if (@moved) {
+		my $re = join('|', map { quotemeta("$old_dir$_") } sort { length($b) <=> length($a) } @moved);
+		foreach(keys(%$blog)) {
+			if ($blog->{$_} !~ /^(?:$re)/) { next; }
+			$self->update_blogset($blog, $_, $new_dir . substr($blog->{$_}, length($old_dir)));
+		}
+	}
+
+	$self->call_event($evt_name);
+	$self->rebuild_blog();
 	return 0;
 }
 

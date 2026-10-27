@@ -1,0 +1,29 @@
+<@7>
+<@local(name,id,ps,x,all)>
+<$name = argv#0>
+<$id = argv#1>
+<@>
+<@> サイドバーの検索。HTMLはここだけに書く（docs/仕様/スケルトン.md）
+<@>	呼び出し元：plugin/des_searchbox/plugin.info
+<@>	           雛形の既定の中身（skel/ と、テーマの _skel/ の同じ名前のスケルトン）
+<@>	テーマで変えたいときは、テーマの _skel/_sub/ に同じ名前で置く
+<@>
+<@>	argv#0	モジュール名（data-module-name。設定もこの名前で読む）
+<@>	argv#1	要素のid
+<@>
+<!--検索====================================================-->
+<$ps = v.load_plgset(name)>
+<div class="hatena-module" id="<@id>" data-module-name="<@name>">
+<@if(!ps.title_none, '<div class="hatena-moduletitle">検索</div>')>
+<div class="hatena-modulebody">
+<form method="GET" action="<@v.myself>">
+<input type="search" class="search-box w80" name="q" value="<@tag_escape(x = Query.q)>" required>
+<button type="submit" class="search-btn">検索</button><br>
+<$ifset(exists(Query.all), all, Query.all, ps.all)>
+<span class="search-radio">
+<label><input class="search-title" type="radio" name="all" value="0" <@if(all eq '0', "checked")>>タイトル</label>
+<label><input class="search-text"  type="radio" name="all" value="1" <@if(all ne '0', "checked")>>全文</label>
+</span>
+</form>
+</div> <!-- hatena-modulebody -->
+</div> <!-- hatena-module -->

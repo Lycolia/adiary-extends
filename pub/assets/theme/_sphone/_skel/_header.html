@@ -4,6 +4,8 @@
 
 <!--ヘッダ部================================================================-->
 <header id="sp-header"><div>
+<@> ログイン中は、画面の上の管理バー（_sub/admin_bar）にメニューがあるので出さない（デザインの編集では出す）
+<@ifexec(!Auth.ok || v.system_mode, begin.nav)>
 <nav id="sp-nav-header" data-module-name="deh_login" data-fix="1">
 	<@ifexec(Auth.ok, begin)><span class="welcome"><a href="<@myself>" class="welcome-prefix">ようこそ</a><a href="<@myself>" class="welcome-name"><@Auth.name></a><span class="welcome-postfix">さん</span></span><$end>
 
@@ -22,6 +24,7 @@
 		<$end>
 	<$end>	</span>
 </nav>
+<$end.nav>
 
 <!--タイトル部==============================================================-->
 <h1 id="sp-page-title" data-module-name="deh_title">
@@ -31,7 +34,7 @@
 <@>-----------------------------------------------------------------------------
 <@> スマホ画面用拡張
 <@>-----------------------------------------------------------------------------
-<@ifexec(v.blog && !v.system_mode, begin)>
+<@ifexec(v.allow_view && !v.system_mode, begin)>
 <!--検索ボックス============================================================-->
 <div id="sp-head-search">
 <form method="GET" action="<@v.myself>">

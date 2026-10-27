@@ -18,6 +18,17 @@
 - nginxまたはApache2
 - Perl 5.14.0以降（pure Perl可）
 
+Perl標準モジュールのほかに、使い方によって次のモジュールが必要です。
+
+| モジュール                        | 要るとき                                                                                                 |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| FCGI                              | FastCGIで動かすとき（`adiary.fcgi`）。ソケットで待ち受けるときはスレッド（ithreads）に対応したPerlも必要 |
+| DBI、DBD::PgまたはDBD::mysql      | PostgreSQLかMySQLを使うとき。既定のテキストDBでは要らない                                                |
+| Image::Magick                     | 画像のサムネイルを作るとき。無いと、画像のサムネイルの代わりにアイコンを出す                             |
+| Net::SSLeay                       | 外部のサイトとhttpsで通信するとき（更新通知、`[&URL]`のタイトルの取得、記事の画像の取り込みなど）        |
+| threads（スレッドに対応したPerl） | `adiary.httpd.pl`（Perlだけで動くWebサーバー）を使うとき                                                 |
+| Encode::Locale、Crypt::glibc      | Windowsで`adiary.httpd.pl`を使うとき                                                                     |
+
 # インストール方法
 
 1. 解凍してでてきたファイルをサーバ上の任意の位置に置く
@@ -31,13 +42,12 @@
 
 # 著作権表示(Copyright)
 
-Copyright (C)2013-2025 nabe@abk.
+- Copyright (C)2013-2025 nabe@abk.
+- Copyright (C)2024-2026 Lycolia.
 
 本プログラム（システム）はフリーソフトウェアです。
 
-AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3 または
-それ以降のバージョンの下で本プログラム（システム）を再配布
-することが可能です。
+AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3またはそれ以降のバージョンの下で本プログラム（システム）を再配布することが可能です。
 
 # 利用著作物
 
@@ -54,10 +64,11 @@ AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3 または
 
 ## Perl
 
-- Image::Magick (Apache 2.0)
-- Net::SSLeay (Perl)
-- CryptX (Perl)
-- [Crypt::glibc](https://github.com/nabe-abk/Crypt-glibc) (LGPL / use Windows only)
+`lib/Digest/`に同梱しています。
+
+- Digest::SHA::PurePerl (Perl)
+- Digest::HMAC (Perl)
+- Digest::HMAC_MD5 (Perl)
 
 ## プラグインとテーマ
 

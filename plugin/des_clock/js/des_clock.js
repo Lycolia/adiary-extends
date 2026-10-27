@@ -1,11 +1,15 @@
-$(function() {
+(function(func) {
+	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', func);
+	else func();
+})(function() {
 	var baseID = "side-serika-clock";
 	var show, caltype;
 
 	// SIML Support test -- by nabe@abk
 	var animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
 	if (!animate.beginElement) {
-		$('#' + baseID).remove();
+		var box = document.getElementById(baseID);
+		if (box) box.remove();
 		return;
 	}
 
@@ -14,17 +18,17 @@ $(function() {
 	var ymd = '123456';
 
 	function init(){
-		var svg=$('#'+baseID+'-svg');
-		if (!svg.length) return;
+		var svg=document.getElementById(baseID+'-svg');
+		if (!svg) return;
 
-		show = svg.data('show') || 'yt';
-		caltype = svg.data('caltype') || 'ymd';
+		show = svg.dataset.show || 'yt';
+		caltype = svg.dataset.caltype || 'ymd';
 
 if(show=='y'){
-	svg.get(0).setAttribute("viewBox", "0 0 165 40");
+	svg.setAttribute("viewBox", "0 0 165 40");
 }
 if(show=='t'){
-	svg.get(0).setAttribute("viewBox", "175 0 165 40");
+	svg.setAttribute("viewBox", "175 0 165 40");
 }
 
 		ly = ly10 = lmo= lmo10= ld = ld10 = -1;
@@ -41,7 +45,7 @@ if(show=='t'){
 		}
 
 setInterval(function(){
-		if (!$('#'+baseID+'-svg').length) return;	// if remove on design/edit
+		if (!document.getElementById(baseID+'-svg')) return;	// if remove on design/edit
 
 		var t = new Date();
 		var a,b;

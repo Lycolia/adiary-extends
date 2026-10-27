@@ -260,6 +260,7 @@ sub regist_article {
 	$art{enable} = $form->{enable}  ? 1 : 0;
 	$art{com_ok} = $form->{com_ok}  ? 1 : 0;
 	$art{hcom_ok}= $form->{hcom_ok} ? 1 : 0;
+	$art{nsfw}   = $form->{nsfw}    ? 1 : 0;
 
 	#-------------------------------------------------------------
 	# 日付
@@ -407,7 +408,10 @@ sub regist_article {
 	# 時刻設定と記事の初公開判定
 	#-------------------------------------------------------------
 	my $first_visible;
-	$art{update_tm} = $ROBJ->{TM};	# 最終更新日時
+	# 最終更新日時。既存の記事で「更新日時を変えない」なら変えない（誤字の直しなど、更新として扱いたくないとき。Lyndbaumと同じ）
+	if (!$edit_pkey || !$form->{keep_update_tm}) {
+		$art{update_tm} = $ROBJ->{TM};
+	}
 
 	if ($form->{draft}) {
 		$art{enable} = 0;
@@ -747,7 +751,7 @@ sub json_long_text {
 # ほかの画面（別のタブや端末）で先に保存されていないかを見る。
 # 記事一覧やコンテンツの編集はupdate_tmを変えずに書き換えるので、中身で比べる。
 # コメント数や変換後の本文は、記事を書き換えなくても変わるので入れない。
-my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok
+my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok nsfw
 		    ctype link_key upnode priority main_image description);
 sub article_digest {
 	my ($self, $art) = @_;
@@ -2226,6 +2230,7 @@ sub check_view_pass {
 	if ($pass eq $cpass) { return; }
 
 	# パスワード要求
+	$self->{allow_view} = 0;
 	$ROBJ->set_status(403);
 	$ROBJ->{POST} = 0;
 	$ROBJ->{Form} = {};

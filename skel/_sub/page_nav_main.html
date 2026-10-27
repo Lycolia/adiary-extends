@@ -1,0 +1,36 @@
+<@7>
+<@local(name,ret,page,url,t,x,ps)>
+<$name = argv#0>
+<$ret = argv#1>
+<$page = argv#2>
+<$url = argv#3>
+<@>
+<@> 記事の一覧のページ送り。HTMLはここだけに書く（docs/仕様/スケルトン.md）
+<@>	呼び出し元：plugin/dem_page-nav/plugin.info
+<@>	           雛形の既定の中身（skel/ と、テーマの _skel/ の同じ名前のスケルトン）
+<@>	テーマで変えたいときは、テーマの _skel/_sub/ に同じ名前で置く
+<@>
+<@>	argv#0	モジュール名（data-module-name。設定もこの名前で読む）
+<@>	argv#1	記事の一覧（load_arts_list の結果）
+<@>	argv#2	今のページの番号
+<@>	argv#3	ページ送りのURLの元
+<@>
+<@><!--========================================================================-->
+<$ps = v.load_plgset(name)>
+<@ifexec(ret.pagemode && (1<page || ret.next_page), begin.page)>
+<nav class="page-nav art-nav <@ps.align>" data-module-name="<@name>">
+<@page_nav_force || exec(begin.function)>
+<@ifexec(ret.pages, begin, begin)>
+	<a<@if(1<page, #' href="<@url>' . if(2<page, '&amp;p=' . (page-1)) . '"')> class="prev-page" rel="prev">前のページ</a>
+	<@foreach_num(x, page_max-page_offset, begin)>
+		<$t = page_offset + x>
+		<@if(t!=ret.page, #'<a href="<@url>&amp;p=<@t>"><@t></a>', "<strong><@t></strong>")> 
+	<$end>
+	<a<@if(ret.next_page, #' href="<@url>&amp;p=' . (page+1) . '"')> class="next-page" rel="next">次のページ</a>
+<$else>
+	<a<@if(1<page, #' href="<@url>' . if(2<page, '?&amp;p=' . (page-1)) . '"')> class="prev-page" rel="prev">前のページ</a> <@\>
+	<a<@if(ret.next_page, #' href="<@url>?&amp;p=' . (page+1) . '"')> class="next-page" rel="next">次のページ</a>
+<$end>
+<$end.function>
+</nav>
+<$end.page>

@@ -16,7 +16,7 @@
 <tr>
 <td>UserID</td><td<@if(Auth.isadmin, ' title="あなたは管理者です"')>><@Auth.id><@if(Auth.isadmin, '(*)')></td>	
 </tr>
-<@ifexec(v.blog, begin)>
+<@ifexec(v.allow_view, begin)>
 <tr>
 <td>公開記事&ensp;</td><td><@v.blog.arts || 0>件</td>
 </tr>
@@ -38,7 +38,7 @@
 <@>$HEADER:END$----------------------------------------------------------------
 <@v.sidebar_html> <@> from _top.html
 
-<@ifexec(v.blog, begin)>
+<@ifexec(v.allow_view, begin)>
 <!--Information==========================================-->
 <div class="hatena-module" id="side-information" data-module-name="des_information-ja">
 <div class="hatena-moduletitle">Information</div>
@@ -56,41 +56,10 @@
 <aside class="site-sidebar sidebar-right" id="sidebar-right" aria-label="サイドバーB">
 <div id="side-b">
 <@>$SEPARATOR:END$------------------------------------------------------------
-<@ifexec(v.blog, begin)>
-<!--検索=================================================-->
-<$ps = v.load_plgset('des_searchbox')>
-<div class="hatena-module" id="side-search" data-module-name="des_searchbox">
-<div class="hatena-moduletitle">検索</div>
-<div class="hatena-modulebody">
-<form method="GET" action="<@v.myself>">
-<input type="search" class="search-box w80" name="q" value="<@tag_escape(x = Query.q)>" required>
-<button type="submit" class="search-btn">検索</button><br>
-<span class="search-radio">
-<$ifset(exists(Query.all), all, Query.all, ps.all)>
-<label><input class="search-title" type="radio" name="all" value="0" <@if(all eq '0', "checked")>>タイトル</label>
-<label><input class="search-text"  type="radio" name="all" value="1" <@if(all ne '0', "checked")>>全文</label>
-</span>
-</form>
-</div> <!-- hatena-modulebody -->
-</div> <!-- hatena-module -->
-<$end>
 
-<!--システム情報=========================================-->
-<div class="hatena-module" id="side-system-info" data-module-name="des_system-info">
-<div class="hatena-moduletitle">System info</div>
-<div class="hatena-modulebody">
-<@ifexec(Timer, begin)>
-Total time : <span id="system-info-total-time">---</span> ms<br>
-DB time : <span id="system-info-db-time">---</span> ms<br>
-<$end>
-Runtime : <@CGI_mode><br>
-RDBMS : <@DB._RDBMS><br>
-<@if(Status != 200, "HTTP Status: <@Status><br>")>
-<@if(Develop && html_cache_key, "<span title='<@html_cache_key>'>HTML Cache: 1</span><br>")>
-<@if(Develop && AutoReload, "AutoReload : 1<br>")>
-</div> <!-- hatena-modulebody -->
-</div> <!-- hatena-module -->
-
+<@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
+<@ifexec(v.allow_view, begin)><@call('_sub/side_search', 'des_searchbox', 'side-search')><$end>
+<@call('_sub/side_system_info', 'des_system-info')>
 <@>$FOOTER$--------------------------------------------------------------------
 </div> <!-- End of side-b -->
 </aside> <!-- End of sidebar-right -->

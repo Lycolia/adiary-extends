@@ -419,6 +419,16 @@ textarea {
 /*--------------------------------------------------------------------
 ●フォームポップアップ
 --------------------------------------------------------------------*/
+/* 項目の説明（ヘルプ）。項目や内容の欄の下に小さく出す。色はテーマに合わせて薄くする。
+   テンプレートが入れる文（更新通知の送り先の一覧など）の改行は、そのまま改行にする */
+.help-text {
+	display:	block;
+	margin:		0.2em 0;
+	font-size:	85%;
+	line-height:	1.4;
+	white-space:	pre-line;
+	opacity:	0.75;
+}
 .help {
 	font-weight:	bold;
 	margin:		0 4px;
@@ -598,10 +608,286 @@ span.highlight4	{ background-color: #f6f; }
 }
 
 /*--------------------------------------------------------------------
+●管理バー（skel/_sub/admin_bar.html）
+--------------------------------------------------------------------*/
+/* ログイン中に、公開画面の上に貼り付ける。WordPressの管理バーと同じく、テーマの色によらず暗い地にする。
+   項目は右に寄せる。1行に収めて高さを --admin-bar-h に決め打ちにし、その分だけページを下げる（margin-top）。
+   アンカーで飛んだ先も、バーの裏に入らないよう下げる（scroll-padding-top）。
+   テーマが画面の上に貼り付けるもの（lyndbaumのサイドバーのボタンなど）は、--admin-bar-h の分だけ下げる */
+html:has(.admin-bar) {
+	--admin-bar-h:		2rem;
+	margin-top:		var(--admin-bar-h);
+	scroll-padding-top:	var(--admin-bar-h);
+}
+.admin-bar {
+	position:		fixed;
+	top:			0;
+	left:			0;
+	right:			0;
+	z-index:		300;
+	display:		flex;
+	align-items:		center;
+	justify-content:	flex-end;
+	gap:			1em;
+	box-sizing:		border-box;
+	height:			var(--admin-bar-h);
+	padding:		0 0.75rem;
+	overflow:		hidden;
+	white-space:		nowrap;
+	background-color:	#1d2327;
+	color:			#f0f0f1;
+	font-size:		0.85rem;
+	line-height:		1.5;
+	text-align:		left;
+}
+.admin-bar a, .admin-bar a:link, .admin-bar a:visited {
+	color:			#f0f0f1;
+	text-decoration:	none;
+}
+.admin-bar a:hover, .admin-bar a:focus-visible {
+	color:			#72aee6;
+	text-decoration:	underline;
+}
+/* 名前が長いときは、名前を省いて1行に収める。overflow: hidden で字の上が切れないよう、バーの行の高さは 1 にしない */
+.admin-bar .welcome {
+	min-width:		0;
+	overflow:		hidden;
+	text-overflow:		ellipsis;
+}
+.admin-bar .adminmenu {
+	flex:			none;
+	display:		inline-flex;
+	align-items:		center;
+}
+/* 項目のアイコン（線で描いたSVG。色は文字と同じ） */
+.admin-bar-icon {
+	flex:			none;
+	width:			1.15em;
+	height:			1.15em;
+	margin-right:		0.3em;
+	vertical-align:		-0.2em;
+	fill:			none;
+	stroke:			currentColor;
+	stroke-width:		2;
+	stroke-linecap:		round;
+	stroke-linejoin:	round;
+}
+/* 新着のコメントの印（押すとコメント一覧）。「ようこそ○○さん」（管理画面へのリンク）のすぐ後ろに付ける。
+   色は管理画面の新着の印（admin.css の admin-new-badge）にそろえる */
+.admin-bar .admin-bar-new,
+.admin-bar .admin-bar-new:link,
+.admin-bar .admin-bar-new:visited {
+	flex:			none;
+	padding:		0.1em 0.35em;
+	background-color:	#d63638;
+	color:			#fff;
+	font-size:		0.75rem;
+}
+
+/* スマホの表示（狭い画面と、スマホ用のテーマ）では、WordPressと同じく、バーを太くし（32px → 46px）、
+   どの項目もアイコンだけにして、押せる範囲（リンク）をバーの高さいっぱいに広げる。
+   幅は、adiary.js がスマホとして扱う幅（640px）に合わせる */
+@media (max-width: 40rem) {
+	html:has(.admin-bar) {
+		--admin-bar-h:		2.875rem;
+	}
+	.admin-bar {
+		gap:			0;
+		padding:		0 0.25rem;
+	}
+	.admin-bar .admin-bar-label,
+	.admin-bar .welcome > span {
+		display:		none;
+	}
+	.admin-bar > a {
+		align-self:		stretch;
+		display:		inline-flex;
+		align-items:		center;
+		padding:		0 0.6rem;
+	}
+	/* 「ようこそ」のリンクの右の余白（0.6rem）から少しだけ引き寄せ、隙間をPCの表示と同じくらいにする */
+	.admin-bar .admin-bar-new,
+	.admin-bar .admin-bar-new:link,
+	.admin-bar .admin-bar-new:visited {
+		align-self:		center;
+	}
+	.admin-bar .admin-bar-icon {
+		margin-right:		0;
+		width:			1.6em;
+		height:			1.6em;
+	}
+}
+html:has(body.sp .admin-bar) {
+	--admin-bar-h:		2.875rem;
+}
+.sp .admin-bar {
+	gap:			0;
+	padding:		0 0.25rem;
+}
+.sp .admin-bar .admin-bar-label,
+.sp .admin-bar .welcome > span {
+	display:		none;
+}
+.sp .admin-bar > a {
+	align-self:		stretch;
+	display:		inline-flex;
+	align-items:		center;
+	padding:		0 0.6rem;
+}
+.sp .admin-bar .admin-bar-new,
+.sp .admin-bar .admin-bar-new:link,
+.sp .admin-bar .admin-bar-new:visited {
+	align-self:		center;
+}
+.sp .admin-bar .admin-bar-icon {
+	margin-right:		0;
+	width:			1.6em;
+	height:			1.6em;
+}
+
+/*--------------------------------------------------------------------
+●脚注と注釈のポップアップ（adiary.js）
+--------------------------------------------------------------------*/
+/* テーマの色によらず読めるように、地と文字の色をここで決める。管理バー（z-index: 300）より下に出す */
+.fn-popup {
+	position:		absolute;
+	z-index:		250;
+	box-sizing:		border-box;
+	width:			max-content;
+	max-width:		min(24rem, calc(100vw - 16px));
+	padding:		0.6em 0.8em;
+	border:			1px solid #aaa;
+	border-radius:		4px;
+	background-color:	#fff;
+	color:			#222;
+	box-shadow:		0 2px 10px rgba(0,0,0,0.25);
+	font-size:		90%;
+	line-height:		1.6;
+	text-align:		left;
+	overflow-wrap:		anywhere;
+}
+.fn-popup p {
+	margin:			0;
+}
+.fn-popup p + p {
+	margin-top:		0.5em;
+}
+.fn-popup a, .fn-popup a:link {
+	color:			#0a58ca;
+}
+.fn-popup a:visited {
+	color:			#6f42c1;
+}
+.fn-popup-jump {
+	text-align:		right;
+	font-size:		90%;
+}
+
+/*--------------------------------------------------------------------
+●記事の情報の、コメント欄と参照元へのリンク（skel/_sub/art_info.html）
+--------------------------------------------------------------------*/
+.art-jump a + a {
+	margin-left:		1em;
+}
+
+/*--------------------------------------------------------------------
+●NSFWの年齢確認（skel/_sub/nsfw_gate.html）
+--------------------------------------------------------------------*/
+/* 年齢確認を済ませるまで、中身をぼかして年齢確認を重ねる。ぼかす中身は、
+     NSFWの記事        .nsfw の中の .nsfw-content（本文）
+     ブログ全体        画面全体。年齢確認を画面全体に重ね、その下を backdrop-filter でぼかす。
+                       中身に filter をかけると、中の position: fixed（テーマの引き出しのサイドバーなど）が
+                       画面でなく中身に付いてはみ出し、スマホで画面の幅が広がるため、中身はそのままにする
+   済ませたところには nsfw-open が付く。確認を覚えていると、html に nsfw-ok が付く（_frame.html、adiary.js） */
+.nsfw .body-main {
+	position:		relative;
+}
+/* 中身が短くても、年齢確認が収まるようにする */
+.nsfw .nsfw-content {
+	min-height:		14em;
+}
+.nsfw .nsfw-content {
+	filter:			blur(16px);
+	pointer-events:		none;
+	user-select:		none;
+}
+.nsfw-gate {
+	position:		absolute;
+	top:			0;
+	left:			0;
+	right:			0;
+	bottom:			0;
+	z-index:		2;
+	padding:		2em 1em;
+}
+.nsfw-site > .nsfw-gate {
+	position:		fixed;
+	z-index:		1000;
+	padding-top:		20vh;
+	background-color:	rgba(0,0,0,0.3);
+	-webkit-backdrop-filter:	blur(16px);
+	backdrop-filter:	blur(16px);
+}
+/* ぼかせないブラウザーでは、下を見えなくする */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.nsfw-site > .nsfw-gate {
+		background-color:	rgba(0,0,0,0.9);
+	}
+}
+/* テーマの色によらず読めるように、地と文字の色をここで決める。
+   位置は中身の長さによらず、上からの位置で決める（長い本文では、スクロールしても見えるところに残す） */
+.nsfw-gate-box {
+	position:		sticky;
+	top:			2em;
+	box-sizing:		border-box;
+	max-width:		28em;
+	margin:			0 auto;
+	padding:		1em 1.5em;
+	border:			1px solid #888;
+	border-radius:		8px;
+	background-color:	#fff;
+	color:			#222;
+	box-shadow:		0 2px 12px rgba(0,0,0,0.4);
+	text-align:		center;
+}
+.nsfw-gate-box p {
+	margin:			0.5em 0;
+}
+.nsfw-gate-box label {
+	color:			#222;
+}
+.nsfw-gate-msg {
+	font-weight:		bold;
+}
+html.nsfw-ok .nsfw .nsfw-content,
+.nsfw.nsfw-open .nsfw-content {
+	filter:			none;
+	pointer-events:		auto;
+	user-select:		auto;
+}
+html.nsfw-ok .nsfw .nsfw-content,
+.nsfw.nsfw-open .nsfw-content {
+	min-height:		0;
+}
+html.nsfw-ok .nsfw-gate,
+.nsfw.nsfw-open .nsfw-gate {
+	display:		none;
+}
+/* 覚えているときだけ出す */
+.nsfw-remembered {
+	display:		none;
+	margin:			0 0 0.5em 0;
+	font-size:		90%;
+}
+html.nsfw-ok .nsfw-remembered {
+	display:		block;
+}
+
+/*--------------------------------------------------------------------
 ●ソーシャルボタン
 --------------------------------------------------------------------*/
-/* X、Facebook、はてなブックマークは、それぞれのサービスの色の地に、ロゴと文字をCSSで出す（4.09）。
-   画像のファイルは使わない。ロゴはそれぞれのサービスのもの */
+/* X、Facebook、はてなブックマーク、汎用の共有は、それぞれのサービスの色の地に、ロゴと文字をCSSで出す（4.09）。
+   画像のファイルは使わない。ロゴはそれぞれのサービスのもの（汎用の共有は共有のアイコン） */
 .social-buttons {
 	margin:			1em 0;
 }
@@ -677,6 +963,48 @@ span.highlight4	{ background-color: #f6f; }
 .social-button.hatena-share a.count:hover {
 	background-color:	#006b92;
 }
+/* 汎用の共有。共有のアイコン（3つの点を線でつないだ形）を、灰色の地に出す */
+.social-button.web-share a.share {
+	padding:		0 8px 0 24px;
+	background:		#555 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11A2.99 2.99 0 0 0 21 5a3 3 0 1 0-5.91.7L8.04 9.81A2.99 2.99 0 0 0 3 12a2.99 2.99 0 0 0 5.04 2.19l7.12 4.16c-.05.21-.08.43-.08.65A2.92 2.92 0 1 0 18 16.08z'/%3E%3C/svg%3E") no-repeat 7px center / 12px 12px;
+}
+.social-button.web-share a.share:hover {
+	background-color:	#333;
+}
+
+/* 動画とYouTubeのサムネイル。押すと画像ビューアー（Lythumb-viewer）で再生する。
+   再生の印は画像のファイルを使わず、CSSで重ねる（docs/仕様/動画のサムネイル.md） */
+a.video-thumb {
+	position:		relative;
+	display:		inline-block;
+	max-width:		100%;
+	vertical-align:		top;
+}
+a.video-thumb img {
+	display:		block;
+	max-width:		100%;
+	height:			auto;
+}
+/* YouTubeのサムネイル（hqdefault.jpg）は4:3で上下に黒い帯があるので、16:9に切り取る */
+a.video-thumb.youtube img {
+	aspect-ratio:		16 / 9;
+	object-fit:		cover;
+}
+a.video-thumb::after {
+	content:		"";
+	position:		absolute;
+	left:			50%;
+	top:			50%;
+	width:			56px;
+	height:			56px;
+	margin:			-28px 0 0 -28px;
+	border-radius:		50%;
+	background:		rgba(0,0,0,0.6) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M8 5v14l11-7z'/%3E%3C/svg%3E") no-repeat 55% center / 28px 28px;
+	pointer-events:		none;
+}
+a.video-thumb:hover::after, a.video-thumb:focus-visible::after {
+	background-color:	rgba(0,0,0,0.8);
+}
 
 /* 記事貼り付け */
 figure {
@@ -727,6 +1055,7 @@ figure.center, figure.c {
 .ui-icon-image	{ background-position: -32px 0px; }
 .ui-icon-close	{ background-position: -48px 0px; }
 .ui-icon-closethick { background-position: -64px 0px; }
+.ui-icon-help { background-position: -80px 0px; }
 
 /* adiary original */
 .prev-page:before,

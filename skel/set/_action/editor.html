@@ -8,6 +8,7 @@
 	private = flag
 	com_ok  = flag 
 	hcom_ok = flag
+	nsfw = flag
 	ping = flag
 	wiki = flag
 	suggest_link_key = flag
@@ -19,6 +20,10 @@
 	hcom_ok_force = 非公開コメント強制OFF
 	hcom_ok_force:default = 
 	hcom_ok_force:enum = ,0
+
+	nsfw_force = ブログ全体をNSFWにする
+	nsfw_force:default = 
+	nsfw_force:enum = ,1
 
 	edit_upload = 編集画面のUpload先
 	edit_upload:filter0 = trim
@@ -59,7 +64,12 @@
 	<$h.edit_upload = replace(h.edit_upload, '/+$', '/')>
 <$end>
 
+<@> ブログ全体のNSFWを変えたら、RSSに本文を出すかが変わるので書き出し直す
+<$ifset(h.nsfw_force ne v.blog.nsfw_force, nsfw_changed, 1)>
 <$action_return = v.save_blogset(h)>
+<$ifexec(action_return eq '0' && nsfw_changed, begin)>
+	<$v.generate_rss()>
+<$end>
 
 POST成功時の処理
 <$ifexec(action_return eq '0', begin)>

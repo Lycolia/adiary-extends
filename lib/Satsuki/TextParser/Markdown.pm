@@ -46,6 +46,7 @@ sub new {
 ################################################################################
 # Main
 ################################################################################
+
 # 行末記号
 #	\x01	これ以上、行処理しない
 #	\x02	これ以上、行処理も記法処理もしない
@@ -85,6 +86,10 @@ sub parse {
 	$self->{footnotes}     = {};	# 脚注定義 [^id]: content
 	$self->{footnote_order}= [];	# 脚注の出現順序
 	$self->{footnote_refs} = {};	# 脚注ごとの参照の数
+	# [S] (())の注釈の番号は、記事ごとに1から振る（パーサーは使い回されるので、ここで戻す）
+	if ($self->{satsuki_footnote} && $self->{satsuki_obj}) {
+		$self->{satsuki_obj}->init_footnote();
+	}
 
 	# parse main
 	$lines = $self->parse_block ($lines);
@@ -813,7 +818,15 @@ sub parse_inline {
 
 	my $links = $self->{links};
 	foreach(@$lines) {
-		if (substr($_,-1) eq "\x02") { next; }
+		if (substr($_,-1) eq "\x02") {
+			# [S] (())の注釈の一覧は、節の終わり（</section>）の前に出す。
+			#     一覧の中の注の文も、このあとの記法の処理を通すので、ここで読み飛ばさない
+			if (!@footnote || $_ ne "</section>\x02") { next; }
+			my $ary = $satsuki->output_footnote(undef, \@footnote, \%note_hash);
+			$_ = join('', @$ary) . "</section>\x01";
+			# 番号の「*1」は、強調の記法にしない
+			$_ =~ s/>\*(\d+)</>\x0342\x03$1</g;
+		}
 
 		# エスケープ処理
 		# [M] コードスパンの中のバックスラッシュは文字のまま（コードスパンは次で処理する）
@@ -833,13 +846,9 @@ sub parse_inline {
 		|eg;
 
 		# 注釈処理 ((xxxx))
+		# 注釈の中には、対になった ( ) を1段だけ書ける（リンクの記法を注釈の最後に書いても、そこで閉じない）
 		if ($self->{satsuki_footnote}) {
-			$_ =~ s/\(\((.*?)\)\)/ $satsuki->footnote($1, \@footnote, \%note_hash) /eg;
-			if (substr($_,-2) eq "\x02\x01") {
-				# section end
-				my $ary = $satsuki->output_footnote(undef, \@footnote, \%note_hash);
-				$_ = join('', @$ary) . $_;
-			}
+			$_ =~ s/\(\(((?:[^()]++|\([^()]*\))*)\)\)/ $self->satsuki_footnote_ref($satsuki->footnote($1, \@footnote, \%note_hash)) /eg;
 		}
 
 		# 直接リンク記法 - [text](<https://example.com/hoge_(fuga)>)を処理できる方式
@@ -994,6 +1003,23 @@ sub parse_inline {
 	$self->un_escape(@$lines);
 
 	return $lines;
+}
+
+#-------------------------------------------------------------------------------
+# [S] (())の注釈の、本文に出す番号のリンク
+#-------------------------------------------------------------------------------
+# このあとの記法の処理を通さない（「*1」が強調にならず、title の中の記法がタグにならない）。
+# title には注の原文が入るので、リンクの記法は文字だけにする
+sub satsuki_footnote_ref {
+	my ($self, $ref) = @_;
+	$ref =~ s{title="([^"]*)"}{
+		my $t = $1;
+		$t =~ s/!?\[([^\]]*)\]\([^)]*\)/$1/g;
+		"title=\"$t\"";
+	}e;
+	# タグの「>」はエスケープしない（後の処理が、閉じていないタグの「<」を文字にするため）
+	$ref =~ s/([\\`'\*_\{\}\[\]\(\)#\+\-\.\~!])/"\x03" . ord($1) . "\x03"/eg;
+	return $ref;
 }
 
 # エスケープを戻す

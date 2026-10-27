@@ -1,6 +1,10 @@
 
-$(function(){
-	var ta = $('#side-serika-memo textarea');
+(function(func) {
+	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', func);
+	else func();
+})(function(){
+	var ta = document.querySelector('#side-serika-memo textarea');
+	if (!ta) return;
 
 	function loadMemo(){
 	    var i;
@@ -16,7 +20,7 @@ $(function(){
 	}
 
 	function saveMemo(){
-		var d = ta.val();
+		var d = ta.value;
 		var exp = new Date();
 		if(d != ""){
 			exp.setTime( exp.getTime() + 1000 * 3600 * 24 * 365);
@@ -28,8 +32,8 @@ $(function(){
 	}
 
 	function init(){
-		ta.text(loadMemo());
-		ta.change(saveMemo);
+		ta.value = loadMemo();
+		ta.addEventListener('change', saveMemo);
 	}
 
 	init();
