@@ -56,7 +56,6 @@ AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3 または
 
 - Image::Magick (Apache 2.0)
 - Net::SSLeay (Perl)
-- CryptX (Perl)
 - [Crypt::glibc](https://github.com/nabe-abk/Crypt-glibc) (LGPL / use Windows only)
 
 ## プラグインとテーマ
