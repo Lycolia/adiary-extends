@@ -1515,8 +1515,10 @@ sub footnote {
 	my $hash = shift || {};
 
 	# 同じ内容は、同じfootnoteを参照する
+	# 一覧から戻る先（id）は最初の参照だけに付ける（2回目からも付けると、同じidが重なる）
 	my $number;
 	my $name;
+	my $id_attr = '';
 	my $name_base = 'fn';
 	if (exists $hash->{$note}) {	# 同じ内容注釈がある
 		$number = $hash->{$note};
@@ -1524,6 +1526,7 @@ sub footnote {
 	} else {
 		$hash->{$note} = $number = (++ $self->{footnote_no});
 		$name   = "$name_base$number";
+		$id_attr = " id=\"fnt-$name\"";
 		push(@$buf, <<HTML);
 	<p class="footnote"><a href="$self->{thisurl}#fnt-$name" id="fn-$name">*$number</a> : $note</p>
 HTML
@@ -1531,7 +1534,7 @@ HTML
 	$self->tag_delete($note);
 	$note =~ s/"/&quot;/g;
 
-	return "<span class=\"footnote\"><a title=\"$note\" href=\"$self->{thisurl}#fn-$name\" id=\"fnt-$name\">*$number</a></span>";
+	return "<span class=\"footnote\"><a title=\"$note\" href=\"$self->{thisurl}#fn-$name\"$id_attr>*$number</a></span>";
 }
 
 #---------------------------------------------------------------------

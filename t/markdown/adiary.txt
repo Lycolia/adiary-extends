@@ -82,12 +82,68 @@
 --- expected
 <div class="notice_banner info">    <div><svg width="25" viewBox="0 0 24 24" aria-label="fontSize small"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path></svg></div>    <div class="message">お知らせ</div></div>
 
-=== 非対応: 注釈 ((注釈)) は文章
---- todo: 作り直しで対応（非対応の記法を文章として表示）
+=== 注釈 ((注釈)) は、見出しで区切った節の終わりに一覧を出す
+番号は記事の中で通しで振る。1行に2つあっても「*1」と「*2」が強調にならない
+--- options: sectioning=1
+--- input
+本文((注釈A))と((注釈B))
+
+# 見出し
+
+次((注釈C))
+--- expected
+<section>
+<p>本文<span class="footnote"><a title="注釈A" href="/0001#fn-fn1" id="fnt-fn1">*1</a></span>と<span class="footnote"><a title="注釈B" href="/0001#fn-fn2" id="fnt-fn2">*2</a></span></p>
+
+<footer>
+	<p class="footnote"><a href="/0001#fnt-fn1" id="fn-fn1">*1</a> : 注釈A</p>
+	<p class="footnote"><a href="/0001#fnt-fn2" id="fn-fn2">*2</a> : 注釈B</p>
+</footer>
+</section>
+<section>
+<h3 id="見出し"><a href="/0001#見出し">見出し</a></h3>
+
+<p>次<span class="footnote"><a title="注釈C" href="/0001#fn-fn3" id="fnt-fn3">*3</a></span></p>
+<footer>
+	<p class="footnote"><a href="/0001#fnt-fn3" id="fn-fn3">*3</a> : 注釈C</p>
+</footer>
+</section>
+
+=== 注釈の番号は、記事ごとに1から振る（前のケースの続きの番号にならない）
+--- options: sectioning=1
 --- input
 本文((注釈))
 --- expected
-<p>本文((注釈))</p>
+<section>
+<p>本文<span class="footnote"><a title="注釈" href="/0001#fn-fn1" id="fnt-fn1">*1</a></span></p>
+<footer>
+	<p class="footnote"><a href="/0001#fnt-fn1" id="fn-fn1">*1</a> : 注釈</p>
+</footer>
+</section>
+
+=== 同じ節で同じ内容の注釈は同じ番号を使い、戻る先のidは最初の参照だけに付ける
+--- options: sectioning=1
+--- input
+A((同じ))とB((同じ))
+--- expected
+<section>
+<p>A<span class="footnote"><a title="同じ" href="/0001#fn-fn1" id="fnt-fn1">*1</a></span>とB<span class="footnote"><a title="同じ" href="/0001#fn-fn1">*1</a></span></p>
+<footer>
+	<p class="footnote"><a href="/0001#fnt-fn1" id="fn-fn1">*1</a> : 同じ</p>
+</footer>
+</section>
+
+=== 注釈の中のリンクは、一覧ではリンクに、本文の番号のtitleでは文字になる
+--- options: sectioning=1
+--- input
+本文((詳しくは[こちら](https://example.com/)))
+--- expected
+<section>
+<p>本文<span class="footnote"><a title="詳しくはこちら" href="/0001#fn-fn1" id="fnt-fn1">*1</a></span></p>
+<footer>
+	<p class="footnote"><a href="/0001#fnt-fn1" id="fn-fn1">*1</a> : 詳しくは<a href="https://example.com/">こちら</a></p>
+</footer>
+</section>
 
 
 === 目次に入る見出しが無ければ何も出さない
