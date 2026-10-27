@@ -894,10 +894,11 @@ function update_view(flag, selected) {
 		view.removeClass('name-view');
 		view.addClass('thumb-view');
 		var file = cur_files[i];
+		var viewable = file.isImg || is_video_file(file.name);	// 画像ビューアーで開ける（画像と動画）
 		var link = $('<a>', {
 			href: encode_link( fspath + file.name )
 		});
-		if (file.isImg) {
+		if (viewable) {
 			link.attr({
 				'data-lythumb': 'roadtrip',
 				'data-caption': file.name
@@ -908,6 +909,7 @@ function update_view(flag, selected) {
 			'data-title': file.name,
 			'data-isimg': file.isImg ? 1 : 0
 		});
+		img.data('viewable', viewable);
 		if (allow_edit) {
 			img.click( img_click );
 			img.dblclick( img_dblclick );
@@ -930,10 +932,11 @@ function update_view(flag, selected) {
 		view.removeClass('thumb-view');
 		view.addClass('name-view');
 		var file = cur_files[i];
+		var viewable = file.isImg || is_video_file(file.name);	// 画像ビューアーで開ける（画像と動画）
 		var link = $('<a>', {
 			href: encode_link( fspath + file.name )
 		});
-		if (file.isImg) {
+		if (viewable) {
 			link.attr({
 				'data-lythumb': 'roadtrip',
 				'data-caption': file.name,
@@ -942,6 +945,7 @@ function update_view(flag, selected) {
 		var span = $('<span>').addClass('fileline').data({
 			title: file.name,
 			isimg: file.isImg ? 1 : 0,
+			viewable: viewable,
 			href:  link.attr('href')	// for CTRL + click
 		});
 		// ファイル名
@@ -1059,7 +1063,7 @@ function update_view(flag, selected) {
 	function img_dblclick(evt) {
 		var obj = $(evt.target);
 		if (!is_thumbview && !obj.hasClass('fileline')) obj = obj.parents('.fileline');
-		if (!obj.data('isimg')) return;
+		if (!obj.data('viewable')) return;
 		if (evt.type == 'click') return;
 		dbl_click = true;
 		obj.click();
@@ -1185,12 +1189,15 @@ function make_selected_video_thumbnails(){
 	make_video_thumbnails(cur_folder, files);
 }
 
+// サムネイルを作れて、画像ビューアーで再生できる動画か（サーバーの is_video と同じ）
+function is_video_file(name) {
+	return /\.(?:mp4|m4v|webm|ogv)$/i.test(name);
+}
+
 // folder の videos（ファイル名）の中の動画のサムネイルを、ブラウザーで作って送る
 function make_video_thumbnails(folder, videos) {
 	folder = (folder == '/') ? '' : folder.replace(/^\/+/, '');
-	var files = videos.filter(function(name){
-		return /\.(?:mp4|m4v|webm|ogv)$/i.test(name);
-	}).map(function(name){
+	var files = videos.filter( is_video_file ).map(function(name){
 		return { folder: folder, name: name };
 	});
 	if (!files.length) return;
