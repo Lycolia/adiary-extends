@@ -1234,15 +1234,18 @@ sub import_img {
 		my $fname = $url_l =~ m|([^/]*)$| ? $1 : '';
 		$ROBJ->tag_unescape($fname);
 		$fname =~ s/%([0-9A-Fa-f][0-9A-Fa-f])/$1/g;
-		my $file = $fname;
-		$ROBJ->tag_escape($file);
-		$file = "$dir$file";
 
 		if (!$img_l) { next; }
-		if ($self->save_image_to_album($dir, $fname, $img_l)) {
+		my ($r, $saved) = $self->save_image_to_album($dir, $fname, $img_l);
+		if ($r) {
 			$msg  .= "  Save '$fname' fail!\n";
 			next;	# save fail
 		}
+		# 同じ名前のファイルがあると別名で保存するので、保存した名前で書き換える
+		$fname = $saved;
+		my $file = $fname;
+		$ROBJ->tag_escape($file);
+		$file = "$dir$file";
 
 		# サムネイル保存
 		my $thumb;
@@ -1341,11 +1344,13 @@ sub save_image_to_album {
 	my $name = shift;
 	my $data = shift;
 
-	return $self->do_upload( $dir, {
+	my $h = {
 		name => $name,
 		size => length($data),
 		data => $data
-	});
+	};
+	my $r = $self->do_upload( $dir, $h );
+	return wantarray ? ($r, $h->{name}) : $r;	# 保存した名前（別名のこともある）
 }
 
 ################################################################################

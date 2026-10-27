@@ -513,10 +513,13 @@ sub do_upload {
 	# ファイルの保存
 	my $save_file = $dir . $ROBJ->fs_encode($file_name);
 	if (-e $save_file && !$file_h->{overwrite}) {	# 同じ名前のファイルが存在する
-		# リネームして保存
-		my $timestamp = $ROBJ->time2timehash(time);
-		$file_name =~ /^(?<name>.*?)\.(?<ext>[^\.]+)$/;
-		$file_name = $+{name} . $timestamp->{year} . $timestamp->{mon} . $timestamp->{day} . $timestamp->{hour} . $timestamp->{min} . $timestamp->{sec} . "." . $+{ext};
+		# 中身が同じなら、保存せずに今あるファイルを使う（同じ画像をもう一度上げたとき）
+		if ($self->is_same_upload_file($save_file, $file_h)) {
+			$file_h->{name} = $file_name;
+			return 0;
+		}
+		# 中身が違えば、別の名前で保存する
+		$file_name = $self->unique_upload_name($dir, $file_name);
 		$save_file = $dir . $ROBJ->fs_encode($file_name);
 	}
 
@@ -537,6 +540,43 @@ sub do_upload {
 	$ROBJ->file_delete( "${dir}.thumbnail/$file_name.jpg" );
 	$ROBJ->file_delete( "${dir}.thumbnail/$file_name.poster.jpg" );
 	return 0;	# 成功
+}
+
+#---------------------------------------------------------------------
+# ○同じ名前のファイルがあるときの別名
+#---------------------------------------------------------------------
+# photo.jpg → photo_20261027-114032.jpg。その名前もあれば photo_20261027-114032_2.jpg、_3 …
+# ※ゴミ箱に入れたときの名前（photo.#20261027-114032.jpg）とは形を変えてある
+#
+sub unique_upload_name {
+	my ($self, $dir, $file_name) = @_;
+	my $ROBJ = $self->{ROBJ};
+
+	my ($base, $ext) = $file_name =~ /^(.*)(\.[^\.]+)$/ ? ($1, $2) : ($file_name, '');
+	$base .= '_' . $ROBJ->print_tmf('%Y%m%d-%H%M%S');
+	my $name = "$base$ext";
+	for(my $i=2; -e $dir . $ROBJ->fs_encode($name); $i++) {
+		$name = "${base}_$i$ext";
+	}
+	return $name;
+}
+
+#---------------------------------------------------------------------
+# ○アップロードしたファイルと、今あるファイルの中身が同じか
+#---------------------------------------------------------------------
+sub is_same_upload_file {
+	my ($self, $file, $file_h) = @_;
+	my $size = $file_h->{tmp} ? -s $file_h->{tmp} : length($file_h->{data});
+	if ((-s $file) != $size) { return 0; }
+	if ($file_h->{tmp}) {
+		require File::Compare;
+		return File::Compare::compare($file, $file_h->{tmp}) == 0;
+	}
+	open(my $fh, '<:raw', $file) || return 0;
+	local $/;
+	my $data = <$fh>;
+	close($fh);
+	return $data eq $file_h->{data};
 }
 
 #-------------------------------------------------------------------------------
