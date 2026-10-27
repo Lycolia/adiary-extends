@@ -37,13 +37,15 @@
 	<$end>
 <$end>
 
-<@ifexec(!v.blog, begin, begin)>
-	<$set_status(404)>
+<@ifexec(!v.allow_view, begin, begin)>
+	<@> 閲覧できない（プライベートモード）ときは403、ブログが無いときは404
+	<$set_status(if(v.exists_blog(), 403, 404))>
 	<$message(if(v.exists_blog(), "ブログを見る権限がありません", "ブログがまだ作られていません"))>
 	<$ifmessage(v.exists_blog() && ! Auth.ok, "閲覧を許可されている場合はログインしてください。")>
 <$else>
   <$ifexec(##logs==-1, begin)>
-	<$ifset_status(v.query ne '', 404)>
+	<@> 検索などで見つからないときと、/99 のような数字だけのURL（コンテンツの名前として探す）で無いときは404
+	<$ifset_status(v.query ne '' || v.pinfo ne '', 404)>
 	<$message("該当する記事がありません")>
   <$end>
 <$end>
@@ -167,7 +169,7 @@
 
 	<@if(Auth.isadmin && !v.exists_blog(), #'<p><a href="<@v.myself>?etc/myblog_create">ブログを作成する</a></p>')>
 
-	<@if(Auth.ok && !v.blog, #'<p><a href="<@v.myself>?menu">管理メニューに移動</a></p>')>
+	<@if(Auth.ok && !v.allow_view, #'<p><a href="<@v.myself>?menu">管理メニューに移動</a></p>')>
 	
 </div>
 </article>

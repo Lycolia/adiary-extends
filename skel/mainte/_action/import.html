@@ -1,12 +1,15 @@
 <@20>
+<@local(r,arts)>
 <$ifbreak(! v.blog_admin)>
 <$v.action_is_main=1>
 
 <$v.frame_skeleton=''>
 <$set_content_type('text/plain')>
 
-<@"ret=" . v.art_import(Form) . "\n">
-<@"articles=" . int(v.import_arts) . "\n">
+<@> articles はインポートできた記事の数
+<$(r, arts) = v.art_import(Form)>
+<@"ret=" . r . "\n">
+<@"articles=" . int(arts) . "\n">
 
 <$ifbreak(! @Message)>
 <@"msg=" . join("\n", Message)>

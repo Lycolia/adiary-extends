@@ -413,6 +413,10 @@ sub sys_update_416 {
 	$r += $DB->add_column("art",   {name=>'nsfw', type=>'flag'});
 	$r += $DB->add_column("trash", {name=>'nsfw', type=>'flag'});
 	if ($r) { $ROBJ->message("Blog database error(%s)", $r); }
+
+	# プライベートモードなのに、公開フォルダのファイルが pub/ の直下にある。
+	# 4.10で pub/ に移したとき、推測できない名前のフォルダに置くのをやめていたため
+	$self->save_private_mode();
 }
 
 #-------------------------------------------------------------------------------

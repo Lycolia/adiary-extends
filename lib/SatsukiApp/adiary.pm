@@ -246,8 +246,8 @@ sub select_blog_and_pinfo {
 	# ブログは1つだけ。ブログが無いときも選択して内部変数を初期化すること
 	$self->select_blog();
 
-	# テーマの設定
-	my $theme = $self->{blog}->{theme};
+	# テーマの設定（$self->{blog}->{theme} と書くと、閲覧できないときに空のハッシュができる）
+	my $theme = ($self->{blog} || {})->{theme};
 	if (!$theme || $self->load_theme($theme)) {
 		$self->load_theme( $self->{default_theme} );
 	}
@@ -466,6 +466,7 @@ sub select_blog {
 
 	# ブログ情報設定
 	$self->{blog}        = $blog;
+	$self->{allow_view}  = 1;	# 表示パスワードが合わないときは、check_view_pass で外す
 	$self->{blog_dir}    = $self->blog_dir();
 	$self->{blogpub_dir} = $self->blogpub_dir();
 	# ブログ個別スケルトンの登録（プラグイン等で生成される）
@@ -496,6 +497,7 @@ sub unselect_blog {
 
 	# 内部変数初期化
 	$self->{blog}   = undef;
+	$self->{allow_view} = undef;
 	$self->{allow_edit} = undef;
 	$self->{allow_com}  = undef;
 	$self->{blog_admin} = undef;
@@ -731,8 +733,9 @@ sub load_articles {
 	my $ROBJ = $self->{ROBJ};
 	my $DB   = $self->{DB};
 
-	my $blog = $self->load_blogset();
-	if (! $blog) { return []; }
+	# 閲覧できない人（プライベートモード）には読まない
+	if (!$self->{allow_view}) { return []; }
+	my $blog = $self->{blog};
 
 	#-------------------------------------------------------------
 	# ●モードセレクタ
@@ -1230,6 +1233,7 @@ sub load_comments {
 	my $self = shift;
 	my ($a_pkey, $opt) = @_;
 	my $DB   = $self->{DB};
+	if (!$self->{allow_view}) { return []; }	# 閲覧できない
 
 	# コメントのロード
 	my $loads  = $opt->{loads} ne '' ? int($opt->{loads}) : undef;
@@ -1506,6 +1510,7 @@ sub save_sysdat {
 sub load_tag_cache {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
+	if (!$self->{allow_view}) { return [ {} ]; }	# 閲覧できない（0番目は名前からpkeyへの表）
 
 	my $file = $self->blog_dir() . "tag_cache.txt";
 	return $ROBJ->fread_lines_cached($file, {
@@ -1659,13 +1664,15 @@ sub blog_dir {
 	my $self = shift;
 	return "$self->{data_dir}blog/";
 }
+# プライベートモードでは、推測できない名前のフォルダ（pub/private.乱数/）の下に置く（save_private_mode）
 sub blogpub_dir {
 	my $self = shift;
-	return $self->{pub_dir};
+	my $dir  = ($self->{blog} || {})->{pub_private_dir};
+	return $self->{pub_dir} . ($dir ne '' ? "$dir/" : '');
 }
 sub blogimg_dir {
 	my $self = shift;
-	return $self->{pub_dir} . 'attachments/';
+	return $self->blogpub_dir() . 'attachments/';
 }
 
 #-------------------------------------------------------------------------------

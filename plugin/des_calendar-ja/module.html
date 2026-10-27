@@ -9,7 +9,7 @@
 <table class="calendar">
 <thead>
 <tr class="calendar-month">
-<@ifexec(v.blog, begin, begin)>
+<@ifexec(v.allow_view, begin, begin)>
 	<$yyyymm = year*100 + mon>
 	<td class="calendar-prev-month" colspan="2"><a href="<@v.myself>?d=<@cal.prev_month(yyyymm)>" rel="nofollow">&lt;&lt;</a>
 	<td class="calendar-current-month" colspan="3"><a href="<@v.myself>?d=<@yyyymm>" rel="nofollow"><@year>/<@mon></a></td>

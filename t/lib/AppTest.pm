@@ -7,6 +7,7 @@ use utf8;
 # 本物の data/ や pub/ には触らない。
 #
 #	my $app = AppTest->new();		# 空のデータで作る
+#	my $app = AppTest->new(develop => 1);	# 開発モード（テンプレートのエラーを画面に出す）
 #	$app->setup();				# ユーザーとブログを作る
 #	my $r = $app->get('admin', 'menu');	# adminでログインして ?menu を開く
 #	my $r = $app->post('admin', 'set/role', { action => 'set/role', ... });
@@ -37,6 +38,7 @@ our $PASS  = 'test-pass-1234';
 #-------------------------------------------------------------------------------
 sub new {
 	my $class = shift;
+	my %opt   = @_;
 	my $dir   = File::Temp::tempdir('adiary-test-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 	my $self  = bless({ dir => $dir, cookie => {} }, $class);
 
@@ -50,6 +52,11 @@ sub new {
 	# 設定は配布物の見本を使う（手元の adiary.conf.cgi に左右されないように）
 	_copy("$ROOT/adiary.cgi", "$dir/adiary.cgi");
 	_copy("$ROOT/adiary.conf.cgi.sample", "$dir/adiary.conf.cgi");
+	if ($opt{develop}) {
+		open(my $fh, '>', "$dir/adiary.env.cgi") || die "adiary.env.cgi: $!";
+		print $fh "<\$Develop=1>\n";
+		close($fh);
+	}
 	mkdir("$dir/data");
 	return $self;
 }
@@ -144,7 +151,7 @@ sub request {
 			CONTENT_LENGTH => length($body),
 		) : ()),
 		($who ne 'guest' && $self->{cookie}->{$who} ? (
-			HTTP_COOKIE => $self->{cookie}->{$who},
+			HTTP_COOKIE => join('; ', map { "$_=$self->{cookie}->{$who}->{$_}" } sort keys(%{$self->{cookie}->{$who}})),
 		) : ()),
 	);
 
@@ -189,12 +196,16 @@ sub _parse_response {
 	}
 	if ($r{headers}->{location} && $r{status} == 200) { $r{status} = 302; }
 
-	# セッションのCookieを覚える
+	# Cookieを覚える（guest は覚えない）。期限切れにされたものは消す
 	foreach (@{$r{cookies}}) {
-		my ($pair) = split(/;/, $_);
+		my ($pair, @attr) = split(/;\s*/, $_);
 		my ($name, $val) = split(/=/, $pair, 2);
-		next if ($name ne 'session' || $who eq 'guest');
-		$self->{cookie}->{$who} = $pair;
+		next if ($who eq 'guest');
+		if (grep { /^expires=.*19[0-9]{2}/i } @attr) {
+			delete $self->{cookie}->{$who}->{$name};
+			next;
+		}
+		$self->{cookie}->{$who}->{$name} = $val;
 	}
 	if ($r{headers}->{'content-type'} =~ m|application/json|) {
 		require JSON::PP;
@@ -213,7 +224,7 @@ sub setup {
 
 	# 初期セットアップ：システム管理者がいないので root* で自動ログインする
 	my $r = $self->get('root*', 'login_auto');
-	die "login_auto failed: $r->{status}" if (!$self->{cookie}->{'root*'});
+	die "login_auto failed: $r->{status}" if (!$self->{cookie}->{'root*'}->{session});
 
 	$self->user_add('root*', 'admin', 1);
 	$self->login('admin');
@@ -266,7 +277,7 @@ sub seed {
 	die "delete 3 failed: $r->{title}" if (!is_reload($r));
 
 	# 編集者のコメントは、スパム対策の判定の対象外
-	$r = $self->post('editor', '', { action => 'comment_post', a_pkey => 1, comment_txt => 'コメント', name => 'editor' });
+	$r = $self->post('editor', '', { action => 'comment_post', a_pkey => 1, comment_txt => 'seedのコメント', name => 'editor' });
 	die "comment failed: $r->{title}" if (($r->{title} // '') !~ /^処理結果/);	# 公開画面の処理結果（_sub/reload_message_public）
 
 	# アルバムの根元は、画像を初めて置くときに作られる。ここでは先に作っておく
@@ -304,7 +315,7 @@ sub user_add {
 sub login {
 	my ($self, $id) = @_;
 	my $r = $self->post($id, '', { action => '_ajax_login', adiary_id => $id, pass => $PASS });
-	if (!$r->{json} || $r->{json}->{ret} ne '0' || !$self->{cookie}->{$id}) {
+	if (!$r->{json} || $r->{json}->{ret} ne '0' || !$self->{cookie}->{$id}->{session}) {
 		die "login $id failed: $r->{body}";
 	}
 }
@@ -352,7 +363,7 @@ sub snapshot {
 	my $self = shift;
 	my $snap = File::Temp::tempdir('adiary-snap-XXXXXX', TMPDIR => 1, CLEANUP => 1);
 	system('cp', '-a', "$self->{dir}/data", "$self->{dir}/pub", $snap) == 0 || die "snapshot failed";
-	return { dir => $snap, cookie => { %{$self->{cookie}} } };
+	return { dir => $snap, cookie => _copy_cookie($self->{cookie}) };
 }
 sub restore {
 	my ($self, $snap) = @_;
@@ -360,7 +371,20 @@ sub restore {
 		system('rm', '-rf', "$self->{dir}/$_") == 0 || die "restore failed";
 		system('cp', '-a', "$snap->{dir}/$_", "$self->{dir}/") == 0 || die "restore failed";
 	}
-	$self->{cookie} = { %{$snap->{cookie}} };
+	$self->{cookie} = _copy_cookie($snap->{cookie});
+}
+sub _copy_cookie {
+	my $c = shift;
+	return { map { $_ => { %{$c->{$_}} } } keys(%$c) };
+}
+
+#-------------------------------------------------------------------------------
+# ●Cookie
+#-------------------------------------------------------------------------------
+# ブラウザーのJavaScriptが書くCookie（表示パスワードの view-pass など）を置く
+sub set_cookie {
+	my ($self, $who, $name, $val) = @_;
+	$self->{cookie}->{$who}->{$name} = $val;
 }
 
 1;

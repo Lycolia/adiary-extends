@@ -16,7 +16,7 @@
 <tr>
 <td>UserID</td><td<@if(Auth.isadmin, ' title="あなたは管理者です"')>><@Auth.id><@if(Auth.isadmin, '(*)')></td>	
 </tr>
-<@ifexec(v.blog, begin)>
+<@ifexec(v.allow_view, begin)>
 <tr>
 <td>公開記事&ensp;</td><td><@v.blog.arts || 0>件</td>
 </tr>
@@ -38,7 +38,7 @@
 <@>$HEADER:END$----------------------------------------------------------------
 <@v.sidebar_html> <@> from _top.html
 
-<@ifexec(v.blog, begin)>
+<@ifexec(v.allow_view, begin)>
 <!--Information==========================================-->
 <div class="hatena-module" id="side-information" data-module-name="des_information-ja">
 <div class="hatena-moduletitle">Information</div>
@@ -58,7 +58,7 @@
 <@>$SEPARATOR:END$------------------------------------------------------------
 
 <@> デザインを保存していないときの既定の中身（保存すると、置いたモジュールに置き換わる）
-<@ifexec(v.blog, begin)><@call('_sub/side_search', 'des_searchbox', 'side-search')><$end>
+<@ifexec(v.allow_view, begin)><@call('_sub/side_search', 'des_searchbox', 'side-search')><$end>
 <@call('_sub/side_system_info', 'des_system-info')>
 <@>$FOOTER$--------------------------------------------------------------------
 </div> <!-- End of side-b -->

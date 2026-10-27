@@ -14,7 +14,7 @@
 <h2><@v.title></h2>
 <div class="body">
 	<form action="<@v.myself>?<@v.skeleton>" method="POST">
-	<@ifexec(v.blog, begin)>
+	<@ifexec(v.allow_view, begin)>
 	<p><button type="submit" name="action" value="<@v.skel_dir>rebuild_blog_info">付加情報の再生成</button><span class="help-text">アクセスURLが変わった時に必ず実行してください。</span></p>
 
 	<p><button type="submit" name="action" value="<@v.skel_dir>rebuild_blog">全記事の再構築</button><span class="help-text">すべての記事を再構築し、HTMLを書きなおします。記法やパーサーを変更したときに使います。</span></p>
@@ -29,7 +29,7 @@
 
 	<@>
 	<@> 動画のサムネイルはブラウザーで作る（docs/仕様/動画のサムネイル.md）。アップデート処理の後は続けて作る
-	<$videos = if(v.blog, v.load_videos_without_thumbnail())>
+	<$videos = if(v.allow_view, v.load_videos_without_thumbnail())>
 	<@ifexec(videos && ##videos>=0, begin)>
 	<h3>動画のサムネイル</h3>
 	<div id="video-thumbnail" data-url="<@Basepath><@v.blogimg_dir()>" data-size="120"<@if(Query.video_thumbnail, ' data-auto="1"')>

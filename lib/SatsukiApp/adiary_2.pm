@@ -2230,6 +2230,7 @@ sub check_view_pass {
 	if ($pass eq $cpass) { return; }
 
 	# パスワード要求
+	$self->{allow_view} = 0;
 	$ROBJ->set_status(403);
 	$ROBJ->{POST} = 0;
 	$ROBJ->{Form} = {};
