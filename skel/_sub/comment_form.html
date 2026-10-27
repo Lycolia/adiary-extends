@@ -1,0 +1,41 @@
+<@7>
+<@local(name,t,permalink,ps,c,x)>
+<$name      = argv#0>
+<$t         = argv#1>
+<$permalink = argv#2>
+<@>
+<@> コメント欄（コメントの投稿フォーム）。WordPressの comment_form() と同じく、HTMLはここだけに書く
+<@>	呼び出し元：plugin/dec_comment-form/module.html（デザインモジュール）
+<@>	            skel/_article.html、テーマの _skel/_article.html（デザインを保存していないときの既定の中身）
+<@>	テーマで見た目を変えたいときは、テーマの _skel/_sub/comment_form.html に置く（こちらより先に使われる）
+<@>
+<@>	argv#0	モジュール名（デザイン編集で使う data-module-name。設定もこの名前で読む）
+<@>	argv#1	記事
+<@>	argv#2	記事のURL
+<@>
+<$ps = v.load_plgset(name)>
+	<@ifexec(t.com_ok && v.allow_com, begin)>
+	<form method="POST" action="<@permalink>#comment-form" class="comment" id="comment-form" data-module-name="<@name>" data-fix="1"<@if(v.allow_edit, ' data-no-wait="1"')>
+	 data-secure="<$x=t.pkey & 255><@forexec(c, secure_ary, begin)><@c ^ x>,<$end>25">
+	 	<input type="hidden" name="action" value="comment_post">
+		<input type="hidden" name="a_pkey" value="<@t.pkey>" id="comment-form-apkey">
+		<input type="hidden" name="secure_id" value="" id="comment-form-sid">
+		<@ifexec(v.comment_form_msg, begin)><div class="messages"><@join("\n", v.comment_form_msg)></div><$end>
+		<div class="comment-website" aria-hidden="true"><input type="text" name="website" value="" tabindex="-1" autocomplete="off"></div>
+		<span class="caption-name">名前</span><span class="separater">:</span>
+		<@ifexec(Auth.ok, begin, begin)><span class="comment-author"><@Auth.name></span><@if(v.blog_admin, ' <span class="comment-badge">管理者</span>')><$else><input type="text" name="name" class="w160 comment-author" value="<@esc(Form.name)>" required><$end>
+		<@ifexec(t.hcom_ok, begin)>&emsp;<label><input type="checkbox" name="hidden" value="1">非公開</label><$end>
+		&emsp;<button type="submit" id="post-comment">投稿</button><br>
+		<textarea class="comment-txt w600" name="comment_txt" rows="3" required><@esc(Form.comment_txt)></textarea>
+		<@if(t.hcom_ok && ps.hidden_help, #'<span class="help-text"><@ps.hidden_help></span>')>
+		<span class="help-text">返信は「&gt;&gt;n」で行えます。<br>空白とタブ文字を使えます。HTMLタグや記法は無効です。<br>投稿する前に文章を一度確認してください。しばらく経たないと投稿ボタンを押せません。</span>
+		<@ifexec(ps.email, begin)>
+		<div class="post-comment-email"><span class="caption-email">E-Mail(任意/非公開)</span><span class="separater">:</span><input class="w300" type="email" name="email" value="<@esc(Form.email)>"></div>
+		<$end>
+		<@ifexec(ps.url, begin)>
+		<div class="post-comment-url"><span class="caption-url">URL(任意)</span><span class="separater">:</span><input class="w300" type="url" name="url" value="<@esc(Form.url)>"></div>
+		<$end>
+		<@ps.msg_txt>
+	</form> <!-- comment form -->
+	<$end>
+
