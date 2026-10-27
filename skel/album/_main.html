@@ -7,7 +7,7 @@
 	<div id="album-header">
 		<div>
 			<@ifexec(v.allow_edit, begin)>
-			<label><input type="checkbox" id="all-select">全選択</label><span class="help" data-help="クリック：選択\nダブルクリック：表示\nSHIFT+クリック：範囲選択\nCTRL+クリック：ダウンロード">?</span>
+			<label><input type="checkbox" id="all-select">全選択</label><span class="help-text">クリック：選択<br>ダブルクリック：表示<br>SHIFT+クリック：範囲選択<br>CTRL+クリック：ダウンロード</span>
 			<$end>
 		</div>
 		<div class="view-option">
@@ -20,7 +20,7 @@
 				<option value="160">160px</option>
 				<option value="240">240px</option>
 				<option value="320">320px</option>
-			</select><span class="help" data-help="サムネイルの表示最大サイズを指定します。指定サイズより小さいサムネイルはそのままです。">?</span>
+			</select>
 			</span>
 			<span class="option-item">
 			<select id="view-type">
@@ -39,6 +39,7 @@
 				<option value="1">降順</option>
 			</select>
 			</span>
+			<span class="help-text">サムネイルの表示最大サイズを指定します。指定サイズより小さいサムネイルはそのままです。</span>
 		</div>
 	</div>
 <@call('album/_main-view')>

@@ -4,24 +4,26 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr>
-		<th>表示開始ノード<span class="help" data-help="指定したノードから下をリスト表示します。">?</span></th>
+		<th>表示開始ノード</th>
 		<td>
 			<select name="node" id="node-select" data-default="<@ps.node>" data-url="<@Basepath><@v.blogpub_dir>contents.json?<@v.blog.json_tm>">
 				<option value="0">*トップ(root)</option>
 			</select>
+			<span class="help-text">指定したノードから下をリスト表示します。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>タグを表示<span class="help" data-help="コンテンツではなく指定したタグから下をリスト表示します。">?</span></th>
+		<th>タグを表示</th>
 		<td>
 			<select name="tag" id="tag-select" class="js-disable" data-target="#node-select" data-default="<@tag_escape_amp(x = ps.tag)>" data-url="<@Basepath><@v.blogpub_dir>taglist.json?<@v.blog.json_tm>">
 				<option value="">【コンテンツを表示】</option>
 				<option value=",">*トップ(root)</option>
 			</select>
+			<span class="help-text">コンテンツではなく指定したタグから下をリスト表示します。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>表示階層<span class="help" data-help="指定したノードからどれくらい深くのノードまで表示するか指定します。4階層以降は表示が崩れることがあります。また記事表示の場合、この指定は無効です。">?</span></th>
+		<th>表示階層</th>
 		<td>
 			<$x=ps.depth || 3>
 			<select name="depth" class="int" id="depth">
@@ -30,12 +32,14 @@
 				<option value="3" <@if(x == 3, ' selected')>>3</option>
 				<option value="4" <@if(x == 4, ' selected')>>4</option>
 			</select>階層まで表示
+			<span class="help-text">指定したノードからどれくらい深くのノードまで表示するか指定します。4階層以降は表示が崩れることがあります。また記事表示の場合、この指定は無効です。</span>
 		</td>
 	</tr>
 	<tr>
-		<th>記事を表示<span class="help" data-help="コンテンツ等ではなく特定の記事（非公開でも可）に書かれたリスト（<ul>～</ul>）を表示することができます。「投稿情報」にある記事番号を入力してください。コンテンツ等に戻す場合は値を空にします。">?</span></th>
+		<th>記事を表示</th>
 		<td>
 			<input type="number" class="int w100 js-disable" data-target="#depth, #node-select, #tag-select" name="art_pkey" value="<@ps.art_pkey>" min="0">
+			<span class="help-text">コンテンツ等ではなく特定の記事（非公開でも可）に書かれたリスト（&lt;ul&gt;～&lt;/ul&gt;）を表示することができます。「投稿情報」にある記事番号を入力してください。コンテンツ等に戻す場合は値を空にします。</span>
 		</td>
 	</tr>
 	</tbody>

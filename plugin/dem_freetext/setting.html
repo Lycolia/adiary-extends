@@ -5,15 +5,16 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr>
-		<th>タイトル<span class="help" data-help='タイトルを入れるとメッセージボックスとして展開されます。タイトルを入れないと<div>に展開されます。\nヘッダに配置するときは設定しないこと。'>?</span></th>
-		<td><input type="text" class="w320" name="title" value="<@ps.title>" maxlength="128"></td>
+		<th>タイトル</th>
+		<td><input type="text" class="w320" name="title" value="<@ps.title>" maxlength="128"><span class="help-text">タイトルを入れるとメッセージボックスとして展開されます。タイトルを入れないと&lt;div&gt;に展開されます。<br>ヘッダに配置するときは設定しないこと。</span></td>
 	</tr>
 	<tr>
-		<th>表示条件<span class="help" data-help='ヘッダに配置した場合は機能しません。'>?</span></th>
+		<th>表示条件</th>
 		<td>
 			<label><input type="checkbox" name="no_page"    value="1"<@if(ps.no_page,   ' checked')>>1ページ目のみ表示</label><br>
 			<label><input type="checkbox" name="no_article" value="1"<@if(ps.no_article,' checked')>>複数記事モードのみ表示</label><br>
 			<label><input type="checkbox" name="no_search"  value="1"<@if(ps.no_search, ' checked')>>検索時を除く</label><br>
+			<span class="help-text">ヘッダに配置した場合は機能しません。</span>
 		</td>
 	</tr>
 	<tr>

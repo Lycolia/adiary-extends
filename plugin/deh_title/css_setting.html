@@ -13,8 +13,9 @@
 		</td>
 	</tr>
 	<tr>
-		<th>フォントの変更<span class="help" data-help="フォント名等を「,」区切りで記述します。詳しくは「font-family」で検索してください。">?</span></th><td>
+		<th>フォントの変更</th><td>
 			<input type="text" class="int w300" name="font_f" id="font-f" value="<@esc(ps.font_f)>">
+			<span class="help-text">フォント名等を「,」区切りで記述します。詳しくは「font-family」で検索してください。</span>
 		</td>
 	</tr>
 	<tr><th>文字の装飾</th>
@@ -38,12 +39,13 @@
 			縁取り幅 <input type="number" class="int w50" name="s_ow" value="<@ps.s_ow || 0>" min="0" max="9">px
 		</td>
 	</tr>
-	<tr><th>タイトル画像<span class="help" data-help="タイトル文字の代わりに画像を表示します。背景透過のPNG画像を推奨します。">?</span></th>
+	<tr><th>タイトル画像</th>
 		<td>
 			<input type="file" class="fileup" id="head-file" name="titleimg"><br>
 			<@ifexec(ps.titleimg, begin)>
 			<label><input type="checkbox" name="titleimg_void" value="1">現在使用しているファイルを無効にする</label>
 			<$end>
+			<span class="help-text">タイトル文字の代わりに画像を表示します。背景透過のPNG画像を推奨します。</span>
 		</td>
 	</tr>
 	<tr>
@@ -83,7 +85,7 @@
 		<td>
 			<input type="file" class="fileup" id="head-file" name="bgfile"><br>
 			<label><input type="checkbox" name="bgfile_fit" value="1"<@if(ps.bgfile_fit,' checked')>>領域の高さを画像にフィットさせる</label>
-			<span class="help" data-help="画像がタイトル領域がより大きい場合のみ有効になります。">?</span><br>
+			<span class="help-text">画像がタイトル領域がより大きい場合のみ有効になります。</span><br>
 			<@ifexec(ps.bgfile, begin)>
 			<label><input type="checkbox" name="bgfile_void" value="1">現在使用しているファイルを無効にする</label>
 			<$end>
@@ -95,22 +97,24 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr>
-		<th>枠線<span class="help" data-help="テーマによって下線や枠線などが表示される場合、この項目から変更することができます。">?</span></th>
+		<th>枠線</th>
 		<td>
 			色 <input type="text" id="border-c" name="border_c" value="<@ps.border_c || '#000080'>" class="color-picker">
 			角の丸め<input type="number" class="int w50" name="bdr" value="<@ps.border_r || 0>" min="0" max="99" id="border-r">px
 			<label><input type="checkbox" class="js-disable" data-target="#border-c,#border-r"<@if(ps.border_c eq '',' checked')>>変更しない</label>
+			<span class="help-text">テーマによって下線や枠線などが表示される場合、この項目から変更することができます。</span>
 		</td>
 	</tr>
 
 	<tr>
-		<th>枠線の表示<span class="help" data-help="テーマによって下線や枠線などが表示される場合、この項目から変更することができます。">?</span></th>
+		<th>枠線の表示</th>
 		<td>
 			上<input type="number" class="int w50" name="border0" value="<@ps.border0 || 0>" min="0" max="99" id="border0"> 
 			右<input type="number" class="int w50" name="border1" value="<@ps.border1 || 0>" min="0" max="99" id="border1"> 
 			下<input type="number" class="int w50" name="border2" value="<@ps.border2 || 0>" min="0" max="99" id="border2"> 
 			左<input type="number" class="int w50" name="border3" value="<@ps.border3 || 0>" min="0" max="99" id="border3"> &ensp;
 			<label><input type="checkbox" class="js-disable" data-target="#border0,#border1,#border2,#border3"<@if(ps.border0 eq '',' checked')>>変更しない</label>
+			<span class="help-text">テーマによって下線や枠線などが表示される場合、この項目から変更することができます。</span>
 		</td>
 	</tr>
 	<tr>

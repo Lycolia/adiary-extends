@@ -30,28 +30,31 @@
 		<th>ブログの紹介<br>（RSSにも出力）<br><a href="<@v.myself>?etc/allow_tags&amp;n=description" target="_blank">使用可能なHTMLタグ</a></th><td><textarea name="description_txt" class="description w400" cols="50" rows="3" wrap="soft"><@replace(x = s.description_txt, "<br>", "\n")></textarea>
 		改行有効。タグ非推奨。紹介文以外は<a href="<@v.myself>?design/edit">デザイン編集</a>を。</td>
 	</tr>
-	<tr><th>更新通知<span class="help" data-help="あなたが新しい記事を書いたことを、pingサーバに通知し公開します。">?</span></th>
+	<tr><th>更新通知</th>
 		<td>
 		<label><input type="checkbox" name="ping" value="1"<@if(s.ping, ' checked')>>更新通知Pingを送信する</label>
+		<span class="help-text">あなたが新しい記事を書いたことを、pingサーバに通知し公開します。</span>
 		</td>
 	</tr>
-	<tr><th>記事の入力方法<span class="help" data-help="詳細は「編集画面の設定」から行ってください。">?</span></th>
+	<tr><th>記事の入力方法</th>
 		<td>
 		<label><input type="checkbox" name="markdown" value="1"<@if(s.parser eq 'markdown' || s.markdown, ' checked')>>Markdownで入力する</label>
 		</td>
 	</tr>
-	<tr><th>プライベートモード<span class="help" data-help="ログインしているブログ所有者（＋書き込み権限保持者）以外にはブログ全体が非表示になるモードです。画像等はURLを直指定すれば表示されます。">?</span></th>
+	<tr><th>プライベートモード</th>
 		<td>
 		<label><input type="checkbox" name="private" value="1"<@if(s.private eq '1', ' checked')>>プライベートモードに設定する</label>
+		<span class="help-text">ログインしているブログ所有者（＋書き込み権限保持者）以外にはブログ全体が非表示になるモードです。画像等はURLを直指定すれば表示されます。</span>
 		</td>
 	</tr>
-	<tr><th>サイトアイコン<span class="help" data-help="Faviconの設定。サイトをブックマークした時等に表示されるアイコンを設定します。64x64ピクセル程度を推奨します。">?</span></th>
+	<tr><th>サイトアイコン</th>
 		<td>
 			<input type="file" name="iconfile"><br>
 			<@ifexec(s.iconfile, begin)>
 			<a href="<@Basepath><@s.iconfile>" data-lythumb=""><img class="middle" src="<@Basepath><@s.iconfile>" style="max-width:24px; max-height:24px;"></a>
 			<label><input type="checkbox" name="iconfile_void" value="1">このアイコンを無効にする</label>
 			<$end>
+			<span class="help-text">Faviconの設定。サイトをブックマークした時等に表示されるアイコンを設定します。64x64ピクセル程度を推奨します。</span>
 		</td>
 	</tr>
 	</tbody>

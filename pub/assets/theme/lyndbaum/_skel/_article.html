@@ -179,10 +179,11 @@
 	<@ifexec(coms && v.allow_edit, begin)>
 	<div class="com-buttons">
 	<@ifexec(t.enable, begin)>
-	<button type="submit" name="enable"  class="js-check-form" data-confirm="">表示に設定</button><span class="help" data-help="非公開コメントは表示することはできません">?</span>
+	<button type="submit" name="enable"  class="js-check-form" data-confirm="">表示に設定</button>
 	<button type="submit" name="disable" class="js-check-form" data-confirm="">非表示に設定</button>
 	<$end>
 	<button type="submit" name="delete"  class="js-check-form" id="del-submit" data-confirm="%c件のコメントを削除しますか？" data-focus="cancel">削除</button>
+	<@if(t.enable, '<span class="help-text">非公開コメントは表示することはできません</span>')>
 	</div>
 	</form>
 	<$end>
@@ -203,8 +204,9 @@
 		<span class="caption-name">名前</span><span class="separater">:</span>
 		<@ifexec(Auth.ok, begin, begin)><span class="comment-author"><@Auth.name></span><@if(v.blog_admin, ' <span class="comment-badge">管理者</span>')><$else><input type="text" name="name" class="w160 comment-author" value="<@esc(Form.name)>" required><$end>
 		<@if(t.hcom_ok, '&emsp;<label><input type="checkbox" name="hidden" value="1">非公開</label>')>
-		&emsp;<button type="submit" id="post-comment">投稿</button><span class="help" data-help="返信は「>>n」\n空白、タブ有効。タグ無効。\n押せない時は少しお待ちください。">?</span><br>
+		&emsp;<button type="submit" id="post-comment">投稿</button><br>
 		<textarea class="comment-txt w600" name="comment_txt" rows="3" required><@esc(Form.comment_txt)></textarea>
+		<span class="help-text">返信は「&gt;&gt;n」<br>空白、タブ有効。タグ無効。<br>押せない時は少しお待ちください。</span>
 		<@ifexec(ps.email, begin)>
 		<div class="post-comment-email"><span class="caption-email">E-Mail(任意/非公開)</span><span class="separater">:</span><input class="w300" type="email" name="email" value="<@esc(Form.email)>"></div>
 		<$end>

@@ -4,14 +4,15 @@
 	<table class="blog-setting">
 	<tbody>
 	<tr>
-		<th>モジュールタイトル<span class="help" data-help="Informationモジュールのタイトルです。">?</span></th>
-		<td><input type="text" class="w160" name="title" value="<@ps.title || 'Information'>" maxlength="64"></td>
+		<th>モジュールタイトル</th>
+		<td><input type="text" class="w160" name="title" value="<@ps.title || 'Information'>" maxlength="64"><span class="help-text">Informationモジュールのタイトルです。</span></td>
 	</tr>
 	<tr>
-		<th>タイトル表示<span class="help" data-help="タイトルを「display: none;」します。使用テーマによっては最初から非表示になっています。（テーマ側で強制的に表示されることもあります）">?</span></th>
+		<th>タイトル表示</th>
 		<td>
 			<input type="hidden" name="title_hidden" value="0">
 			<label><input type="checkbox" name="title_hidden" value="1"<@if(ps.title_hidden,' checked')>>非表示にする</label>
+			<span class="help-text">タイトルを「display: none;」します。使用テーマによっては最初から非表示になっています。（テーマ側で強制的に表示されることもあります）</span>
 		</td>
 	</tr>
 	</tbody>
@@ -67,7 +68,7 @@ description
 	<input type="radio" name="bcounter" value="lb"><label style="color: #5587E7">■</label>
 </div>
 
-<div data-module-name="bicon" title="はてなブックマーク数" data-alt='はてなブックマーク数<span class="help" data-help="赤字でサイト全体のブックマーク数を表示します。1件もないときは非表示です。右はサンプルになります。">?</span>'>
+<div data-module-name="bicon" title="はてなブックマーク数" data-alt='はてなブックマーク数<span class="help-text">赤字でサイト全体のブックマーク数を表示します。1件もないときは非表示です。右はサンプルになります。</span>'>
 	<a class="http-bookmark" href="https://b.hatena.ne.jp/entry/https://adiary.org"><img src="//b.st-hatena.com/entry/image/https://adiary.org" alt="はてブ数"></a>
 </div>
 

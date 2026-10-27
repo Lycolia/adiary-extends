@@ -715,6 +715,10 @@ div.messages:empty {
 .help, .btn-help:after {
 	color:			var(--admin-link);
 }
+.help-text {
+	color:			var(--admin-muted);
+	opacity:		1;
+}
 div.popup-help {
 	min-width:		100px;
 	max-width:		360px;

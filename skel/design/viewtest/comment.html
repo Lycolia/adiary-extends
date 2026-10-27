@@ -197,9 +197,10 @@
 		<div class="ip-host-agent">example.com (192.168.0.1)<br>Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A403 Safari/8536.25</div>
 	</div> <!-- comment-one -->
 	<div class="com-buttons">
-	<button type="button" name="enable"  class="js-check-form" data-confirm="">表示に設定</button><span class="help" data-help="非公開コメントを表示することはできません">?</span>
+	<button type="button" name="enable"  class="js-check-form" data-confirm="">表示に設定</button>
 	<button type="button" name="disable" class="js-check-form" data-confirm="">非表示に設定</button>
 	<button type="button" name="delete"  class="js-check-form" id="del-submit" data-confirm="%c件のコメントを削除しますか？" data-focus="cancel">削除</button>
+	<span class="help-text">非公開コメントを表示することはできません</span>
 	</div>
 	</div><!-- end of comemntview -->
 
@@ -208,8 +209,9 @@
 	<form method="POST" action="#" class="comment" id="comment-form" data-module-name="dec_comment-form" data-fix="1">
 		<span class="caption-name">名前</span><span class="separater">:</span>
 		<span class="comment-author">なべ</span>&emsp;<label><input type="checkbox" name="hidden" value="1">非公開<span class="sp-hidden">コメント</span></label>
-		<button type="button" id="post-comment">投稿</button><span class="help" data-help="返信は「>>n」\n空白、タブ有効。タグ無効。\n押せない時はちょっと待ってね。">?</span><br>
+		<button type="button" id="post-comment">投稿</button><br>
 		<textarea class="comment-txt w600" name="comment_txt" rows="3" required></textarea>
+		<span class="help-text">返信は「&gt;&gt;n」<br>空白、タブ有効。タグ無効。<br>押せない時はちょっと待ってね。</span>
 	</form> <!-- comment form -->
 
 
