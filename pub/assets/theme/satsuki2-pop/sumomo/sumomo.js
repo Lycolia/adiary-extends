@@ -1,42 +1,58 @@
 'use strict';
-$(function(){
+(function(func) {
+	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', func);
+	else func();
+})(function(){
 	const TARGET    = '.main div.body-main figure, .main div.body-main table, .main div.body-main div, .main div.body-main blockquote, .main div.body-main pre, .main div.body-main iframe';
-	const baseWidth = $('.main div.body-main').width() * 0.9;
+	const body      = document.querySelector('.main div.body-main');
+	const baseWidth = (body ? inner_width(body) : 0) * 0.9;
 	const minMargin = 8;
 
-	function alian_lineheight(dom) {
-		const $obj = $(dom);
-		if ($obj.parents(TARGET).length) return;
+	// jQuery の width() と同じ（padding と border を除いた幅）
+	function inner_width(dom) {
+		const css = getComputedStyle(dom);
+		return dom.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight);
+	}
+	function prev_target(dom) {
+		const x = dom.previousElementSibling;
+		return x && x.matches(TARGET) ? x : null;
+	}
+	function next_target(dom) {
+		const x = dom.nextElementSibling;
+		return x && x.matches(TARGET) ? x : null;
+	}
 
-		let line_h = parseInt($obj.css('line-height'));
+	function alian_lineheight(dom) {
+		if (dom.parentElement && dom.parentElement.closest(TARGET)) return;
+
+		let line_h = parseInt(getComputedStyle(dom).lineHeight);
 		line_h = isNaN(line_h) ? 24 : line_h;		// default 24px;
 
-		const objs = [$obj];
-		if ($obj.outerWidth() > baseWidth) {	// 横に複数並ぶ figure を除外する
+		const objs = [dom];
+		if (dom.offsetWidth > baseWidth) {	// 横に複数並ぶ figure を除外する
 			while(true) {
-				const $y = objs[0].prev(TARGET);
-				if (!$y.length) break;
-				const w  = $y.outerWidth();
+				const y = prev_target(objs[0]);
+				if (!y) break;
+				const w  = y.offsetWidth;
 				if (w < baseWidth) break;
-				objs.unshift($y);
+				objs.unshift(y);
 			}
 			while(true) {
-				const $y = objs[objs.length-1].next(TARGET);
-				if (!$y.length) break;
-				const w  = $y.outerWidth();
+				const y = next_target(objs[objs.length-1]);
+				if (!y) break;
+				const w  = y.offsetWidth;
 				if (w < baseWidth) break;
-				objs.push($y);
+				objs.push(y);
 			}
 		}
 
 		let height = (objs.length-1) * minMargin;
-		for(const $o of objs) {
-			height += $obj.outerHeight();
-			$obj.css({
-				'margin-top':    minMargin + 'px',
-				'margin-bottom': minMargin + 'px',
-				'vertical-align':'middle'
-			});
+		// 元の処理のとおり、どの回でも dom の高さを足し、dom に余白を付ける（並んだ要素 o ではない）
+		for(const o of objs) {
+			height += dom.offsetHeight;
+			dom.style.marginTop     = minMargin + 'px';
+			dom.style.marginBottom  = minMargin + 'px';
+			dom.style.verticalAlign = 'middle';
 		}
 
 		const mul  = Math.ceil( (height + minMargin*2) /line_h );
@@ -44,14 +60,14 @@ $(function(){
 		const diff = line_h * mul - height;
 
 		const m = (diff/2) + 'px';
-		objs[0]            .css('margin-top',    m);
-		objs[objs.length-1].css('margin-bottom', m);
+		objs[0]            .style.marginTop    = m;
+		objs[objs.length-1].style.marginBottom = m;
 	}
 
 	const observer = new MutationObserver(function(list){
 		const targets = [];
 		for(const x of list) {
-			const tar = $(x.target).closest(TARGET)[0];
+			const tar = x.target.closest && x.target.closest(TARGET);
 			if (!tar) continue;
 
 			let f;
@@ -67,20 +83,22 @@ $(function(){
 		}
 	});
 
-	for(const dom of $(TARGET)) {
+	for(const dom of document.querySelectorAll(TARGET)) {
 		alian_lineheight(dom);
 
 		observer.observe(dom, { childList: true, subtree: true });
 	}
 
-	$('.main div.body-main img, .main div.body-main iframe').on('load', evt => {
-		let dom = evt.target;
-		if (dom.tagName === 'IMG') {
-			const $fig = $(dom).closest('figure');
-			if (!$fig.length) return;
-			dom = $fig[0];
-		}
-		// console.log('load', dom);
-		alian_lineheight(dom);
+	document.querySelectorAll('.main div.body-main img, .main div.body-main iframe').forEach(function(x) {
+		x.addEventListener('load', evt => {
+			let dom = evt.target;
+			if (dom.tagName === 'IMG') {
+				const fig = dom.closest('figure');
+				if (!fig) return;
+				dom = fig;
+			}
+			// console.log('load', dom);
+			alian_lineheight(dom);
+		});
 	});
 });

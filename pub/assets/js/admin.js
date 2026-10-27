@@ -1,11 +1,149 @@
 //##############################################################################
 // admin.js
-//	管理画面でだけ使う処理。adiary.jsの後に読み込む
-//	※公開画面のフレーム（_frame）でも、システムモード（デザイン編集など）のときは読み込む
+//	管理画面でだけ使う処理。asys.js（jQuery）と adiary.js の後に読み込む
+//	※公開画面のフレーム（_frame）でも、システムモード（デザイン編集など）のときと、
+//	  ログイン中（記事のページのコメントの管理など）は読み込む
 //##############################################################################
 //[TAB=8]
 'use strict';
+{
+// 公開画面の処理（adiary.js）。asys.js を読んだページでは、adiary は asys.js（$$）になる
+const adiary_public = window.adiary_public;
+
 $(function(){
+//##############################################################################
+// ■initalize
+//##############################################################################
+(function(){
+	this.DialogWidth       = -1;	// auto
+	this.DialogMinWidth    = 480;
+
+	// load adiary vars
+	const data = this.asys_vars;
+	const ary  = ['ScriptDir', 'PubdistDir', 'SpecialQuery', 'Static'];
+	for(var i in ary) {
+		this[ary[i]] = data[ary[i]];
+	}
+
+	// Smartphone mode
+	this.SP = adiary_public.SP;
+	if (this.SP) {
+		this.DialogWidth    = 320;
+		this.DialogMinWidth =   0;
+	}
+
+	// load message
+	this.load_msg('[data-secure].adiary-msgs');
+
+}).call(adiary);
+
+////////////////////////////////////////////////////////////////////////////////
+// ●公開画面の処理（adiary.js）を adiary.〜 で呼べるようにする
+////////////////////////////////////////////////////////////////////////////////
+// テンプレートの <script-defer> と、デザインのテーマ選択（プレビューの css_init）から呼ぶ
+for(const name of ['css_init', 'get_value_from_css', 'init_top_search', 'word_highlight']) {
+	$$[name] = function() {
+		return adiary_public[name].apply(adiary_public, arguments);
+	};
+}
+
+//##############################################################################
+// ■extend jQuery
+//##############################################################################
+(function() {
+	const init_orig = $.fn.init;
+	$.fn.init = function(sel,cont) {
+		if (typeof sel === "string" && sel.match(/<.*?[\W]on\w+\s*=/i))
+			throw 'Security error by ' + $$.name + '.js : ' + sel;
+		return  new init_orig(sel,cont);
+	};
+})();
+
+////////////////////////////////////////////////////////////////////////////////
+// Emulate jquery.cookie for dynatree
+////////////////////////////////////////////////////////////////////////////////
+(function(_ls) {
+	const ls = _ls;
+	$.cookie = function(key, val) {
+		if (val === undefined) return ls.get(key);
+		ls.set(key, val);
+	}
+	$.removeCookie = function(key) {
+		ls.removeItem(key);
+	}
+})($$.Storage);
+
+//##############################################################################
+// ■dom extend
+//##############################################################################
+////////////////////////////////////////////////////////////////////////////////
+//●詳細情報ダイアログの表示
+////////////////////////////////////////////////////////////////////////////////
+$$.init( function(){
+	let prev;
+	const self=this;
+	this.$body.on('click', '.js-info[data-info], .js-info[data-url]', function(evt){
+
+		if (evt.target == prev) return;	// 連続クリック防止
+		prev = evt.target;
+
+		const $obj = $(evt.target);
+		const $div = $('<div>');
+		const $div2= $('<div>');	// 直接 div にクラスを設定すると表示が崩れる
+
+		$div.attr('title', $obj.data("title") || "Infomataion" );
+		$div2.addClass($obj.data("class"));
+		$div.empty();
+		$div.append($div2);
+		if ($obj.data('info')) {
+			const text = self.tag_esc_br( $obj.data("info") );
+			$div2.html( text );
+			$div.adiaryDialog({ width: self.DialogWidth, close: close_func });
+			return;
+		}
+		var url = $obj.data("url");
+		$div2.load( url, function(){
+			$div2.text( $div2.text().replace(/\n*$/, "\n\n") );
+			$div.adiaryDialog({ width: self.DialogWidth, height: 320, close: close_func });
+		});
+	});
+	function close_func() {
+		prev = null;
+	}
+});
+
+////////////////////////////////////////////////////////////////////////////////
+//●画像・コメントのポップアップ
+////////////////////////////////////////////////////////////////////////////////
+$$.init( function(){
+	const self = this;
+	const func = function(evt){ self.popup(evt) }
+
+	this.$body.on('mouseover', '.js-popup-img', {
+		func: function($obj, $div) {
+			const $img = $('<img>');
+			$img.attr('src', $obj.data('img-url'));
+			$div.empty();
+			$div.attr('id', 'popup-image');
+			$div.append( img );
+		}
+	}, func);
+	$('.js-popup-img').removeAttr('title');	// remove title attr popup
+
+	this.$body.on('mouseover', '.js-popup-com', {
+		func: function($obj, $div){
+			var num = $obj.data('target');
+			if (num == '' || num == 0) return $div.empty();
+
+			var $com = $secure('#c' + num);
+			if (!$com.length) return $div.empty();
+
+			$div.attr('id', 'popup-com');
+			$div.html( $com.html() );
+		}
+	}, func);
+});
+
 //##############################################################################
 // ■UI
 //##############################################################################
@@ -396,4 +534,10 @@ $$.init( function(){
 });
 
 //##############################################################################
+// init
+//##############################################################################
+$$.init();
+
+//##############################################################################
 });
+}

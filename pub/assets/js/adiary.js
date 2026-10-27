@@ -1,29 +1,142 @@
 //##############################################################################
 // adiary.js
-//
+//	公開画面の処理。jQueryとasys.jsを使わない
+//	※ログイン中と管理画面では、asys.js（jQuery）と admin.js も読み込む。そのときは、
+//	  <script-defer> の実行と js-switch は asys.js が行い、window.adiary は asys.js（$$）になる。
+//	  テンプレートなどから adiary.〜 で呼ぶものは、admin.js が $$ からも呼べるようにする
 //##############################################################################
 //[TAB=8]
 'use strict';
-$(function(){
-//##############################################################################
-// initalize
-//##############################################################################
 (function(){
-	const self = this;
+const adiary = {
+	name:			'adiary',
+	SP:			false,		// smart phone mode
+	CommentEnableTime:	10000,		// msec
+	CommentEnableKeys:	10,
+	PopupDelayTime:		300,		// msec
+	PopupOffsetX:		15,
+	PopupOffsetY:		10
+};
+const with_asys = !!window.jQuery;	// asys.js を読んだページ（ログイン中、管理画面）
 
-	this.SP = false;		// smart phone mode
-	this.DialogWidth       = -1;	// auto
-	this.DialogMinWidth    = 480;
+window.adiary        = adiary;		// asys.js を読んだページでは、asys.js が置き換える
+window.adiary_public = adiary;		// admin.js から呼ぶ
 
-	this.CommentEnableTime = 10000;	// msec
-	this.CommentEnableKeys = 10;
+const inits = [];
+function init(func) {
+	inits.push(func);
+}
 
-	// load adiary vars
-	let data = this.asys_vars;
-	const ary = ['ScriptDir', 'PubdistDir', 'SpecialQuery', 'Static'];
-	for(var i in ary) {
-		this[ary[i]] = data[ary[i]];
+//##############################################################################
+// ■基本の関数
+//##############################################################################
+////////////////////////////////////////////////////////////////////////////////
+// ●idで要素を探す。同じidが2つ以上あるときは使わない
+////////////////////////////////////////////////////////////////////////////////
+function secure(sel) {
+	const id   = sel.replace(/^#/, '');
+	const list = document.querySelectorAll('[id="' + id.replace(/["\\]/g, '\\$&') + '"]');
+	if (list.length > 1) {
+		console.error('secure() error! : id="' + id + '" is duplicate.');
+		return null;
 	}
+	return list[0] || null;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ●スクリプトの読み込み
+////////////////////////////////////////////////////////////////////////////////
+adiary.load_script = function(url, callback) {
+	const script = document.createElement('script');
+	script.src   = url;
+	script.async = true;
+	if (callback) script.addEventListener('load', callback);
+	document.head.appendChild(script);
+	return script;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ●<style> を足す
+////////////////////////////////////////////////////////////////////////////////
+adiary.append_style = function(css) {
+	const style = document.createElement('style');
+	style.textContent = css || '';
+	document.head.appendChild(style);
+	return style;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ●textareaのカーソルの位置に文字を入れる
+////////////////////////////////////////////////////////////////////////////////
+function insert_to_textarea(ta, text) {
+	const p = ta.selectionStart;
+	ta.value = ta.value.substring(0, p) + text + ta.value.substring(ta.selectionEnd);
+	ta.setSelectionRange(p + text.length, p + text.length);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ●ブラウザーに覚える（asys.js の PrefixStorage と同じキー）
+////////////////////////////////////////////////////////////////////////////////
+function storage_key(key) {
+	return String(adiary.myself || '/') + '::' + key;
+}
+function storage_get(key) {
+	try { return localStorage.getItem(storage_key(key)); } catch(e) { return null; }
+}
+function storage_set(key, val) {
+	try { localStorage.setItem(storage_key(key), val); } catch(e) {}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ●マウスを乗せたときのポップアップ
+////////////////////////////////////////////////////////////////////////////////
+// show(dom, div) で div に中身を入れる。中身が無ければ div を空にする
+adiary.popup = function(dom, show) {
+	const self = this;
+	let timer;
+	dom.addEventListener('mouseover', function(evt) {
+		if (timer) return;
+		const x = evt.pageX;
+		const y = evt.pageY;
+		timer = setTimeout(function(){
+			const div = self.popup_div || (self.popup_div = document.body.appendChild(document.createElement('div')));
+			div.className = 'popup-block';
+			div.removeAttribute('id');
+			div.innerHTML = '';
+			show(dom, div);
+			if (!div.childNodes.length) return;
+			div.style.left    = (self.SP ? 0 : x + self.PopupOffsetX) + 'px';
+			div.style.top     = (y + self.PopupOffsetY) + 'px';
+			div.style.display = 'block';
+		}, self.PopupDelayTime);
+	});
+	dom.addEventListener('mouseleave', function() {
+		clearTimeout(timer);
+		timer = null;
+		if (self.popup_div) self.popup_div.style.display = 'none';
+	});
+}
+
+//##############################################################################
+// ■初期化
+//##############################################################################
+init(function(){
+	// load adiary vars
+	const vars = secure('#asys-vars');
+	if (vars) {
+		try {
+			const json = vars.innerHTML.replace(/^[\s\S]*?{/, '{').replace(/}[\s\S]*?$/, '}');
+			const data = JSON.parse(json);
+			const ary  = ['myself', 'myself2', 'Basepath', 'ScriptDir', 'PubdistDir', 'SpecialQuery', 'Static'];
+			for(const k of ary) {
+				if (k in data) this[k] = data[k];
+			}
+			this.vars = data;
+		} catch(e) {
+			console.error(e);
+		}
+	}
+	const data = this.vars || {};
 
 	// remove #rss-tm hash
 	if (window.location.hash.indexOf('#rss-tm') == 0) {
@@ -31,89 +144,62 @@ $(function(){
 	}
 
 	// Smartphone mode
-	if (this.$body.hasClass('sp')
-	 || this.$body.hasClass('responsive') && window.matchMedia('(max-width: 640px)').matches) {
-		this.SP = 1;
-		this.DialogWidth    = 320;
-		this.DialogMinWidth =   0;
+	const body = document.body.classList;
+	if (body.contains('sp')
+	 || body.contains('responsive') && window.matchMedia('(max-width: 640px)').matches) {
+		this.SP = true;
 	}
 
 	// DB time, Total time
-	if (data.DBTime)    $('#system-info-db-time')   .text( data.DBTime    );
-	if (data.TotalTime) $('#system-info-total-time').text( data.TotalTime );
+	const db_time    = document.getElementById('system-info-db-time');
+	const total_time = document.getElementById('system-info-total-time');
+	if (data.DBTime    && db_time)    db_time.textContent    = data.DBTime;
+	if (data.TotalTime && total_time) total_time.textContent = data.TotalTime;
 
 	// Google Analytics 4
 	if (data.GA4_ID) {
 		window.dataLayer = window.dataLayer || [];
-		function gtag(){dataLayer.push(arguments);}
+		function gtag(){ dataLayer.push(arguments); }
 		gtag('js', new Date());
 		gtag('config', data.GA4_ID);
 		this.load_script('https://www.googletagmanager.com/gtag/js?id=' + data.GA4_ID);
 	}
 
-	// load message
-	this.load_msg('[data-secure].adiary-msgs');
-
 	// load script		ex) twitter-widget of filter syntax
-	$('script-load').each(function(idx, dom) {
-		self.load_script(dom.getAttribute('src'));
+	document.querySelectorAll('script-load').forEach(function(dom) {
+		adiary.load_script(dom.getAttribute('src'));
 	});
-
-}).call(adiary);
-
-//##############################################################################
-// extend jQuery
-//##############################################################################
-(function() {
-	const init_orig = $.fn.init;
-	$.fn.init = function(sel,cont) {
-		if (typeof sel === "string" && sel.match(/<.*?[\W]on\w+\s*=/i))
-			throw 'Security error by ' + $$.name + '.js : ' + sel;
-		return  new init_orig(sel,cont);
-	};
-})();
-
-////////////////////////////////////////////////////////////////////////////////
-// Emulate jquery.cookie for dynatree
-////////////////////////////////////////////////////////////////////////////////
-(function(_ls) {
-	const ls = _ls;
-	$.cookie = function(key, val) {
-		if (val === undefined) return ls.get(key);
-		ls.set(key, val);
-	}
-	$.removeCookie = function(key) {
-		ls.removeItem(key);
-	}
-})($$.Storage);
+});
 
 //##############################################################################
 // ■CSSへの機能提供
 //##############################################################################
-$$.css_funcs = [];
-$$.css_init  = function(func) {
-	if (func)
-		return this.css_funcs.push(func);
-
-	const funcs = this.css_funcs;
-	for(var i=0; i<funcs.length; i++)
-		funcs[i].call(this);
+// テーマのCSSに書いた印を読んで動く。デザインのテーマ選択は、CSSを変えたらプレビューの css_init() を呼ぶ
+const css_funcs = [];
+function css_init(func) {
+	css_funcs.push(func);
 }
-$$.init(adiary.css_init);
+adiary.css_init = function() {
+	for(const func of css_funcs) func.call(this);
+}
+init(adiary.css_init);
 
 ////////////////////////////////////////////////////////////////////////////////
 // ●CSSから値を取得する
 ////////////////////////////////////////////////////////////////////////////////
-$$.get_value_from_css = function(id, attr) {
-	var span = $('<span>').attr('id', id).css('display', 'none');
-	this.$body.append(span);
+adiary.get_value_from_css = function(id, attr) {
+	const span = document.createElement('span');
+	span.id = id;
+	span.style.display = 'none';
+	document.body.appendChild(span);
+	const css = getComputedStyle(span);
 	if (attr) {
-		attr = span.css(attr);
+		attr = css.getPropertyValue(attr);
 		span.remove();
 		return attr;
 	}
-	var size = span.css('min-width');	// 1pxの時のみ有効
-	var str  = span.css('font-family');
+	const size = css.minWidth;	// 1pxの時のみ有効
+	let   str  = css.fontFamily;
 	span.remove();
 	if (str == null || size != '1px') return '';
 	str = str.replace(/["']/g, '');
@@ -123,36 +209,40 @@ $$.get_value_from_css = function(id, attr) {
 ////////////////////////////////////////////////////////////////////////////////
 //●sidebarのHTML位置変更
 ////////////////////////////////////////////////////////////////////////////////
-$$.css_init(function(){
-	var flag = this.get_value_from_css('sidebar-move-to-before-main');
+css_init(function(){
+	const flag = this.get_value_from_css('sidebar-move-to-before-main');
 	if (this.SP || !flag) return;
 
 	// 入れ替え
-	var sidebar = $('#sidebar');
-	sidebar.insertBefore( 'div.main:first-child' );
+	const sidebar = document.getElementById('sidebar');
+	const main    = document.querySelector('div.main:first-child');
+	if (sidebar && main) main.parentNode.insertBefore(sidebar, main);
 });
 
-$$.css_init(function(){
-	var flag = this.get_value_from_css('side-b-move-to-footer');
+css_init(function(){
+	const flag = this.get_value_from_css('side-b-move-to-footer');
 	if (this.SP || !flag) return;
 
 	// 入れ替え
-	$('#footer').prepend( $('#side-b') );
+	const footer = document.getElementById('footer');
+	const side_b = document.getElementById('side-b');
+	if (footer && side_b) footer.prepend(side_b);
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 //●viewport の上書き
 ////////////////////////////////////////////////////////////////////////////////
-$$.css_init(function(){
-	var val = this.get_value_from_css('viewport-setting');
+css_init(function(){
+	const val = this.get_value_from_css('viewport-setting');
 	if (!val) return;
-	$('#viewport').attr('content', val);
+	const viewport = document.getElementById('viewport');
+	if (viewport) viewport.setAttribute('content', val);
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 //●ui-iconの生成
 ////////////////////////////////////////////////////////////////////////////////
-$$.css_init(function(){
+css_init(function(){
 	let color_bin;
 	{
 		const css = this.get_value_from_css('ui-icon-autoload', 'background-color');
@@ -168,7 +258,6 @@ $$.css_init(function(){
 			color_bin = String.fromCharCode(rgb[1], rgb[2], rgb[3]);
 		}
 	}
-	// console.log(color_bin.charCodeAt(0), color_bin.charCodeAt(1), color_bin.charCodeAt(2));
 
 	// generate ui-icon.png
 	let png = atob( 'iVBORw0KGgoAAAANSUhEUgAAAFAAAAAgAQMAAAC//W0vAAAABlBMVEUAAP/8/PzLviUMAAAAAnRSTlP/AOW3MEoAAADJSURBVBjTdc4xjgIxDEDRjChSUOQIPkoOskehMBIH4EoZUUy509GgTaQtpiSIJiiRjR0BooBUr3D8bfj1zBvJMSiWxbSFMFnmw8Hcrg1jvf6OO1Nr2/zVyz7ZBwtkp1ydavMFdNbOP515KW5e94HkLjyv+7eJ/4V92Z6PHGtPRD6z1iT8+bLPDDYyIyGxJCYmbJ5QOHLDAuRNhoAFsyNQQh6S3TpTfHBpCKutVUIamhc2DJiVTjhy0WVgiCdZJvQSjs9Ezyu/XHYH55/2IroZ0KMAAAAASUVORK5CYII=')
@@ -204,20 +293,19 @@ $$.css_init(function(){
 		const p = offset + length;
 		png = png.substr(0, p) + crc + png.substr(p+4);
 	}
-	const $style = this.ui_icon_style = this.ui_icon_style || this.append_style();
-	const css = '.ui-icon, .art-nav a:before, .art-nav a:after {'
+	const style = this.ui_icon_style = this.ui_icon_style || this.append_style();
+	style.textContent = '.ui-icon, .art-nav a:before, .art-nav a:after {'
 			+ 'background-image: '
 			+ 	'url("data:image/png;base64,' + btoa(png) + '")'
 			+ '}';
-	$style.html(css);
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 //●MathJaxの自動ロード
 ////////////////////////////////////////////////////////////////////////////////
-$$.init(function(){
-	const $math = $('span.math, div.math');
-	if (! $math.length ) return;
+init(function(){
+	const math = document.querySelectorAll('span.math, div.math');
+	if (!math.length) return;
 
 	const MathJaxURL = 'https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js';
 	window.MathJax = {
@@ -236,143 +324,104 @@ $$.init(function(){
 		extensions: ["TeX/AMSmath.js", "TeX/AMSsymbol.js"]
 	};
 	this.load_script(MathJaxURL, async function(){
-      		for(const dom of $math) {
+		for(const dom of math) {
 			const deli = dom.tagName === 'SPAN' ? "\x01\x01" : "\x01\x02";
 			dom.innerHTML = deli + dom.innerHTML + deli;
 		}
-		await MathJax.typesetPromise($math);
-		$math.trigger('mathjax-complite');
+		await MathJax.typesetPromise(Array.from(math));
 	});
 });
 
-
 //##############################################################################
-// dom extend
+// ■dom extend
 //##############################################################################
-////////////////////////////////////////////////////////////////////////////////
-//●詳細情報ダイアログの表示
-////////////////////////////////////////////////////////////////////////////////
-$$.init( function(){
-	let prev;
-	const self=this;
-	this.$body.on('click', '.js-info[data-info], .js-info[data-url]', function(evt){
-
-		if (evt.target == prev) return;	// 連続クリック防止
-		prev = evt.target;
-
-		const $obj = $(evt.target);
-		const $div = $('<div>');
-		const $div2= $('<div>');	// 直接 div にクラスを設定すると表示が崩れる
-
-		$div.attr('title', $obj.data("title") || "Infomataion" );
-		$div2.addClass($obj.data("class"));
-		$div.empty();
-		$div.append($div2);
-		if ($obj.data('info')) {
-			const text = self.tag_esc_br( $obj.data("info") );
-			$div2.html( text );
-			$div.adiaryDialog({ width: self.DialogWidth, close: close_func });
-			return;
-		}
-		var url = $obj.data("url");
-		$div2.load( url, function(){
-			$div2.text( $div2.text().replace(/\n*$/, "\n\n") );
-			$div.adiaryDialog({ width: self.DialogWidth, height: 320, close: close_func });
-		});
-	});
-	function close_func() {
-		prev = null;
-	}
-});
-
-////////////////////////////////////////////////////////////////////////////////
-//●画像・コメントのポップアップ
-////////////////////////////////////////////////////////////////////////////////
-$$.init( function(){
-	const self = this;
-	const func = function(evt){ self.popup(evt) }
-
-	this.$body.on('mouseover', '.js-popup-img', {
-		func: function($obj, $div) {
-			const $img = $('<img>');
-			$img.attr('src', $obj.data('img-url'));
-			$div.empty();
-			$div.attr('id', 'popup-image');
-			$div.append( img );
-		}
-	}, func);
-	$('.js-popup-img').removeAttr('title');	// remove title attr popup
-
-	this.$body.on('mouseover', '.js-popup-com', {
-		func: function($obj, $div){
-			var num = $obj.data('target');
-			if (num == '' || num == 0) return $div.empty();
-
-			var $com = $secure('#c' + num);
-			if (!$com.length) return $div.empty();
-
-			$div.attr('id', 'popup-com');
-			$div.html( $com.html() );
-		}
-	}, func);
-});
-
 ////////////////////////////////////////////////////////////////////////////////
 //●textareaでのタブ入力
 ////////////////////////////////////////////////////////////////////////////////
-$$.init( function(){
-	const self=this;
+init(function(){
+	const tab_stop = new WeakSet();
 
-	this.$body.on('focus', 'textarea', function(evt){
-		var $obj = $(evt.target);
-		$obj.data('_tab_stop', true);
+	document.addEventListener('focusin', function(evt){
+		if (evt.target.tagName === 'TEXTAREA') tab_stop.add(evt.target);
 	});
 
-	this.$body.on('keydown', 'textarea', function(evt){
-		var $obj = $(evt.target);
-		if ($obj.prop('readonly') || $obj.prop('disabled')) return;
+	document.addEventListener('keydown', function(evt){
+		const ta = evt.target;
+		if (ta.tagName !== 'TEXTAREA' || ta.readOnly || ta.disabled) return;
 
 		// ESC key
-		if (evt.keyCode == 27) return $obj.data('_tab_stop', true);
+		if (evt.keyCode == 27) return tab_stop.add(ta);
 
 		// フォーカス直後のTABは遷移させる
-		if ($obj.data('_tab_stop')) {
-			$obj.data('_tab_stop', false);
+		if (tab_stop.has(ta)) {
+			tab_stop.delete(ta);
 			return;
 		}
 		if (evt.shiftKey || evt.keyCode != 9) return;
 
 		evt.preventDefault();
-		self.insert_to_textarea(evt.target, "\t");
+		insert_to_textarea(ta, "\t");
 	});
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 //【スマホ】ドロップダウンメニューでの hover の代わり
 ////////////////////////////////////////////////////////////////////////////////
-$$.init( function(){
-	function open_link(evt) {
-		location.href = $(evt.target).attr('href');
-	}
+// 押すと開閉する。すばやく2回押したら（ダブルクリック、ダブルタップ）、リンクを開く
+init(function(){
+	const DoubleTapTime = 400;	// msec
+	document.addEventListener('click', function(evt) {
+		const a  = evt.target.closest('.js-alt-hover li > a');
+		if (!a) return;
+		const li = a.parentNode;
+		if (!li.querySelector(':scope > ul')) return;
 
-	this.$body.on('click', '.js-alt-hover li > a', function(evt) {
-		const $obj = $(evt.target).parent();
-		if (!$obj.children('ul').length) return true;
-
-		if ($obj.hasClass('open')) {
-			$obj.removeClass('open');
-			$obj.find('.open').removeClass('open')
-		} else {
-			$obj.addClass('open');
+		const now  = Date.now();
+		const last = li._alt_hover_tm;
+		li._alt_hover_tm = now;
+		if (last && now - last < DoubleTapTime) {
+			location.href = a.getAttribute('href');
+			return;
 		}
-		// リンクをキャンセル。"return false" ではダブルクリックイベントが発生しない
-		evt.preventDefault();
 
-		// dbltapイベントを登録
-		if ($obj.data('_reg_dbltap')) return;
-		$obj.data('_reg_dbltap', true);
-		$obj.on('dblclick', open_link);
-		$obj.on('mydbltap', open_link);
+		if (li.classList.contains('open')) {
+			li.classList.remove('open');
+			li.querySelectorAll('.open').forEach(function(x){ x.classList.remove('open') });
+		} else {
+			li.classList.add('open');
+		}
+		// リンクをキャンセル
+		evt.preventDefault();
+	});
+});
+
+////////////////////////////////////////////////////////////////////////////////
+//●表示の切り替え（js-switch）
+////////////////////////////////////////////////////////////////////////////////
+// <input type="checkbox" class="js-switch" data-target="セレクタ"> で、チェックしたら出す。
+// data-save があれば、ブラウザーに覚える。asys.js を読んだページでは asys.js が行う
+init(function(){
+	if (with_asys) return;
+
+	function update(dom, first) {
+		const targets = document.querySelectorAll(dom.dataset.target);
+		if (!targets.length) return;
+		const save = dom.hasAttribute('data-save');
+		const key  = dom.id || dom.name || dom.dataset.target;
+		if (first && save && storage_get(key) != null) {
+			dom.checked = !!parseInt(storage_get(key));
+		}
+		let show = dom.checked;
+		if (dom.dataset.negative) show = !show;
+
+		dom.classList.toggle('sw-show',  show);
+		dom.classList.toggle('sw-hide', !show);
+		targets.forEach(function(x){ x.style.display = show ? '' : 'none' });
+		if (save) storage_set(key, show ? '1' : '0');
+	}
+	document.querySelectorAll('input.js-switch[type="checkbox"][data-target]').forEach(function(dom) {
+		update(dom, true);
+		dom.addEventListener('change', function(){ update(dom) });
 	});
 });
 
@@ -382,35 +431,33 @@ $$.init( function(){
 ////////////////////////////////////////////////////////////////////////////////
 //●コメント欄の加工
 ////////////////////////////////////////////////////////////////////////////////
-$$.init( function(){
-	const self=this;
-	$('#com div.comment-text').each(function(idx,dom) {
-		const $obj = $(dom);
-
+init(function(){
+	const self = this;
+	document.querySelectorAll('#com div.comment-text').forEach(function(dom) {
 		////////////////////////////////////////////////////////////////
 		// リンクに加工 ex) >>14 >>2
 		////////////////////////////////////////////////////////////////
 		let flag;
-		let text = $obj.html();
+		let text = dom.innerHTML;
 		text = text.replace(/&gt;&gt;(\d+)/g, function(all, num){
 			flag=true;
 			return '<a href="#c' + num + '">&gt;&gt;' + num + '</a>';
 		});
 		if (!flag) return;
-		$obj.html(text);
+		dom.innerHTML = text;
 
 		////////////////////////////////////////////////////////////////
 		// regist popup
 		////////////////////////////////////////////////////////////////
-		$obj.find('a').on('mouseover', {
-			func: function($obj, $div) {
-				const num  = $obj.attr('href').toString().replace(/[^\d]/g, '');
-				const $com = $('#c' + num);
-				if (!$com.length) return $div.empty();
-				$div.attr('id', 'popup-com');
-				$div.html( $com.html() );
-			}
-		}, function(evt){ self.popup(evt) });
+		dom.querySelectorAll('a').forEach(function(a) {
+			self.popup(a, function(a, div) {
+				const num = (a.getAttribute('href') || '').replace(/[^\d]/g, '');
+				const com = document.getElementById('c' + num);
+				if (!com) return;
+				div.id        = 'popup-com';
+				div.innerHTML = com.innerHTML;
+			});
+		});
 	});
 });
 
@@ -418,12 +465,13 @@ $$.init( function(){
 //●セキュリティコードの設定
 ////////////////////////////////////////////////////////////////////////////////
 // コメントのスパム対策。決まりはdocs/コメントのスパム対策.mdの「投稿ボタンが押せるようになるまで」
-$$.init( function(){
-	const $form = $('#comment-form');
-	if (!$form.length) return;
+init(function(){
+	const form = document.getElementById('comment-form');
+	if (!form) return;
 
-	let   pkey = $('#comment-form-apkey').val() || '';
-	const ary  = ($form.data('secure') || '').split(',');
+	const apkey = document.getElementById('comment-form-apkey');
+	let   pkey  = apkey && apkey.value || '';
+	const ary   = (form.dataset.secure || '').split(',');
 	if (!pkey.match(/^\d+$/)) return;
 	pkey = parseInt(pkey) & 255;
 
@@ -432,27 +480,28 @@ $$.init( function(){
 		if (!ary[i].match(/^\d+$/)) return;
 		sid += String.fromCharCode( ary[i] ^ pkey );
 	}
+	const sid_input = document.getElementById('comment-form-sid');
 
 	// 記事を編集できる人（ブログ管理者と編集者）は待たせない（data-no-wait）
-	if ($form.data('no-wait')) {
-		$('#comment-form-sid').val(sid);
+	if (form.dataset.noWait) {
+		sid_input.value = sid;
 		return;
 	}
 
 	// 投稿ボタンを disable に
-	const $btn = $('#post-comment');
-	$btn.prop('disabled', true);
+	const btn = document.getElementById('post-comment');
+	if (btn) btn.disabled = true;
 
 	// 10key押されるか、10秒経ったら設定
-	const $ta = $form.find('textarea');
+	const tas = form.querySelectorAll('textarea');
 
 	let hook;
 	let timer;
 	const enable_func = function() {
 		clearTimeout( timer );
-		$ta.off('keydown', hook);
-		$('#comment-form-sid').val(sid);
-		$btn.prop('disabled', false);
+		tas.forEach(function(ta){ ta.removeEventListener('keydown', hook) });
+		sid_input.value = sid;
+		if (btn) btn.disabled = false;
 	};
 
 	let cnt=this.CommentEnableKeys;
@@ -462,7 +511,7 @@ $$.init( function(){
 			if (cnt) return;
 			enable_func();
 		}
-		$ta.on('keydown', hook);
+		tas.forEach(function(ta){ ta.addEventListener('keydown', hook) });
 	}
 
 	timer = setTimeout(enable_func, this.CommentEnableTime);
@@ -471,15 +520,88 @@ $$.init( function(){
 ////////////////////////////////////////////////////////////////////////////////
 // ●検索条件の項目マーク
 ////////////////////////////////////////////////////////////////////////////////
-$$.init_top_search = function(id, flag) {
-	var $form = $secure(id);
-	var tagdel = $('<span>').addClass('ui-icon ui-icon-close');
-	if (!flag) tagdel.click(function(evt){
-		var $obj = $(evt.target);
-		$obj.parent().remove();
-		$form.submit();
+adiary.init_top_search = function(id, flag) {
+	const form = secure(id);
+	if (!form) return;
+	form.querySelectorAll("div.taglist span.tag, div.ctype span.ctype, div.yyyymm span.yyyymm").forEach(function(dom) {
+		const del = document.createElement('span');
+		del.className = 'ui-icon ui-icon-close';
+		if (!flag) del.addEventListener('click', function(){
+			dom.remove();
+			form.submit();
+		});
+		dom.appendChild(del);
 	});
-	$form.find("div.taglist span.tag, div.ctype span.ctype, div.yyyymm span.yyyymm").append(tagdel);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ●検索した語の強調
+////////////////////////////////////////////////////////////////////////////////
+adiary.word_highlight = function(id) {
+	const list = secure(id);
+	if (!list) return;
+	const words = [];
+	for(const dom of list.children) {
+		const w = dom.textContent;
+		if (w.length < 1) continue;
+		words.push( w.toLowerCase() );
+	}
+	if (!words.length) return;
+
+	const target = document.querySelectorAll("#articles article h2 .title, #articles article div.body div.body-main, #articles span.tags");
+	let h_cnt = 0;
+	rec_childnodes(target);
+
+	// childnodesを再起関数で探索
+	function rec_childnodes(_nodes) {
+		// ノードはリアルタイムで書き換わるので、呼び出し時点の状態を保存しておく
+		const nodes = Array.from(_nodes);
+
+		// テキストノードの書き換えループ
+		for(const node of nodes) {
+			if (node.nodeType == Node.TEXT_NODE) {
+				const text = node.nodeValue;
+				if (text == undefined || text.match(/^[\s\n\r]*$/)) continue;
+				do_highlight_string(node);
+				h_cnt++; if (h_cnt>999) break;
+				continue;
+			}
+			if (! node.hasChildNodes() ) continue;
+			rec_childnodes( node.childNodes );	// 再起
+		}
+	}
+	function do_highlight_string(node) {
+		const par  = node.parentNode;
+		let   str  = node.nodeValue;
+		let   str2 = str.toLowerCase();
+		let   find = false;
+		while(1) {
+			let p=str.length;
+			let n=-1;
+			for(let i=0; i<words.length; i++) {
+				const x = str2.indexOf(words[i]);
+				if (x<0 || p<=x) continue;
+				p = x;
+				n = i;
+			}
+			if (n<0) break;	// 何も見つからなかった
+			// words[n]が位置pに見つかった
+			const len  = words[n].length;
+			const span = document.createElement('span');
+			span.className = "highlight highlight" + n;
+			span.appendChild( document.createTextNode( str.substr(p,len) ) );
+			if (p) par.insertBefore( document.createTextNode( str.substr(0,p) ), node );
+			par.insertBefore( span, node );
+
+			find = true;
+			str  = str.substr ( p + len );
+			str2 = str2.substr( p + len );
+		}
+		if (!find) return ;
+		// 残った文字列を追加して、nodeを消す
+		if (str.length) par.insertBefore( document.createTextNode( str ), node );
+		par.removeChild( node );
+	}
 }
 
 //##############################################################################
@@ -488,68 +610,69 @@ $$.init_top_search = function(id, flag) {
 ////////////////////////////////////////////////////////////////////////////////
 //●ソーシャルボタンの加工
 ////////////////////////////////////////////////////////////////////////////////
-// はてなブックマークの件数を読む（ほかのサービスは件数を出さない）
-$$.init( function(){
-  $('.social-button.hatena-share').each(function(idx,dom) {
-	const obj = $(dom);
-	const url_orig = obj.data('url') || '';
-	if (!url_orig.match(/^https?:\/\//i)) return;
+// はてなブックマークの件数を読む（ほかのサービスは件数を出さない）。JSONPで読む
+init(function(){
+	let num = 0;
+	document.querySelectorAll('.social-button.hatena-share').forEach(function(dom) {
+		const url_orig = dom.dataset.url || '';
+		if (!url_orig.match(/^https?:\/\//i)) return;
+		const count = dom.querySelector(':scope > a.count');
+		if (!count) return;
 
-	// data-urlはencode_uricom済みなので、一度戻してから符号化する
-	let url;
-	try { url = encodeURIComponent( decodeURIComponent(url_orig) ); }
-	catch(e) { url = encodeURIComponent( url_orig ); }
+		// data-urlはencode_uricom済みなので、一度戻してから符号化する
+		let url;
+		try { url = encodeURIComponent( decodeURIComponent(url_orig) ); }
+		catch(e) { url = encodeURIComponent( url_orig ); }
 
-	const count = obj.children('a.count');
-	count.text('-');
-	$.ajax({
-		url: 'https://bookmark.hatenaapis.com/count/entry?url=' + url,
-		dataType: 'jsonp',
-		success: function(c) {
-			count.text( parseInt(c) || 0 );
-		}
+		count.textContent = '-';
+		const callback = 'adiary_hatena_count_' + (num++);
+		let script;
+		window[callback] = function(c) {
+			count.textContent = parseInt(c) || 0;
+			delete window[callback];
+			script.remove();
+		};
+		script = adiary.load_script('https://bookmark.hatenaapis.com/count/entry?url=' + url + '&callback=' + callback);
 	});
-  });
 });
 
 ////////////////////////////////////////////////////////////////////////////////
 //●汎用の共有ボタン
 ////////////////////////////////////////////////////////////////////////////////
 // OSの共有の画面を出し、出せなければ記事のURLをコピーする
+init(function(){
+	document.querySelectorAll('.social-button.web-share').forEach(function(dom) {
+		const url_orig = dom.dataset.url || '';
+		if (!url_orig.match(/^https?:\/\//i)) return;
 
-$$.init( function(){
-  $('.social-button.web-share').each(function(idx,dom) {
-	const obj = $(dom);
-	const url_orig = obj.data('url') || '';
-	if (!url_orig.match(/^https?:\/\//i)) return;
+		// data-urlはencode_uricom済みなので戻す
+		let url;
+		try { url = decodeURIComponent(url_orig); }
+		catch(e) { url = url_orig; }
+		const title = dom.dataset.title || document.title;
 
-	// data-urlはencode_uricom済みなので戻す
-	let url;
-	try { url = decodeURIComponent(url_orig); }
-	catch(e) { url = url_orig; }
-	const title = obj.data('title') || document.title;
-
-	const btn = obj.children('a.share');
-	btn.on('click', function(evt) {
-		evt.preventDefault();
-		if (navigator.share) {
-			// 共有の画面を閉じたとき（AbortError）も失敗になるので、何もしない
-			navigator.share({ title: title, url: url }).catch(function(){});
-			return;
-		}
-		if (!navigator.clipboard) {	// httpのページなど
-			window.prompt('記事のURL', url);
-			return;
-		}
-		navigator.clipboard.writeText(url).then(function(){
-			const text = btn.text();
-			btn.text('コピーしました');
-			setTimeout(function(){ btn.text(text); }, 2000);
-		}, function(){
-			window.prompt('記事のURL', url);
+		const btn = dom.querySelector(':scope > a.share');
+		if (!btn) return;
+		btn.addEventListener('click', function(evt) {
+			evt.preventDefault();
+			if (navigator.share) {
+				// 共有の画面を閉じたとき（AbortError）も失敗になるので、何もしない
+				navigator.share({ title: title, url: url }).catch(function(){});
+				return;
+			}
+			if (!navigator.clipboard) {	// httpのページなど
+				window.prompt('記事のURL', url);
+				return;
+			}
+			navigator.clipboard.writeText(url).then(function(){
+				const text = btn.textContent;
+				btn.textContent = 'コピーしました';
+				setTimeout(function(){ btn.textContent = text; }, 2000);
+			}, function(){
+				window.prompt('記事のURL', url);
+			});
 		});
 	});
-  });
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -560,7 +683,7 @@ $$.init( function(){
 //   タッチの端末：番号を押すと、移動せずに出す。もう一度押すか、外を押すと閉じる
 // 注の中身は、番号と同じ記事（<article>）の中から探す（一覧では、記事ごとに同じidが出るため）。
 // 中身がページに無いとき（「続きを読む」で隠れているときなど）は、今までどおりのリンクにする
-$$.init( function(){
+init(function(){
 	const refs = document.querySelectorAll('sup[id^="fnref-"] > a[href*="#fn-"], span.footnote > a[href*="#fn-"]');
 	if (!refs.length) return;
 
@@ -677,7 +800,7 @@ $$.init( function(){
 ////////////////////////////////////////////////////////////////////////////////
 // 参照元は、テーマの雛形か、参照元のモジュール（dea_backlinks）を置いたときだけ出るので、
 // 飛ぶ先が無ければリンクを消す（_sub/art_info.html）
-$$.init( function(){
+init(function(){
 	if (document.getElementById('backlinks')) return;
 	document.querySelectorAll('.art-jump .jump-backlinks').forEach(function(a) {
 		const span = a.parentNode;
@@ -694,7 +817,7 @@ $$.init( function(){
 // ブログ全体の確認には「今後確認しない」が無く、ブラウザーを閉じるまで覚える（sessionStorage）。
 // 覚えたブラウザーでは、_frame.htmlが本文を描く前にぼかしを外す。
 // 「確認を元に戻す」を押したら忘れ、このページのNSFWをまたぼかす
-$$.init( function(){
+init(function(){
 	const root = document.documentElement;
 	document.querySelectorAll('.nsfw-gate-ok').forEach(function(btn) {
 		btn.addEventListener('click', function() {
@@ -730,64 +853,80 @@ $$.init( function(){
 ////////////////////////////////////////////////////////////////////////////////
 //●月別過去ログリストのリロード
 ////////////////////////////////////////////////////////////////////////////////
-$$.init( function(){
-	const self = this;
-	var selbox = $('#month-list-select-box');
-	selbox.change(function(evt){
-		var obj = $(evt.target);
-		if(!obj.data('url')) return;	// for security
-		var val = obj.val();
+init(function(){
+	const self   = this;
+	const selbox = document.getElementById('month-list-select-box');
+	if (!selbox) return;
+	selbox.addEventListener('change', function(){
+		if (!selbox.dataset.url) return;	// for security
+		const val = selbox.value;
 		if (val=='') return;
 		if (self.Static)
 			return window.location = self.myself + 'q/' + val + '.html';
 		window.location = self.myself + '?d=' + val;
 	});
-	var cur = $('#yyyymm-cond').data('yyyymm');
-	if (!cur || typeof(cur) != 'number') return;
-	selbox.val( cur.toString() );
+	const cond = document.getElementById('yyyymm-cond');
+	const cur  = cond && cond.dataset.yyyymm;
+	if (!cur || !cur.match(/^\d+$/)) return;
+	selbox.value = cur;
 });
 
 //##############################################################################
-// other functions
+// ■other functions
 //##############################################################################
 ////////////////////////////////////////////////////////////////////////////////
 //●特殊Queryの処理
 ////////////////////////////////////////////////////////////////////////////////
-$$.init(function(){
- 	if (!this.SpecialQuery) return;
- 	const myself   = this.myself;
- 	const sp_query = this.SpecialQuery;
+init(function(){
+	if (!this.SpecialQuery) return;
+	const myself   = this.myself;
+	const sp_query = this.SpecialQuery;
 
- 	$('a').each( function(idx,dom) {
-		var obj = $(dom);
-		var url = obj.attr('href');
+	document.querySelectorAll('a').forEach(function(a) {
+		let url = a.getAttribute('href');
 		if (! url) return;
 		if (url.indexOf(myself)!=0) return;
 		if (url.match(/\?[\w\/]+$/)) return;		// 管理画面では解除する
 		if (url.match(/\?(.+&)?_\w+=/)) return;		// すでに特殊Queryがある
 
-		var ma =  url.match(/^(.*?)(\?.*?)?(#.*)?$/);
+		const ma =  url.match(/^(.*?)(\?.*?)?(#.*)?$/);
 		if (!ma) return;
 		url = ma[1] + (ma[2] ? ma[2] : '?') + sp_query + (ma[3] ? ma[3] : '');
-		obj.attr('href', url);
+		a.setAttribute('href', url);
 	});
 });
 
 ////////////////////////////////////////////////////////////////////////////////
-// add style
+//●<script-defer> の実行
 ////////////////////////////////////////////////////////////////////////////////
-$$.append_style = function(css) {
-	const $style = $('<style>').html(css || '');
-	this.$head.append($style);
-	return $style;
-}
-
-//##############################################################################
-// init
-//##############################################################################
-$$.init();
-
-//##############################################################################
+// テンプレートの中のスクリプト。初期化の後に動かす。asys.js を読んだページでは asys.js が行う
+init(function(){
+	if (with_asys) return;
+	document.querySelectorAll('script-defer').forEach(function(dom) {
+		const script = document.createElement('script');
+		script.textContent = dom.innerHTML;
+		dom.innerHTML = '';
+		dom.appendChild(script);
+	});
 });
 
+//##############################################################################
+// ■init
+//##############################################################################
+// defer で読み込むので、ほかの defer のスクリプトを読み終えてから動かす（asys.js の init と同じ時）
+function run_inits() {
+	for(const func of inits) {
+		try {
+			func.call(adiary);
+		} catch(e) {
+			console.error(e);
+		}
+	}
+}
+if (document.readyState === 'loading')
+	document.addEventListener('DOMContentLoaded', run_inits);
+else
+	run_inits();
 
+//##############################################################################
+})();

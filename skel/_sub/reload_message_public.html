@@ -20,7 +20,7 @@
 	function back() {
 		location.href = "<@url>";
 	};
-	$('#body').keydown(function(evt) {
+	document.addEventListener('keydown', function(evt) {
 		if (evt.keyCode == 13) back();	// Enterで戻る
 	});
 <@ifexec(rtime, begin)>

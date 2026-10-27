@@ -12,8 +12,8 @@ lyndbaum（`~/develop/perl/lyndbaum`）にある機能のうち、adiary-extends
 
 - テーマの色調整
 - jQueryの抹殺
-  - 公開画面も`asys.min.js`（jQuery 3.6.2を同梱）を読み込み、`adiary.js`が`$`を使っている。4.7で外したのは、単体で読み込んでいたjQuery 3.2.1だけ
-  - 公開画面（`adiary.js`）から先に外す
+  - ログインしていない人の公開画面からは外した（`adiary.js`をjQueryを使わない形にした）
+  - 残り：ログイン中の公開画面（コメントの管理など）、管理画面（`admin.js`、`edit.js`、`album.js`など）、jQuery UI、dynatree、表示パスワードの画面（`js-ajax`）
 
 ### 管理画面
 

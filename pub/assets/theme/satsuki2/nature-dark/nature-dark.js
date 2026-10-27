@@ -2,33 +2,24 @@
 // 記事ヘッダ加工用
 //							(C)2015 nabe@abk
 //##############################################################################
-//[TAB=8]  require jQuery
+//[TAB=8]
 'use strict';
 
-$(function() {
-	$('#main-first article.article').each(function(idx,dom){
-		var obj = $(dom);
-		var h2   = obj.find('h2');
-		var date = h2.find('a.date');
-		var head = obj.find('div.body-header');
-		if (h2.length && head.length) {
-			h2.append(date);
-			h2.append(head);
+(function(func) {
+	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', func);
+	else func();
+})(function() {
+	document.querySelectorAll('#main-first article.article').forEach(function(art){
+		const h2   = art.querySelector('h2');
+		const head = art.querySelector('div.body-header');
+		if (h2 && head) {
+			const date = h2.querySelector('a.date');
+			if (date) h2.appendChild(date);
+			h2.appendChild(head);
 		}
-		var title    = obj.find('h2');
-		var bookmark = h2.find('a.http-bookmark');
-		if (title.length && bookmark.length) {
-			title.append(bookmark);
+		const bookmark = h2 && h2.querySelector('a.http-bookmark');
+		if (bookmark) {
+			h2.appendChild(bookmark);
 		}
 	});
 });
-
-
-
-
-
-
-
-
-
-

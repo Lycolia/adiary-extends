@@ -162,8 +162,28 @@ foreach my $theme (@THEMES) {
 	foreach my $p (@PUBLIC) {
 		my ($q, $status) = @$p;
 		foreach my $who (qw(guest editor)) {
-			check($app->get($who, $q), "[$theme] ?$q を $who で開くとエラーにならない", $status);
+			my $r = $app->get($who, $q);
+			check($r, "[$theme] ?$q を $who で開くとエラーにならない", $status);
+			if ($q eq '') { check_jquery($r, $who, "[$theme] トップ"); }
 		}
+	}
+}
+
+#-------------------------------------------------------------------------------
+# jQuery（asys.js）を読むか
+#-------------------------------------------------------------------------------
+# ログインしていない人の公開画面は adiary.js だけで動く。ログイン中は、記事のページの
+# コメントの管理などに使うので、asys.js と admin.js も読む（skel/_frame.html）
+sub check_jquery {
+	my ($r, $who, $name) = @_;
+	my $body = $r->{body} // '';
+	my $asys = $body =~ m{/asys\.min\.js} ? 1 : 0;
+	my $adm  = $body =~ m{/admin\.js} ? 1 : 0;
+	ok($body =~ m{/adiary\.js}, "$name を $who で開くと adiary.js を読む");
+	if ($who eq 'guest') {
+		ok(!$asys && !$adm, "$name を $who で開くと asys.js と admin.js を読まない");
+	} else {
+		ok($asys && $adm, "$name を $who で開くと asys.js と admin.js を読む");
 	}
 }
 
