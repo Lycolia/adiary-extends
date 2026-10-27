@@ -230,9 +230,12 @@ div.art-info { display: flex; flex-wrap: wrap; gap: 0 1em; margin: 0; padding: 0
 div.art-info > div { display: flex; flex-wrap: wrap; gap: 0 1em; }
 div.art-info br { display: none; }
 /* 編集のリンク（編集できる人がログインしているとき）は右端に置く。リンクはタグと同じ、後ろの div の中にある */
-div.art-info > div:last-child { flex: auto; }
+div.art-info > div:has(> .edit-article) { flex: auto; }
 div.art-info .edit-article { margin-left: auto; }
 span.tags .tag { margin-right: .5em; }
+/* 参照元とコメント欄へのリンク（記事のページだけ）は、投稿日やタグの下の行に置く。間は gap で空ける */
+div.art-info > div.art-jump { flex-basis: 100%; }
+div.art-info .art-jump a + a { margin-left: 0; }
 
 div.body-footer { margin: 0; }
 div.body-footer:empty { display: none; }

@@ -1,6 +1,6 @@
 ######################################################################
 title=参照元の記事
-version=1.01
+version=1.02
 ######################################################################
 author=Lycolia Rizzim
 url=https://lycolia.info/?plugin/modules
@@ -24,7 +24,7 @@ HTML
 
 *module_html=<<HTML
 <@ifexec(t.backlinks, begin)>
-<div class="art-backlinks" data-module-name="<@this>">
+<div class="art-backlinks" id="backlinks" data-module-name="<@this>">
 <h3>参照元</h3>
 <ul class="art-list backlinks-list">
 <@t.backlinks>

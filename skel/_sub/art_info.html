@@ -1,5 +1,5 @@
 <@7>
-<@local(name,t,ps,permalink,url)>
+<@local(name,t,ps,permalink,url,coms)>
 <$name = argv#0>
 <$t = argv#1>
 <@>
@@ -11,9 +11,14 @@
 <@>	argv#0	モジュール名（data-module-name。設定もこの名前で読む）
 <@>	argv#1	記事
 <@>
+<@>	記事のページでは、投稿日やタグの下の行に、参照元（#backlinks）とコメント欄（#com）へ飛ぶリンクも出す（長い記事で下まで送らずに済むように）
+<@>	コメント欄は、_article と同じく、受け付けているか、コメントがあるときに出る
+<@>	参照元は、置いた先（テーマの雛形か、dea_backlinks）が無ければ adiary.js が消す
+<@>
 <$permalink = if(t.link_key eq v.blog.frontpage, v.myself, "<@v.myself2><@t.elink_key>")>
 <$url = ServerURL . permalink>
 <$encode_uricom(url)>
+<$coms = if(v.allow_edit, t.coms_all, t.coms)>
 	<$ps = v.load_plgset(name)>
 	<div class="art-info" data-module-name="<@name>" data-fix="1">
 		<@ifexec(ps.hatena_bicon, begin)>
@@ -28,4 +33,10 @@
 			<@ifexec(ps.author, begin)><span class="author"><@t.name></span><$end>
 			<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
 		</div>
+		<@ifexec(v.view_event eq '_article' && (t.com_ok || coms || t.backlinks), begin)>
+		<div class="art-jump"><@\>
+			<@if(t.com_ok || coms, #'<a href="#com" class="jump-com">コメント（<@coms>件）</a>')><@\>
+			<@if(t.backlinks, '<a href="#backlinks" class="jump-backlinks">参照元</a>')><@\>
+		</div>
+		<$end>
 	</div>
