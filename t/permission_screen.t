@@ -66,7 +66,7 @@ my @SCREENS = (
 	[ 'design/reset'        , 'owner' , 'デザインの初期化' ],
 	[ 'design/usercss'      , 'owner' , 'ユーザーCSSの設定' ],
 	[ 'design/art_sample'   , 'owner' , sub { $_[0]->{status} == 200 } ],	# 題名は最新の記事のもの
-	[ 'design/theme_colors&name=satsuki2/chie', 'owner', $json ],	# 画面はログイン中なら開けるが、中身はブログ管理者だけ（load_theme_info）
+	[ 'design/theme_colors&name=satsuki2/chie', 'owner', $json ],
 	[ 'design/theme_readme&name=satsuki2/chie', 'user', $text ],
 
 	# プラグイン
