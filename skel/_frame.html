@@ -33,7 +33,7 @@
 <@ifexec(!v.system_mode && !v.stop_all_plugins && file_size(file), begin)>
 <link rel="stylesheet" href="<@Basepath><@file>?<@get_lastmodified(file)>" id="user-css">
 <$end>
-<@> 公開画面のフレームを使う管理画面（デザイン編集、表示テスト）
+<@> 公開画面のフレームを使う管理画面（デザイン編集）
 <@ifexec(v.system_mode, begin)>
 <link rel="stylesheet" href="<@Basepath><@v.script_dir>admin-ui.css?<@get_lastmodified(v.script_dir . 'admin-ui.css')>">
 <$end>

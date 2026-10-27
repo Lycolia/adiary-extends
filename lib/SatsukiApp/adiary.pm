@@ -583,26 +583,23 @@ sub save_blogset_sys {
 # ●システムモードへ
 #-------------------------------------------------------------------------------
 sub system_mode {
-	my ($self, $title, $keep_theme) = @_;
+	my ($self, $title) = @_;
 	my $ROBJ = $self->{ROBJ};
 	$self->{system_mode}    = 1;
 	$ROBJ->{no_robots}      = 1;
 	if ($title ne '') { $self->{title} = $title; }
 
 	# テーマは公開画面専用。管理画面は常に標準テーマを使う
-	# ※テーマの表示テストなど、公開画面の部品を見せるページは$keep_themeでテーマを残す
-	if (!$keep_theme) {
-		$self->load_theme( $self->{default_theme} );
-		$self->{system_theme} = 1;
+	$self->load_theme( $self->{default_theme} );
+	$self->{system_theme} = 1;
 
-		# 外フレームも管理画面用にする（フレームを使わない出力はそのまま）
-		# 管理画面は狭い画面にもCSSで合わせるので、スマホ用の処理（_sphone）は使わない
-		if ($self->{frame_skeleton}) {
-			$self->{frame_skeleton} = $self->{admin_frame_skeleton};
-			$self->stop_sphone();
-		} else {
-			$self->check_sphone_after_theme_change();
-		}
+	# 外フレームも管理画面用にする（フレームを使わない出力はそのまま）
+	# 管理画面は狭い画面にもCSSで合わせるので、スマホ用の処理（_sphone）は使わない
+	if ($self->{frame_skeleton}) {
+		$self->{frame_skeleton} = $self->{admin_frame_skeleton};
+		$self->stop_sphone();
+	} else {
+		$self->check_sphone_after_theme_change();
 	}
 }
 
