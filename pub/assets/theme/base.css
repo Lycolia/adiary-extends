@@ -611,7 +611,7 @@ span.highlight4	{ background-color: #f6f; }
 ●管理バー（skel/_sub/admin_bar.html）
 --------------------------------------------------------------------*/
 /* ログイン中に、公開画面の上に貼り付ける。WordPressの管理バーと同じく、テーマの色によらず暗い地にする。
-   1行に収めて高さを --admin-bar-h に決め打ちにし、その分だけページを下げる（margin-top）。
+   項目は右に寄せる。1行に収めて高さを --admin-bar-h に決め打ちにし、その分だけページを下げる（margin-top）。
    アンカーで飛んだ先も、バーの裏に入らないよう下げる（scroll-padding-top）。
    テーマが画面の上に貼り付けるもの（lyndbaumのサイドバーのボタンなど）は、--admin-bar-h の分だけ下げる */
 html:has(.admin-bar) {
@@ -627,6 +627,7 @@ html:has(.admin-bar) {
 	z-index:		300;
 	display:		flex;
 	align-items:		center;
+	justify-content:	flex-end;
 	gap:			1em;
 	box-sizing:		border-box;
 	height:			var(--admin-bar-h);
@@ -670,9 +671,6 @@ html:has(.admin-bar) {
 	stroke-width:		2;
 	stroke-linecap:		round;
 	stroke-linejoin:	round;
-}
-.admin-bar .logout {
-	margin-left:		auto;
 }
 /* 新着のコメントの印（押すとコメント一覧）。「ようこそ○○さん」（管理画面へのリンク）のすぐ後ろに付ける。
    色は管理画面の新着の印（admin.css の admin-new-badge）にそろえる */

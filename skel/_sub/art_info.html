@@ -14,7 +14,6 @@
 <@>	記事のページでは、投稿日やタグの下の行に、参照元（#backlinks）とコメント欄（#com）へ飛ぶリンクも出す（長い記事で下まで送らずに済むように）
 <@>	コメント欄は、_article と同じく、受け付けているか、コメントがあるときに出る
 <@>	参照元は、置いた先（テーマの雛形か、dea_backlinks）が無ければ adiary.js が消す
-<@>	編集のリンクは、記事のページでは管理バー（_sub/admin_bar）に出すので、一覧のときだけ出す
 <@>
 <$permalink = if(t.link_key eq v.blog.frontpage, v.myself, "<@v.myself2><@t.elink_key>")>
 <$url = ServerURL . permalink>
@@ -32,7 +31,7 @@
 		<div>
 			<@ifexec(t.tags, begin)><span class="tags"><@v.make_taglinks(t.tags)></span><$end>
 			<@ifexec(ps.author, begin)><span class="author"><@t.name></span><$end>
-			<@ifexec(v.view_event ne '_article' && v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
+			<@ifexec(v.check_editor(t), begin)><a href="<@v.myself2>0<@t.pkey>?edit" class="edit-article">（編集）</a><$end>
 		</div>
 		<@ifexec(v.view_event eq '_article' && (t.com_ok || coms || t.backlinks), begin)>
 		<div class="art-jump"><@\>
