@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="pub/assets/dist/default-logo.svg" height="64" width="64">
+  <img src="pub/assets/dist/default-icon.svg" height="64" width="64">
 </div>
 
 # adiary-extends
