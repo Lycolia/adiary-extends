@@ -665,8 +665,7 @@ function rename_file(obj, li, new_name) {
 		data: {
 			folder: cur_folder,
 			old:    li.data('name'),
-			name:   new_name,
-			size:	$('#thumbnail-size').val()
+			name:   new_name
 		},
 		success: function(data) {
 			if (data.ret !== 0) return error_msg('#msg-fail-rename-file');
@@ -1205,7 +1204,7 @@ function make_video_thumbnails(folder, videos) {
 	var $msg = $('<div>').addClass('message');
 	message.append( $msg );
 	message.showDelay();
-	adiary.make_video_thumbnails(files, path, $('#thumbnail-size').val(), function(i){
+	adiary.make_video_thumbnails(files, path, $('#remake-thumbnail-dialog').data('size'), function(i){
 		$msg.text( $('#msg-making-video-thumbnail').text() + ' ' + (i+1) + ' / ' + files.length );
 	}).then(function(fail){
 		if (fail) {
@@ -1222,17 +1221,6 @@ function make_video_thumbnails(folder, videos) {
 ////////////////////////////////////////////////////////////////////////////////
 function remake_thumbnail(){
 	var $div = $('#remake-thumbnail-dialog');
-	var buttons = {};
-	var $sel = $('#dialog-thumbnail-size');
-	var val  = $('#thumbnail-size').val();
-	$sel.val( val );
-
-	if ($sel.val() != val) {
-		var $opt = $('<option>').attr('value', val);
-		$opt.text( $sel.data('format').replace('%v', val) );
-		$sel.append( $opt );
-		$sel.val( val );
-	}
 	album_dialog($div, do_remake_thumbnail);
 }
 
@@ -1245,8 +1233,7 @@ function do_remake_thumbnail(){
 		data: {
 			folder: cur_folder,
 			file_ary: files,
-			del_exif: 0,
-			size: $('#dialog-thumbnail-size').val()
+			del_exif: 0
 		},
 		success: function(data) {
 			if (data.ret !== 0) {

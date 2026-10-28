@@ -32,7 +32,7 @@
 	<$videos = if(v.allow_view, v.load_videos_without_thumbnail())>
 	<@ifexec(videos && ##videos>=0, begin)>
 	<h3>動画のサムネイル</h3>
-	<div id="video-thumbnail" data-url="<@Basepath><@v.blogimg_dir()>" data-size="120"<@if(Query.video_thumbnail, ' data-auto="1"')>
+	<div id="video-thumbnail" data-url="<@Basepath><@v.blogimg_dir()>" data-size="<@v.thumbnail_size()>"<@if(Query.video_thumbnail, ' data-auto="1"')>
 	 data-msg-done="サムネイルを作りました" data-msg-fail="%n本の動画はサムネイルを作れませんでした（このブラウザーで再生できない形式など）">
 	<p>サムネイルの無い動画が<@##videos+1>本あります。記事には、サムネイルを作るまで今までどおりプレーヤーで表示されます。
 	<button type="button" class="make">サムネイルを作る</button> <span class="status"></span></p>

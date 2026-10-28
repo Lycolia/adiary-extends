@@ -360,4 +360,64 @@ subtest '操作の記録' => sub {
 	like($b, qr{全12件}, '2ページ目でも絞り込みが引き継がれる');
 };
 
+#-------------------------------------------------------------------------------
+# 編集画面の設定（保存すると、送らなかったflagが0になるので最後に置く）
+#-------------------------------------------------------------------------------
+subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub {
+	# 編集画面のUploadボタン（貼り付けが使う値）と、アップロードのダイアログ
+	my $edit = sub {
+		my $b = body($app->get('editor', 'edit'));
+		my ($btn)  = $b =~ m{(<button type="button" id="edit-file-upload"[^>]*>)};
+		my ($form) = $b =~ m{(<form id="upload-form">.*?</form>)}s;
+		return ($btn, $form);
+	};
+
+	my ($btn, $form) = $edit->();
+	like($btn, qr{data-thumb-size="320" data-paste="" data-exif="0" data-class=""}, '設定していないときの貼り付けの値');
+	unlike($form, qr{name="size"}, 'ダイアログでサムネイルの大きさを選ばせない');
+	unlike($form, qr{ selected>(?:大きい画像|センタリング|左寄せ|右寄せ)|paste-to-exif" checked}, '設定していないときは、サムネイル、そのまま、Exifなし');
+	my @saves = $form =~ m{class="([^"]*\bjs-save\b[^"]*)"}g;
+	is_deeply(\@saves, ['js-switch js-save'], 'ダイアログの欄はブラウザに覚えさせない（覚えるのは「詳細」の開閉だけ）');
+
+	# 選択肢に無い大きさも保存できる
+	my %SET = (action => 'set/editor', edit_thumb_size => 200, edit_paste => 'large', edit_paste_exif => 1, edit_paste_class => 'float-r');
+	my $r = $app->post('owner', 'set/editor', \%SET);
+	ok(AppTest::is_reload($r), '保存できる');
+	($btn, $form) = $edit->();
+	like($btn, qr{data-thumb-size="200" data-paste="large" data-exif="1" data-class="float-r"}, '貼り付けの値が設定になる');
+	like($form, qr{<option value="0" selected>大きい画像を貼付</option>}, 'ダイアログが大きい画像になる');
+	like($form, qr{id="paste-to-exif" checked}, 'ダイアログのExifが付く');
+	like($form, qr{<option value="float-r" selected>}, 'ダイアログの表示が右寄せになる');
+	like(body($app->get('owner', 'set/editor')), qr{<option value="200" selected>200px</option>}, '設定の画面にも出る');
+
+	# 範囲外や、選択肢に無い値は拒む
+	foreach my $bad ([ edit_thumb_size => 50 ], [ edit_thumb_size => 900 ], [ edit_paste => 'xx' ], [ edit_paste_class => 'xx' ]) {
+		$r = $app->post('owner', 'set/editor', { %SET, @$bad });
+		ok(!AppTest::is_reload($r), "$bad->[0]=$bad->[1] は保存できない");
+	}
+	($btn) = $edit->();
+	like($btn, qr{data-thumb-size="200" data-paste="large"}, '拒んだ後も前の設定のまま');
+
+	# サムネイルは、送られた大きさではなく設定の大きさで作る（元の画像は192px）
+	$r = $app->post('owner', 'set/editor', { %SET, edit_thumb_size => 100 });
+	ok(AppTest::is_reload($r), '大きさを100にする');
+	my $png = do {
+		open(my $fh, '<:raw', "$FindBin::Bin/../pub/assets/dist/default-icon.png") || die $!;
+		local $/; <$fh>;
+	};
+	my $thumb = "$dir/pub/attachments/test/.thumbnail/size.png.jpg";
+	require Satsuki::ImageFormat;
+	$r = $app->post('editor', '', [ action => 'album/upload_form', folder => 'test/', size => 640,
+		file_ary => { filename => 'size.png', content => $png, type => 'image/png' } ]);
+	like($r->{body}, qr/^ret=0$/m, 'アップロードできる');
+	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '100x100', 'アップロードでは設定の大きさで作る');
+
+	$r = $app->post('owner', 'set/editor', { %SET, edit_thumb_size => 150 });
+	$r = $app->post('editor', '', { action => 'album/remake_thumbnail', folder => 'test/', file_ary => 'size.png', size => 640 });
+	ok(json_ok($r), '再生成できる');
+	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '150x150', '再生成でも設定の大きさで作る');
+	like(body($app->get('editor', 'album/')), qr{data-size="150"}, 'アルバムの画面に、動画のサムネイル用の大きさが出る');
+	unlike(body($app->get('editor', 'album/')), qr{name="size"|thumbnail-size}, 'アルバムでサムネイルの大きさを選ばせない');
+};
+
 done_testing();

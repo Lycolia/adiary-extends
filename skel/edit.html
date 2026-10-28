@@ -177,7 +177,7 @@
 		<option value="<@t.key>"<@if(art.parser eq t.key, ' selected')>><@t.val></option>
 		<$end>
 	</select></span>
-	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'posts/%y/')>" data-title="ファイルを選択">Upload</button>
+	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'posts/%y/')>" data-thumb-size="<@v.thumbnail_size()>" data-paste="<@s.edit_paste>" data-exif="<@if(s.edit_paste_exif, 1, 0)>" data-class="<@s.edit_paste_class>" data-title="ファイルを選択">Upload</button>
 	<@ifexec(edit_pkey, begin)>
 	<button type="button" id="edit-revision" data-title="更新履歴">履歴</button>
 	<$end>
@@ -349,29 +349,21 @@
 	<input type="file" name="file_ary" multiple id="file-btn" class="display-none">
 </div>
 
+<@> 初期値は編集画面の設定から出す。ブラウザには覚えさせない（js-saveを付けない）
 <select id="paste-thumbnail" name="paste">
 	<option value="1">サムネイルを貼付</option>
-	<option value="0">大きい画像を貼付</option>
+	<option value="0"<@if(s.edit_paste eq 'large', ' selected')>>大きい画像を貼付</option>
 </select>&ensp;
-
-サムネイル<select name="size" id="thumbnail-size" class="r js-save js-combo" data-target="#size-other" data-format="%vpx">
-	<option value="120" selected>120px</option>
-	<option value="160">160px</option>
-	<option value="240">240px</option>
-	<option value="320">320px</option>
-	<option value="480">480px</option>
-	<option value="640">640px</option>
-</select>
 	<label><input type="checkbox" class="js-switch js-save" data-target="#paste-detail">詳細</label><br>
 
 <ul id="paste-detail">
-	<li><label><input type="checkbox" id="paste-to-exif" class="js-save">Exifも貼り付ける</label>
+	<li><label><input type="checkbox" id="paste-to-exif"<@if(s.edit_paste_exif, ' checked')>>Exifも貼り付ける</label>
 	<li>キャプション <input type="text" name="paste_caption" id="paste-caption" class="w200">
-	<li>表示 <select id="paste-class" name="paste_class" class="js-save">
+	<li>表示 <select id="paste-class" name="paste_class">
 		<option value="">そのまま</option>
-		<option value="center">センタリング</option>
-		<option value="float-l">左寄せ（回り込み）</option>
-		<option value="float-r">右寄せ（回り込み）</option>
+		<option value="center" <@if(s.edit_paste_class eq 'center',  ' selected')>>センタリング</option>
+		<option value="float-l"<@if(s.edit_paste_class eq 'float-l', ' selected')>>左寄せ（回り込み）</option>
+		<option value="float-r"<@if(s.edit_paste_class eq 'float-r', ' selected')>>右寄せ（回り込み）</option>
 	</select>
 </ul>
 
@@ -379,10 +371,6 @@
 
 </form><!-- End of upload dialog -->
 
-
-<div id="size-other" data-title="サムネイルサイズ">
-<input type="number" value="120" class="w50" min="60" max="800">px （60～800）
-</div>
 
 <@> 更新履歴ダイアログ
 <div id="revision-dialog">

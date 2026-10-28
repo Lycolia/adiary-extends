@@ -147,6 +147,18 @@ sub load_exif_files {
 }
 
 #-------------------------------------------------------------------------------
+# ●サムネイルの大きさ（長い辺）
+#-------------------------------------------------------------------------------
+# 編集画面の設定（edit_thumb_size）だけで決める。アップロードや再生成のときに選ばせない
+sub thumbnail_size {
+	my $self = shift;
+	my $size = $self->{blog} && int($self->{blog}->{edit_thumb_size}) || 320;
+	if ($size <  60) { $size= 60; }
+	if (800 < $size) { $size=800; }
+	return $size;
+}
+
+#-------------------------------------------------------------------------------
 # ●サムネイル生成
 #-------------------------------------------------------------------------------
 sub make_thumbnail {
@@ -171,7 +183,7 @@ sub make_thumbnail {
 				my $jpeg = $ROBJ->loadpm('Jpeg');
 				$jpeg->strip("$dir$_");
 			}
-			my $r = $self->make_thumbnail_for_image($dir, $_, $opt->{size});
+			my $r = $self->make_thumbnail_for_image($dir, $_);
 			if (!$r) { next; }
 		}
 		my $r = $self->make_thumbnail_for_notimage($dir, $_);
@@ -210,12 +222,8 @@ sub make_thumbnail_for_image {
 	my $self = shift;
 	my $dir  = shift;	# 実パス
 	my $file = shift;
-	my $size = int(shift) || 120;
+	my $size = $self->thumbnail_size();
 	my $ROBJ = $self->{ROBJ};
-
-	# リサイズ
-	if ($size <  60) { $size= 60; }
-	if (800 < $size) { $size=800; }
 
 	# Windowsで日本語ファイル名がなぜか読み書きできない
 	my $tmpfile;
@@ -395,7 +403,6 @@ sub image_upload_form {
 	my $form = shift;
 	my $ROBJ = $self->{ROBJ};
 
-	my $size = $form->{size};	# サムネイルサイズ
 	my $dir  = $self->image_folder_to_dir( $form->{folder} ); # 値check付
 
 	# アップロード
@@ -430,7 +437,6 @@ sub image_upload_form {
 
 	# サムネイル生成
 	$self->make_thumbnail( $dir, \@files, {
-		size     => $form->{size},
 		del_exif => $form->{del_exif}
 	});
 
@@ -589,12 +595,10 @@ sub remake_thumbnail {
 
 	my $dir   = $self->image_folder_to_dir( $form->{folder} ); # 値check付
 	my $files = $form->{file_ary};
-	my $size  = $form->{size};
 	my @names = @{ $files || [] };
 
 	# サムネイル生成
 	$self->make_thumbnail( $dir, $files, {
-		size     => $form->{size},
 		del_exif => $form->{del_exif},
 		force    => 1
 	});
@@ -917,7 +921,6 @@ sub rename_file {
 		$ROBJ->file_delete( "${dir}.thumbnail/$old.jpg" );
 		# 新しいサムネイル生成
 		$self->make_thumbnail( $dir, [$name], {
-			size  => $form->{size},
 			force => 1
 		});
 	}
