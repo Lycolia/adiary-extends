@@ -2,7 +2,5 @@ reload_time=3
 *ping_servers_txt=<<__END_BLK_DATA
 # adiary official
 http://ping.adiary.org/ping/#adiary
-# Google (stopped)
-# http://blogsearch.google.co.jp/ping/RPC2#ex
 __END_BLK_DATA
 http_timeout=3
