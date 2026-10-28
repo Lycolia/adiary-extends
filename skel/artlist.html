@@ -130,7 +130,8 @@
 		<td class="c"><label for="art-<@t.pkey>"><@if(t.enable, '公')></label></td>
 		<td class="c"><label for="art-<@t.pkey>"><@v.format_ymd(t.yyyymmdd)></label></td>
 		<td class="c"><label for="art-<@t.pkey>"><@print_tmf('%Y-%m-%d', t.update_tm)></label></td>
-		<td class="r"><@t.coms_all></td>
+		<@> コメントがあれば、記事のコメント欄へのリンク
+		<td class="r"><@if(t.coms_all, #'<a href="<@v.myself2><@t.elink_key>#com"><@t.coms_all></a>', t.coms_all)></td>
 		<td><@t.name></td>
 	</tr>
 	<$end>
