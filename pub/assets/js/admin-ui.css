@@ -223,6 +223,11 @@ ul.dynatree-container a {
 	outline:		3px solid var(--admin-link, #2271b1);
 	outline-offset:		-1px;
 }
+/* 名前で絞り込んで隠したファイル（album.js の apply_filter）。表示形式ごとの display より強くする */
+#album-folder-view.thumb-view a.filtered-out,
+#album-folder-view.name-view  a.filtered-out {
+	display:		none;
+}
 /* ファイル名一覧 */
 #album-folder-view.name-view {
 	font-size:		14px;
@@ -276,6 +281,13 @@ ul.dynatree-container a {
 }
 #current-folder {
 	margin-left:		4px;
+}
+#current-count {
+	margin-left:		4px;
+	font-weight:		normal;
+}
+#name-filter {
+	width:			12em;
 }
 
 /* アルバムヘッダ */

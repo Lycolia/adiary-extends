@@ -2,7 +2,7 @@
 <$v.special_sidebar_module = 'media/_sidebar'>
 
 <article class="system" id="album">
-<h2 class="dynatree-ico-ef" id="folder-icon-change"><span class="dynatree-icon" id="folder-icon"></span><span id="current-folder">(no load)</span></h2>
+<h2 class="dynatree-ico-ef" id="folder-icon-change"><span class="dynatree-icon" id="folder-icon"></span><span id="current-folder">(no load)</span><span id="current-count"></span></h2>
 <div class="body">
 	<div id="album-header">
 		<div>
@@ -11,6 +11,7 @@
 			<$end>
 		</div>
 		<div class="view-option">
+			<span class="option-item"><input type="search" id="name-filter" placeholder="名前で絞り込み" aria-label="名前で絞り込み"></span>
 			<span class="option-item">
 			<select id="view-type">
 				<option value="thumb">サムネイル</option>

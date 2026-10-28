@@ -30,6 +30,7 @@ $( function(){
 	var sort_type  = $('#sort-type');
 	var sort_rev   = $('#sort-rev');
 	var folder_icon= $('#folder-icon-change');
+	var name_filter= $('#name-filter');
 	var is_thumbview;
 
 	// ツリー関連
@@ -833,7 +834,8 @@ all_select.change( function(){ all_select_change() } );
 
 function all_select_change(init) {
 	var stat = all_select.is(":checked");
-	var imgs = is_thumbview ? view.find('img') : view.find('.fileline');
+	// 名前で絞り込んでいれば、出ているものだけ
+	var imgs = view.children('a').not('.filtered-out').children(is_thumbview ? 'img' : '.fileline');
 	for(var i=0; i<imgs.length; i++) {
 		var obj = $(imgs[i]);
 		if (stat) {
@@ -859,6 +861,36 @@ function view_change() {
 		files[ $(imgs[i]).data('title') ] = true;
 	}
 	update_view(false, files);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ●名前で絞り込み
+////////////////////////////////////////////////////////////////////////////////
+// 名前に語を含むファイルだけを出す（大文字と小文字は区別しない）。Lyndbaum 0 のメディアと同じ
+// 当たらないファイルは隠すだけで、選んでいれば選んだままにする。語はフォルダを移っても残す
+// 範囲選択、全選択、画像ビューアーは、出ているファイルだけを対象にする。ゴミ箱では絞り込まない
+name_filter.on('input', apply_filter);
+
+function apply_filter() {
+	var trash = cur_folder && cur_folder.substr(0,9) == '.trashbox';
+	name_filter.toggle( !trash );
+	var word  = trash ? '' : name_filter.val().trim().toLowerCase();
+	var links = view.children('a');
+	var shown = 0;
+	for(var i=0; i<links.length; i++) {
+		var link = $(links[i]);
+		var obj  = link.children().first();
+		var hit  = word == '' || String(obj.data('title')).toLowerCase().indexOf(word) >= 0;
+		link.toggleClass('filtered-out', !hit);
+		// 画像ビューアーは開くときに data-lythumb のリンクを集めるので、隠したものは外す
+		if (hit && obj.data('viewable'))
+			link.attr('data-lythumb', 'roadtrip');
+		else
+			link.removeAttr('data-lythumb');
+		if (hit) shown++;
+	}
+	view.children('.file-not-found').toggle( shown == 0 );
+	$('#current-count').text( trash ? '' : '(' + shown + '件)' );
 }
 
 
@@ -979,12 +1011,13 @@ function update_view(flag, selected) {
 		span.draggable( { opacity: img_draggable_option.opacity_text } );
 	  }
 	}
-	// file not found.
-	if (cur_files.length == 0) {
+	// file not found.（名前で絞り込んで1つも出ないときも出す。apply_filter で切り替える）
+	{
 		var div = $('<div>').addClass('file-not-found');
 		div.text('(File not found)')
 		view.append( div );
 	}
+	apply_filter();
 
 	//--------------------------------------------------
 	// 画像のクリック
@@ -1023,8 +1056,9 @@ function update_view(flag, selected) {
 		if (prev_sel && evt.shiftKey && prev_sel[0] != obj[0]) {
 			var sel = obj[0];
 			var ary = [];
+			// 名前で絞り込んでいれば、出ているものだけ（apply_filter）
 			// 前方範囲選択
-			var objs = prev_sel.parent().prevAll().children();
+			var objs = prev_sel.parent().prevAll().not('.filtered-out').children();
 			var find = -1;
 			for(var i=0; i<objs.length; i++) {
 				if (objs[i] != sel) continue;
@@ -1033,7 +1067,7 @@ function update_view(flag, selected) {
 			}
 			for(var i=0; i<=find; i++) ary.push(objs[i]);
 			// 後方範囲選択
-			var objs = prev_sel.parent().nextAll().children();
+			var objs = prev_sel.parent().nextAll().not('.filtered-out').children();
 			var find = -1;
 			for(var i=0; i<objs.length; i++) {
 				if (objs[i] != sel) continue;
