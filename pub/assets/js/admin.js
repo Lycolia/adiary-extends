@@ -451,14 +451,14 @@ $$.prepend_css = function(file) {
 //●動画のサムネイルを作って送る
 ////////////////////////////////////////////////////////////////////////////////
 // サーバーではコマンドを動かさず、ブラウザーで動画の1コマを切り出してJPEGにする。
-// 記事用（長い辺1280px）と画像アルバム用（opt.size）の2つを album/upload_video_thumbnail に送る
+// 記事用（長い辺960px）と画像アルバム用（opt.size）の2つを album/upload_video_thumbnail に送る
 //	opt.url    : 動画のURL
 //	opt.folder : 画像アルバムのフォルダ（posts/2026/）
 //	opt.name   : 動画のファイル名
 //	opt.size   : アルバム用のサムネイルの大きさ（px）
 //	ret        : Promise。再生できない形式などで作れなければ reject
 //
-const VIDEO_POSTER_MAX = 1280;
+const VIDEO_POSTER_MAX = 960;	// 記事での既定の表示（480px）の2倍
 const VIDEO_LOAD_TIMEOUT = 30000;
 
 $$.make_video_thumbnail = function(opt) {

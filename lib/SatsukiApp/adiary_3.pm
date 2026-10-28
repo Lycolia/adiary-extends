@@ -673,7 +673,7 @@ sub rebuild_arts_using_files {
 #   thumb  : 画像アルバムの一覧に出す → .thumbnail/動画名.jpg
 # どちらもJPEGで、大きさが決めた範囲のものだけを保存する。保存する名前はここで決める
 #
-my $VIDEO_POSTER_MAX = 1280;	# 記事用のサムネイルの長い辺
+my $VIDEO_POSTER_MAX = 960;	# 記事用のサムネイルの長い辺（記事での既定の表示480pxの2倍）
 my $VIDEO_THUMB_MAX  = 800;	# アルバム用のサムネイルの長い辺（make_thumbnail_for_imageの上限）
 
 sub upload_video_thumbnail {

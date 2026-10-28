@@ -277,6 +277,31 @@ subtest '画像アルバム' => sub {
 	ok(!-e "$dir/pub/attachments/other/renamed.png", 'フォルダから消える');
 };
 
+subtest '動画のサムネイルの大きさの上限' => sub {
+	require MIME::Base64;
+	require Satsuki::ImageFormat;
+	# 1x1のJPEGの、SOF（FFC2）の高さと幅を書き換える。サーバーはヘッダーの大きさだけを見る
+	my $jpeg = sub {
+		my ($w, $h) = @_;
+		my $j = MIME::Base64::decode_base64('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=');
+		my $i = index($j, "\xFF\xC2");
+		substr($j, $i+5, 4) = pack('nn', $h, $w);
+		return $j;
+	};
+	my $post = sub {
+		my ($w, $h) = @_;
+		return $app->post('editor', '', [ action => 'album/upload_video_thumbnail', folder => $AppTest::IMAGE_FOLDER, file => $AppTest::VIDEO_FILE,
+			poster => { filename => 'poster.jpg', content => $jpeg->($w, $h), type => 'image/jpeg' },
+			thumb  => { filename => 'thumb.jpg',  content => $jpeg->(1, 1),   type => 'image/jpeg' } ]);
+	};
+	my $poster = "$dir/pub/attachments/$AppTest::IMAGE_FOLDER.thumbnail/$AppTest::VIDEO_FILE.poster.jpg";
+
+	ok(!json_ok($post->(961, 540)), '記事用が961pxなら受け付けない');
+	ok(json_ok($post->(960, 540)), '記事用が960pxなら受け付ける');
+	is(join('x', Satsuki::ImageFormat::get_size($poster)), '960x540', '記事用のサムネイルが置かれる');
+	ok(!json_ok($post->(540, 961)), '縦長でも、長い辺が961pxなら受け付けない');
+};
+
 #-------------------------------------------------------------------------------
 # エクスポートとインポート
 #-------------------------------------------------------------------------------
