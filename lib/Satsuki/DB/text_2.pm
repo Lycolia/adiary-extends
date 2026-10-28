@@ -549,12 +549,13 @@ sub check_column_type {
 		}
 	}
 	# not null制約の確認
+	# 空文字はnullと同じに扱うので、渡さなかったときと同じく拒む（RDBと同じ）
 	my $notnull_cols = $self->{"$table.notnull"};
 	my @check_columns_ary = $is_update ? keys(%new_hash) : keys(%$notnull_cols);	# update or insert
 	foreach (@check_columns_ary) {
 		if (!$notnull_cols->{$_}) { next; }
 		if (!$is_update && $_ eq 'pkey') { next; }
-		if (!defined $h->{$_}) {
+		if (!defined $new_hash{$_}) {
 			$self->error("On '%s' table, '%s' column is constrained not null", $table, $_);
 			return undef;
 		}
