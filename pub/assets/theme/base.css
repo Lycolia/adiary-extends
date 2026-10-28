@@ -1099,10 +1099,6 @@ span.tag span.ui-icon-close,
 	margin-left:		-1em;
 	cursor:			pointer;
 }
-/* コメント欄の開閉 */
-#com summary.caption {
-	cursor:			pointer;
-}
 /* クリックできるアイコン */
 .ui-icon-close,
 .ui-icon-search,

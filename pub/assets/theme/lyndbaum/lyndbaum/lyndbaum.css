@@ -369,9 +369,9 @@ div.body-main > div > strong.warning { display: block; border: 1px solid #e0a800
 /* 参照元（_skel/_article.html）。見出しはコメントの見出しに合わせる */
 .backlinks-title { margin: 0 0 .5rem; font-size: 1.1rem; }
 .backlinks-list { margin: 0; padding-left: 1.5rem; }
-#com summary.caption { margin: 0 0 .5rem; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-#com summary.caption .com-num { font-weight: normal; color: var(--muted); font-size: .95rem; }
-#com summary.caption .abbr-msg { font-size: .85rem; font-weight: normal; margin-left: .5em; }
+#com div.caption { margin: 0 0 .5rem; font-size: 1.1rem; font-weight: bold; }
+#com div.caption .com-num { font-weight: normal; color: var(--muted); font-size: .95rem; }
+#com div.caption .abbr-msg { font-size: .85rem; font-weight: normal; margin-left: .5em; }
 #com div.swiches { margin-bottom: .5rem; font-size: .9rem; }
 div.comment-one { border-bottom: 1px solid var(--border); padding: .5rem 0; }
 div.commentator { color: var(--muted); font-size: .9rem; }
