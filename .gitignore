@@ -4,7 +4,7 @@
 /*
 
 # VSCode config
-!.vscode/
+!.vscode/*.json
 
 # github files
 !/.github
