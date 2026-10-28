@@ -13,7 +13,8 @@
 | `text_2.pm` | 挿入、更新、削除、集計、UNIQUEの確認、トランザクション、indexの保存 |
 | `text_3.pm` | テーブルとカラムの作成、削除、名前の変更、indexの作り直し             |
 
-- `select_match`などの短縮形（`lib/Satsuki/DB/share.pm`）と、`create_table_wrapper`（`lib/Satsuki/DB/share_3.pm`）は、ほかのDB（MySQL、PostgreSQL）と共通。
+- `select_match`などの短縮形は`lib/Satsuki/DB/share.pm`に、`create_table_wrapper`は`lib/Satsuki/DB/share_3.pm`にある。
+- DBはテキストDBだけ。MySQLとPostgreSQLのドライバーはv4.18で外した（理由は`SQLiteに対応しない理由.md`）。
 - 共通の約束
   - 空文字とNULLを区別しない。どちらも空として扱う。
   - テーブル名とカラム名は`\w`（英数字と`_`）だけ。それ以外の文字は取り除く。テーブル名は数字で始められない。
@@ -151,7 +152,6 @@ __END_BLK_DATA
 - 条件はすべてANDでつなぐ。
 - 数値のカラムに数でない値を渡すと、エラーになって空の配列を返す。テーブルに無いカラムを指定したときも同じ。
 - `match`と`not_match`で、値が空のときは空の行と比べる（`is_null`、`not_null`と同じ）。
-- `RDB_where`と`RDB_values`（`select_where`などの短縮形が使う）はテキストDBでは使えない。渡しても無視して、条件の無い検索になる。
 - 返す行は、中で持っている行のコピー。書き換えても中の行は変わらない。
 
 ### 行ファイルを読む段取り

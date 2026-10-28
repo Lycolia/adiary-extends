@@ -7,7 +7,7 @@ our @EXPORT = qw(&get_options &create_table_wrapper);
 ################################################################################
 # ■オプショナル関数情報
 ################################################################################
-my @optional_methods = qw(add_column drop_column add_index load_dbh);
+my @optional_methods = qw(add_column drop_column add_index);
 
 sub get_options {
 	my $self=shift;

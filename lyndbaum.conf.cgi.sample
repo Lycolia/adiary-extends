@@ -74,20 +74,11 @@
 #-------------------------------------------------------------------------------
 # ●データベースの設定
 #-------------------------------------------------------------------------------
-# テキストDBの場合
+# テキストDB（データを置くフォルダ）
 <$DB = loadpm('DB_text', "<@data_dir>db/")>
 
-# PostgreSQL の場合（データベース名、ユーザー名、パスワード）
-#<$DB = loadpm('DB_pg', 'database=adiary', 'adiary', 'test', {Pool=>1} )>
-#<$DB = loadpm('DB_pg', 'database=adiary;host=pgsql.example.com', 'adiary', 'test', {Pool=>1})>
-
-# MySQL の場合（データベース名、ユーザー名、パスワード）
-#<$DB = loadpm('DB_mysql', 'database=adiary', 'adiary', 'test', {Pool=>1})>
-#<$DB = loadpm('DB_mysql', 'database=adiary;host=mysql.example.com', 'adiary', 'test', {Pool=>1})>
-#<$DB = loadpm('DB_mysql', 'database=adiary;host=mysql.example.com;port=3306', 'adiary', 'test', {Pool=>1})>
-
 # データベースのデバッグ
-# ※外部DB使用時、Developフラグの設定が設定されていればSQLを見ることができる。
+# ※Developフラグが設定されていれば、検索の条件などを見ることができる。
 #<$DB.set_debug(1.on)>
 
 #-------------------------------------------------------------------------------
