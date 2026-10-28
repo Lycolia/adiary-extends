@@ -81,7 +81,7 @@
 	</select>
 	<div id="open-draft-buttons">
 	<button type="button" id="open-draft">開く</button>
-	<button type="button" id="open-template">テンプレートに使用</button><span class="help-text">テンプレートとして開くと、編集・保存しても元にした下書きは残り続けます。</span>
+	<button type="button" id="open-template">テンプレートに使用</button>
 	</div>
 </div>
 </article>
@@ -254,7 +254,7 @@
 		詳細設定</label>
 		<ul id="art-detail" class="checkbox">
 			<li><label><input type="checkbox" name="com_ok" value="1"<@if(art.com_ok, ' checked')>>コメントを受け付ける</label></li>
-			<li><label><input type="checkbox" name="nsfw" value="1"<@if(art.nsfw, ' checked')>>NSFW（年齢確認を出す）</label><span class="help-text"><@if(s.nsfw_force, 'ブログ全体がNSFWに設定されているので、この記事にも年齢確認が出ます。', '開いたときに本文をぼかし、18歳以上かを確認します。検索エンジンにも成人向けと伝えます。')></span></li>
+			<li><label><input type="checkbox" name="nsfw" value="1"<@if(art.nsfw, ' checked')>>NSFW（年齢確認を出す）</label><span class="help-text"><@if(s.nsfw_force, 'ブログ全体がNSFWに設定されているので、この記事にも年齢確認が出ます。', '記事閲覧時の年齢確認と検索エンジンへの通知を出します')></span></li>
 		<@ifexec(!s.private && (art.draft || !edit_pkey), begin)>
 			<@ifexec(v.sys.ping_servers_txt, begin)>
 			<li><label><input type="checkbox" name="ping" value="1"<@if(s.ping, ' checked')>>更新通知Pingを送信する</label></li>
