@@ -735,15 +735,17 @@ sub save_video_thumbnail {
 }
 
 #-------------------------------------------------------------------------------
-# ●サムネイルの無い動画の一覧
+# ●サムネイルを作る動画の一覧
 #-------------------------------------------------------------------------------
 # アップデート処理の後に、ブラウザーでまとめて作るときに使う。ゴミ箱は除く
+# サムネイルの無い動画と、記事用のサムネイルが今の大きさ（$VIDEO_POSTER_MAX）より大きい動画（4.18より前に作ったもの）
 # ret : [ { folder => 'posts/2026/', name => 'clip.mp4' }, ... ]
 #
-sub load_videos_without_thumbnail {
+sub load_videos_need_thumbnail {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $base = $self->blogimg_dir();
+	require Satsuki::ImageFormat;
 
 	my @ary;
 	my @dirs = ('');
@@ -755,7 +757,12 @@ sub load_videos_without_thumbnail {
 				push(@dirs, "$folder$_");
 				next;
 			}
-			if (!$self->is_video($_) || -e "${dir}.thumbnail/$_.poster.jpg") { next; }
+			if (!$self->is_video($_)) { next; }
+			my $poster = "${dir}.thumbnail/$_.poster.jpg";
+			if (-e $poster) {
+				my ($w, $h) = Satsuki::ImageFormat::get_size($poster);
+				if ($w && $w <= $VIDEO_POSTER_MAX && $h <= $VIDEO_POSTER_MAX) { next; }
+			}
 			push(@ary, { folder => $ROBJ->fs_decode("$folder"), name => $ROBJ->fs_decode("$_") });
 		}
 	}

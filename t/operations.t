@@ -376,6 +376,18 @@ subtest '動画のサムネイルの大きさの上限' => sub {
 	ok(json_ok($post->(960, 540)), '記事用が960pxなら受け付ける');
 	is(join('x', Satsuki::ImageFormat::get_size($poster)), '960x540', '記事用のサムネイルが置かれる');
 	ok(!json_ok($post->(540, 961)), '縦長でも、長い辺が961pxなら受け付けない');
+
+	# アップデートの画面で作る動画の一覧
+	my $listed = sub { return index(body($app->get('admin', 'system/update')), "data-name=\"$AppTest::VIDEO_FILE\"") >= 0; };
+	ok(!$listed->(), '今の大きさのサムネイルがあれば、アップデートの画面の一覧に出ない');
+	open(my $fh, '>:raw', $poster) || die "$poster: $!";
+	print $fh $jpeg->(1280, 720);
+	close($fh);
+	ok($listed->(), '4.18より前の大きさ（1280px）のサムネイルなら、一覧に出る');
+	unlink($poster);
+	ok($listed->(), 'サムネイルが無ければ、一覧に出る');
+	ok(json_ok($post->(960, 540)), '作り直せる');
+	ok(!$listed->(), '作り直すと、一覧から消える');
 };
 
 #-------------------------------------------------------------------------------
