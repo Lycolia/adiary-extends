@@ -7,6 +7,9 @@ package SatsukiApp::adiary;
 use Satsuki::AutoLoader;
 use Fcntl;
 #-------------------------------------------------------------------------------
+our $SYSTEM_NAME = 'Lyndbaum';
+our $REPOSITORY_URL = 'https://github.com/Lycolia/lyndbaum4';
+our $SYETEM_DESCRIPTION = 'Neo-Modern High-performance CMS software';
 # データ管理上数値しか解釈できないので文字列にしてはならない
 our $VERSION    = 4.18;
 our $OUTVERSION = "$VERSION";
