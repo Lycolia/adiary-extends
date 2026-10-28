@@ -1,0 +1,14 @@
+[Unit]
+Description=lyndbaum daemon
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/lyndbaum
+ExecStart=/usr/bin/perl /var/www/lyndbaum/lyndbaum.fcgi /var/www/lyndbaum/lyndbaum.sock 10 100
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
