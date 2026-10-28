@@ -46,6 +46,15 @@ sub load_arts_list {
 		# エスケープした状態で保存されているのでエスケープして検索する必要がある
 		$ROBJ->tag_escape(@{ $h{search_words} });
 	}
+	# 種類で絞り込む（art:記事だけ、page:ページだけ、それ以外はすべて）
+	my $type = $opt->{type};
+	if ($type eq 'art') {
+		$h{match}     = { ctype => '' };
+	} elsif ($type eq 'page') {
+		$h{not_match} = { ctype => '' };
+	} else {
+		$type = '';
+	}
 
 	# オフセット、ロード数
 	if ($opt->{offset}) {
@@ -55,6 +64,10 @@ sub load_arts_list {
 		$h{limit} = int($opt->{loads});
 	}
 
+	# 公開・非公開で絞り込む（1:公開だけ、0:非公開だけ、それ以外はすべて）
+	my $enable = $opt->{enable};
+	if ($enable ne '1' && $enable ne '0') { $enable = ''; }
+
 	# ロード対象記事オプション
 	if (! $self->{allow_edit}) {
 		$h{flag} = {enable => 1};
@@ -62,6 +75,9 @@ sub load_arts_list {
 		$h{is_null} = ['tm'];
 	} elsif (!$opt->{load_draft}) {
 		$h{not_null} = ['tm'];
+	}
+	if ($self->{allow_edit} && $enable ne '') {
+		$h{flag} = {enable => int($enable)};
 	}
 
 	# ロードカラム
@@ -79,6 +95,8 @@ sub load_arts_list {
 	$ret{hits} = $hits;
 	$ret{sort} = $sort;
 	$ret{rev}  = $rev;
+	$ret{type} = $type;
+	$ret{enable} = $enable;
 	return wantarray ? ($logs, \%ret) : $logs;
 }
 
