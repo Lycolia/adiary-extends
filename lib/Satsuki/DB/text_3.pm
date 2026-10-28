@@ -169,7 +169,7 @@ sub index_rebuild {
 	# キャッシュをクリアする
 	$self->clear_cache($table);
 
-	$self->{"$table.serial"} = $serial +1;
+	$self->{"$table.serial"} = $serial;	# 振った最大値。次の行は +1 から
 	$self->{"$table.tbl"}    = \@db;
 	$IndexCache{$table}     = \@db;
 	$self->save_index($table, 1);	# force

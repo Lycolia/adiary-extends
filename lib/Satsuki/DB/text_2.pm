@@ -103,6 +103,7 @@ sub update_match {
 		my $v=$h->{$_};
 		$v =~ s![^\w\+\-\*\/\%\(\)\|\&\~<>]!!g;
 		if ($v =~ /\w\(/) {
+			$self->edit_index_exit($table);
 			$self->error("expression error(not allow function). table=$table, $v");
 			return 0;
 		}
@@ -111,12 +112,14 @@ sub update_match {
 		eval "\$func=sub {my \$h=shift; return $v;}";
 		# $ROBJ->debug("$v");
 		if ($@) {
+			$self->edit_index_exit($table);
 			$self->error("expression error. table=$table, $@");
 			return 0;
 		}
 		delete $h->{$_};
 		my $k=substr($_, 1);
 		if ($k eq 'pkey') {
+			$self->edit_index_exit($table);
 			$self->error("On '%s' table, disallow pkey update",$table);
 			return 0;
 		}

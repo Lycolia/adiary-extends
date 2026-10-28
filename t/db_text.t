@@ -99,6 +99,58 @@ is($DB->select_match_limit1('art', 'title', 'abc')->{title}, 'abc', '先にあ�
 	is($DB->select_match_limit1('nn', 'pkey', $pkey)->{title}, 'abc', '拒んだ更新は書かれない');
 }
 
+#-------------------------------------------------------------------------------
+# update_match の式
+#-------------------------------------------------------------------------------
+{
+	$DB->create_table('ex', [ { name => 'num', type => 'int' } ]);
+	my $pkey = $DB->insert('ex', { num => 1 });
+	is($DB->update_match('ex', { '*num' => 'num+1' }, 'pkey', $pkey), 1, '式で更新する');
+	is($DB->select_match_limit1('ex', 'pkey', $pkey)->{num}, 2, '式の結果が入る');
+
+	$DB->set_noerror(1);
+	ok(!$DB->update_match('ex', { '*num' => 'foo(1)' }, 'pkey', $pkey), '関数の呼び出しは拒む');
+	ok(&insert_with_timeout('ex', { num => 3 }), '関数の呼び出しで拒んだ後もロックが残らない');
+	ok(!$DB->update_match('ex', { '*num' => 'num+' }, 'pkey', $pkey), '書き方の誤った式は拒む');
+	ok(&insert_with_timeout('ex', { num => 4 }), '式の誤りで拒んだ後もロックが残らない');
+	ok(!$DB->update_match('ex', { '*pkey' => 'pkey+1' }, 'pkey', $pkey), 'pkeyは書き換えられない');
+	ok(&insert_with_timeout('ex', { num => 5 }), 'pkeyで拒んだ後もロックが残らない');
+	$DB->set_noerror(0);
+	is($DB->select_match_limit1('ex', 'pkey', $pkey)->{num}, 2, '拒んだ更新は書かれない');
+}
+
+#-------------------------------------------------------------------------------
+# index_rebuild
+#-------------------------------------------------------------------------------
+{
+	$DB->create_table('rb', [ { name => 'title', type => 'text', index => 1 } ]);
+	$DB->insert('rb', { title => 'a' }) for 1..3;
+
+	unlink("${dir}rb/#index.dat") || die $!;
+	$DB->clear_cache('rb');
+	is($DB->insert('rb', { title => 'b' }), 4, 'indexを作り直した後は、最大のpkeyの次を振る');
+	is(&read_index("rb/#index.dat")->[2], '000004', 'シリアル値は振った最大値');
+	is($DB->select_match_limit1('rb', 'title', 'a', '*sort', 'pkey')->{pkey}, 1, '既存の行がindexに戻る');
+
+	unlink("${dir}rb/#index.dat") || die $!;
+	$DB->clear_cache('rb');
+	is($DB->generate_pkey('rb'), 5, 'generate_pkeyで作り直したときも、最大のpkeyの次を振る');
+}
+
+# ロックが残っていると、同じプロセスでも書き込みが止まるので、時間を切る
+sub insert_with_timeout {
+	my ($table, $h) = @_;
+	my $r = eval {
+		local $SIG{ALRM} = sub { die "timeout\n" };
+		alarm(5);
+		my $r = $DB->insert($table, $h);
+		alarm(0);
+		$r;
+	};
+	alarm(0);
+	return $r;
+}
+
 sub read_index {
 	my $file = shift;
 	open(my $fh, '<', "$dir$file") || die "$dir$file: $!";
