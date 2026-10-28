@@ -13,9 +13,6 @@ Lyndbaum 0（`~/develop/perl/lyndbaum0`）にある機能のうち、Lyndbaum 4�
 - jQueryの抹殺
   - ログインしていない人の公開画面からは外した（`adiary.js`をjQueryを使わない形にした）
   - 残り：ログイン中の公開画面（コメントの管理など）、管理画面（`admin.js`、`edit.js`、`album.js`など）、jQuery UI、dynatree、表示パスワードの画面（`js-ajax`）
-- 縦長や横長の画像のサムネイルがクリック、視認しづらい
-  - 一定サイズにクリッピングした方がいいかも？
-  - 小さすぎるのは…？
 
 ### 管理画面
 
