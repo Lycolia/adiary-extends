@@ -30,7 +30,7 @@
 <@> テーマとユーザーCSSは最後に読み込む
 <@if(v.sphone || v.responsive,	#'<meta name="viewport" id="viewport" content="width=device-width">\n')>
 <@if(299 < v.sphone,	#'<style type="text/css"><!-- body { max-width: <@v.sphone>px; }</style>\n')>
-<@> 読み込むファイルには更新日時を付ける（長くキャッシュさせても、更新したら読み直させるため。docs/nginx.md）
+<@> 読み込むファイルには更新日時を付ける（長くキャッシュさせても、更新したら読み直させるため。docs/config-example/nginx.conf）
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir>base.css?<@get_lastmodified(v.theme_dir . 'base.css')>">
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir><@v.theme>/<@v.theme_name>.css?<@get_lastmodified("<@v.theme_dir><@v.theme>/<@v.theme_name>.css")>" id="theme-css">
 <@>
