@@ -6,6 +6,9 @@ our $SPEC_VER = '1.12';	# specification version for compatibility
 ################################################################################
 # Satsuki system - HTTP Server
 #					Copyright (C)2019-2023 nabe@abk
+#
+# 脆弱性などの確認を一切していないため、デバッグ以外での利用は推奨しません
+#
 ################################################################################
 # Last Update : 2023/02/02
 #
@@ -15,7 +18,7 @@ BEGIN {
 	if ($path) { chdir($path); }
 	unshift(@INC, './lib');
 }
-use Socket;
+use Socket qw(:DEFAULT IPPROTO_IPV6 IPV6_V6ONLY IN6ADDR_ANY inet_ntop);
 use Fcntl;
 use threads;		# for ithreads
 use POSIX;		# for waitpid(<pid>, WNOHANG);
@@ -77,7 +80,7 @@ if ($IsWindows) {
 # Web Server data
 #-------------------------------------------------------------------------------
 my %DENY_DIRS;
-my %MIME_TYPE = ( 
+my %MIME_TYPE = (
 	html => 'text/html',
 	htm  => 'text/html',
 	text => 'text/plain',
@@ -331,9 +334,19 @@ if ($UNIX_SOCK ne '') {
 	print	"\tUNIX domain socket: $UNIX_SOCK\n"
 
 } else {
-	socket($srv, PF_INET, SOCK_STREAM, getprotobyname('tcp'))	|| die "socket failed: $!";
+	# IPv6 + IPv4 dual stack. If IPv6 is not available, use IPv4 only.
+	my $v6 = eval {
+		socket($srv, PF_INET6, SOCK_STREAM, getprotobyname('tcp'))	|| die;
+		setsockopt($srv, IPPROTO_IPV6, IPV6_V6ONLY, pack("l", 0))	|| die;	# Windows default is 1
+		1;
+	};
+	if (!$v6) {
+		$srv && close($srv);
+		socket($srv, PF_INET, SOCK_STREAM, getprotobyname('tcp'))	|| die "socket failed: $!";
+	}
 	setsockopt($srv, SOL_SOCKET, SO_REUSEADDR, pack("l", 1))	|| die "setsockopt failed: $!";
-	bind($srv, sockaddr_in($PORT, INADDR_ANY))			|| die "bind port failed: $!";
+	bind($srv, $v6 ? pack_sockaddr_in6($PORT, IN6ADDR_ANY) : sockaddr_in($PORT, INADDR_ANY))
+									|| die "bind port failed: $!";
 	listen($srv, SOMAXCONN)						|| die "listen failed: $!";
 }
 
@@ -564,9 +577,17 @@ sub accept_client {
 	binmode($sock);
 
 	if ($PORT) {
-		my ($port, $ip_bin) = sockaddr_in($addr);
-		$ENV{REMOTE_ADDR} = inet_ntoa($ip_bin);
-		$ENV{REMOTE_PORT} = $port;
+		if (sockaddr_family($addr) == AF_INET6) {
+			my ($port, $ip_bin) = unpack_sockaddr_in6($addr);
+			my $ip = inet_ntop(AF_INET6, $ip_bin);
+			$ip =~ s/^::ffff:(\d+\.\d+\.\d+\.\d+)$/$1/i;	# IPv4-mapped address
+			$ENV{REMOTE_ADDR} = $ip;
+			$ENV{REMOTE_PORT} = $port;
+		} else {
+			my ($port, $ip_bin) = sockaddr_in($addr);
+			$ENV{REMOTE_ADDR} = inet_ntoa($ip_bin);
+			$ENV{REMOTE_PORT} = $port;
+		}
 		# print "[$PID] connection from $ip:$port\n";
 	} else {
 		# $ENV{REMOTE_ADDR} = '0.0.0.0';
@@ -684,7 +705,7 @@ sub parse_request {
 	#---------------------------------------------------
 	# Header check
 	#---------------------------------------------------
-	if ($ENV{HTTP_HOST} eq '' || $ENV{HTTP_HOST} !~ m/^[\w-]+(\.[\w\-]+)*(:\d+)?$/) {
+	if ($ENV{HTTP_HOST} eq '' || $ENV{HTTP_HOST} !~ m/^(?:[\w-]+(\.[\w\-]+)*|\[[0-9A-Fa-f:.]+\])(:\d+)?$/) {
 		&_400_bad_request($state);
 		return $state;
 	}
