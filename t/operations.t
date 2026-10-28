@@ -145,18 +145,94 @@ subtest 'ログインしていない人のコメント' => sub {
 	like(body($app->get('editor', 'comlist')), qr{ゲストのコメント}, 'コメント一覧に出る');
 };
 
-subtest 'コメントの表示・非表示・削除' => sub {
+subtest 'コメントの承認の取り消し・承認・削除' => sub {
 	my $r = $app->post('editor', '', { action => 'comments_edit', disable => 1, pkey_ary => 1 });
-	ok(AppTest::is_reload($r), '非表示にできる');
+	ok(AppTest::is_reload($r), '承認を取り消せる');
 	unlike(body($app->get('guest', '/01')), qr{seedのコメント}, 'ログインしていない人には出ない');
 	like(body($app->get('editor', '/01')), qr{seedのコメント}, '編集者には出る');
 
 	$r = $app->post('editor', '', { action => 'comments_edit', enable => 1, pkey_ary => 1 });
-	ok(AppTest::is_reload($r), '表示に戻せる');
+	ok(AppTest::is_reload($r), '承認できる');
+	like(body($app->get('guest', '/01')), qr{seedのコメント}, 'ログインしていない人にも出る');
 
 	$r = $app->post('editor', '', { action => 'comments_edit', delete => 1, pkey_ary => 1 });
 	ok(AppTest::is_reload($r), '削除できる');
 	ok(!-e "$dir/data/db/com/00001.dat" || read_file("$dir/data/db/com/00001.dat") !~ /\S/, 'コメントが消える');
+};
+
+subtest 'コメントの承認待ちと記事の公開・非公開' => sub {
+	# コメント一覧の、そのコメントの行の「状態」
+	my $state = sub {
+		my ($text, $q) = @_;
+		my $b = body($app->get('editor', 'comlist' . ($q // '')));
+		foreach ($b =~ m{<tr>\s*<td class="c"><input.*?</tr>}sg) {
+			next if (index($_, $text) < 0);
+			my @td = map { s/<[^>]*>//gr } /<td[^>]*>(.*?)<\/td>/sg;
+			return $td[1];
+		}
+		return '';
+	};
+	my $recent = sub {
+		my ($b) = body($app->get('guest', '')) =~ m{id="side-recent-comment"(.*?)</ul>}s;
+		return $b // '';
+	};
+	my $coms = sub {
+		my ($n) = body($app->get('editor', 'menu')) =~ m{<th>コメント</th><td>(\d+)件}s;
+		return $n;
+	};
+
+	# URLを書くと承認待ちになる（com_hold_url）
+	my ($secure) = body($app->get('visitor', '/02')) =~ /data-secure="([^"]+)"/;
+	my @ary = split(/,/, $secure);
+	pop(@ary);
+	my $sid = join('', map { chr($_ ^ (2 & 255)) } @ary);
+	sleep(4);
+	my $r = $app->post('visitor', '/02', { action => 'comment_post', a_pkey => 2, secure_id => $sid, name => '保留の人', comment_txt => '保留のコメント', url => 'http://example.com/', website => '' });
+	like($r->{title}, qr/^処理結果/, '投稿できる');
+	unlike(body($app->get('guest', '/02')), qr{保留のコメント}, '承認待ちは記事のページに出ない');
+	is($state->('保留のコメント'), '承認待ち', 'コメント一覧で承認待ちと出る');
+	is($state->('ゲストのコメント'), '承認済み', 'ほかのコメントは承認済み');
+	is($state->('保留のコメント', '&hold=1'), '承認待ち', '承認待ちで絞り込むと出る');
+	is($state->('ゲストのコメント', '&hold=1'), '', '承認待ちで絞り込むと、承認済みは出ない');
+	is($state->('保留のコメント', '&hold=0'), '', '承認済みで絞り込むと、承認待ちは出ない');
+	is($coms->(), 1, 'ブログのコメント数に入らない');
+
+	my ($pkey) = body($app->get('editor', 'comlist')) =~ m{value="(\d+)" class="pkey-ary" id="com-\d+">.*?保留の人}s;
+	$r = $app->post('editor', 'comlist', { action => 'comments_edit', enable => 1, pkey_ary => $pkey, from_comlist => 1 });
+	ok(AppTest::is_reload($r), '承認できる');
+	like(body($app->get('guest', '/02')), qr{保留のコメント}, '承認すると記事のページに出る');
+	is($state->('保留のコメント'), '承認済み', '承認済みになる');
+	like($recent->(), qr{保留の人}, '最近のコメントに出る');
+	is($coms->(), 2, 'ブログのコメント数に入る');
+
+	# 記事を非公開にしても、承認したことは残る。公開に戻すと、承認済みのコメントだけまた出る
+	$r = $app->post('editor', '', { action => 'comments_edit', disable => 1, pkey_ary => $pkey });
+	ok(AppTest::is_reload($r), '承認を取り消せる');
+	is($state->('保留のコメント'), '承認待ち', '承認待ちに戻る');
+	$r = $app->post('editor', 'artlist', [ action => 'articles_edit', mode => 'disable', pkey_ary => 2 ]);
+	ok(AppTest::is_reload($r), '記事を非公開にできる');
+	is($state->('ゲストのコメント'), '承認済み', '記事を非公開にしても承認済みのまま');
+	unlike($recent->(), qr{通りすがり}, '非公開の記事のコメントは最近のコメントに出ない');
+	is($coms->(), 0, '非公開の記事のコメントはブログのコメント数に入らない');
+
+	$r = $app->post('editor', 'artlist', [ action => 'articles_edit', mode => 'enable', pkey_ary => 2 ]);
+	ok(AppTest::is_reload($r), '記事を公開に戻せる');
+	like(body($app->get('guest', '/02')), qr{ゲストのコメント}, '承認済みのコメントがまた出る');
+	unlike(body($app->get('guest', '/02')), qr{保留のコメント}, '承認待ちのコメントは出ない');
+	like($recent->(), qr{通りすがり}, '最近のコメントに戻る');
+	is($coms->(), 1, 'ブログのコメント数に戻る');
+
+	# 非公開の記事のコメントも承認できる。記事を公開したときに出る
+	$r = $app->post('owner', '', { %ART, edit_pkey_int => 2, title => 'ownerの記事', body_txt => "本文2\n", tag_ary => 'タグ2', enable => 0 });
+	ok(AppTest::is_reload($r), '編集画面で記事を非公開にできる');
+	$r = $app->post('editor', '', { action => 'comments_edit', enable => 1, pkey_ary => $pkey });
+	ok(AppTest::is_reload($r), '非公開の記事のコメントを承認できる');
+	is($state->('保留のコメント'), '承認済み', '承認済みになる');
+	is($coms->(), 0, '記事が非公開なので、ブログのコメント数には入らない');
+	$r = $app->post('owner', '', { %ART, edit_pkey_int => 2, title => 'ownerの記事', body_txt => "本文2\n", tag_ary => 'タグ2', enable => 1 });
+	ok(AppTest::is_reload($r), '編集画面で記事を公開にできる');
+	like(body($app->get('guest', '/02')), qr{保留のコメント}, '承認したコメントが出る');
+	is($coms->(), 2, 'ブログのコメント数に戻る');
 };
 
 #-------------------------------------------------------------------------------
@@ -256,25 +332,62 @@ subtest '画像アルバム' => sub {
 	};
 	my $img = "$dir/pub/attachments/test";
 
-	my $r = $app->post('editor', '', [ action => 'album/upload_form', folder => 'test/', size => 120,
+	my $r = $app->post('editor', '', [ action => 'media/upload_form', folder => 'test/', size => 120,
 		file_ary => { filename => 'up.png', content => $png, type => 'image/png' } ]);
 	like($r->{body}, qr/^ret=0$/m, 'アップロードできる');
 	ok(-f "$img/up.png", 'ファイルが置かれる');
 	ok(-f "$img/.thumbnail/up.png.jpg", 'サムネイルが作られる');
 
-	$r = $app->post('editor', '', { action => 'album/rename_file', folder => 'test/', old => 'up.png', name => 'renamed.png' });
+	$r = $app->post('editor', '', { action => 'media/rename_file', folder => 'test/', old => 'up.png', name => 'renamed.png' });
 	ok(json_ok($r), '名前を変えられる');
 	ok(!-e "$img/up.png" && -f "$img/renamed.png", 'ファイルの名前が変わる');
 
-	$r = $app->post('editor', '', { action => 'album/create_folder', folder => '/', name => 'other' });
+	$r = $app->post('editor', '', { action => 'media/create_folder', folder => '/', name => 'other' });
 	ok(json_ok($r), 'フォルダを作れる');
-	$r = $app->post('editor', '', { action => 'album/move_files', from => 'test/', to => 'other/', file_ary => 'renamed.png' });
+	$r = $app->post('editor', '', { action => 'media/move_files', from => 'test/', to => 'other/', file_ary => 'renamed.png' });
 	ok(json_ok($r), '移せる');
 	ok(!-e "$img/renamed.png" && -f "$dir/pub/attachments/other/renamed.png", 'ファイルが移る');
 
-	$r = $app->post('editor', '', { action => 'album/delete_files', folder => 'other/', file_ary => 'renamed.png' });
+	$r = $app->post('editor', '', { action => 'media/delete_files', folder => 'other/', file_ary => 'renamed.png' });
 	ok(json_ok($r), '削除できる');
 	ok(!-e "$dir/pub/attachments/other/renamed.png", 'フォルダから消える');
+};
+
+subtest '動画のサムネイルの大きさの上限' => sub {
+	require MIME::Base64;
+	require Satsuki::ImageFormat;
+	# 1x1のJPEGの、SOF（FFC2）の高さと幅を書き換える。サーバーはヘッダーの大きさだけを見る
+	my $jpeg = sub {
+		my ($w, $h) = @_;
+		my $j = MIME::Base64::decode_base64('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=');
+		my $i = index($j, "\xFF\xC2");
+		substr($j, $i+5, 4) = pack('nn', $h, $w);
+		return $j;
+	};
+	my $post = sub {
+		my ($w, $h) = @_;
+		return $app->post('editor', '', [ action => 'media/upload_video_thumbnail', folder => $AppTest::IMAGE_FOLDER, file => $AppTest::VIDEO_FILE,
+			poster => { filename => 'poster.jpg', content => $jpeg->($w, $h), type => 'image/jpeg' },
+			thumb  => { filename => 'thumb.jpg',  content => $jpeg->(1, 1),   type => 'image/jpeg' } ]);
+	};
+	my $poster = "$dir/pub/attachments/$AppTest::IMAGE_FOLDER.thumbnail/$AppTest::VIDEO_FILE.poster.jpg";
+
+	ok(!json_ok($post->(961, 540)), '記事用が961pxなら受け付けない');
+	ok(json_ok($post->(960, 540)), '記事用が960pxなら受け付ける');
+	is(join('x', Satsuki::ImageFormat::get_size($poster)), '960x540', '記事用のサムネイルが置かれる');
+	ok(!json_ok($post->(540, 961)), '縦長でも、長い辺が961pxなら受け付けない');
+
+	# アップデートの画面で作る動画の一覧
+	my $listed = sub { return index(body($app->get('admin', 'system/update')), "data-name=\"$AppTest::VIDEO_FILE\"") >= 0; };
+	ok(!$listed->(), '今の大きさのサムネイルがあれば、アップデートの画面の一覧に出ない');
+	open(my $fh, '>:raw', $poster) || die "$poster: $!";
+	print $fh $jpeg->(1280, 720);
+	close($fh);
+	ok($listed->(), '4.18より前の大きさ（1280px）のサムネイルなら、一覧に出る');
+	unlink($poster);
+	ok($listed->(), 'サムネイルが無ければ、一覧に出る');
+	ok(json_ok($post->(960, 540)), '作り直せる');
+	ok(!$listed->(), '作り直すと、一覧から消える');
 };
 
 #-------------------------------------------------------------------------------
@@ -338,6 +451,127 @@ subtest 'ユーザー' => sub {
 	$r = $app->post('admin', '', { action => '_ajax_user_delete', id => 'user' });
 	ok(json_ok($r), 'ユーザーを削除できる');
 	unlike(body($app->get('admin', 'user/')), qr{>user<}, 'ユーザーの一覧から消える');
+};
+
+subtest '操作の記録' => sub {
+	# 無いIDでの失敗を12件。タグになる文字を混ぜて、エスケープとURLのエンコードも確かめる
+	$app->post('editor', '', { action => '_ajax_login', adiary_id => 'nobody<x>', pass => 'wrong' }) foreach (1..12);
+	my $rows = sub { my @r = (shift =~ m{<td>nobody&lt;x&gt;</td>\s*<td>ログイン</td>\s*<td><strong class="warning">失敗</strong></td>}g); scalar(@r) };
+
+	my $b = body($app->get('admin', 'user/log&loads=10&result=fail&id=' . AppTest::_uri_escape('nobody<x>')));
+	is($rows->($b), 10, '1ページ目に10件出る');
+	like($b, qr{全12件}, '絞り込んだ件数が出る');
+	unlike($b, qr{>user<}, '成功の記録やほかのIDは出ない');
+
+	# 画面のページ送りのリンクをそのまま辿る
+	my ($link) = $b =~ m{<a href="[^"?]*\?([^"]*page=2)">};
+	ok($link, '2ページ目へのリンクがある');
+	$link =~ s/&amp;/&/g;
+	unlike($link, qr{<|>}, 'リンクにテンプレートの書きかけが残っていない');
+	$b = body($app->get('admin', $link));
+	is($rows->($b), 2, '2ページ目に残りの2件が出る');
+	like($b, qr{全12件}, '2ページ目でも絞り込みが引き継がれる');
+};
+
+#-------------------------------------------------------------------------------
+# 編集画面の設定（保存すると、送らなかったflagが0になるので最後に置く）
+#-------------------------------------------------------------------------------
+subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub {
+	# 編集画面のUploadボタン（貼り付けが使う値）と、アップロードのダイアログ
+	my $edit = sub {
+		my $b = body($app->get('editor', 'edit'));
+		my ($btn)  = $b =~ m{(<button type="button" id="edit-file-upload"[^>]*>)};
+		my ($form) = $b =~ m{(<form id="upload-form">.*?</form>)}s;
+		return ($btn, $form);
+	};
+
+	my ($btn, $form) = $edit->();
+	like($btn, qr{data-thumb-size="320" data-paste="" data-exif="0" data-class=""}, '設定していないときの貼り付けの値');
+	unlike($form, qr{name="size"}, 'ダイアログでサムネイルの大きさを選ばせない');
+	unlike($form, qr{ selected>(?:大きい画像|センタリング|左寄せ|右寄せ)|paste-to-exif" checked}, '設定していないときは、サムネイル、そのまま、Exifなし');
+	my @saves = $form =~ m{class="([^"]*\bjs-save\b[^"]*)"}g;
+	is_deeply(\@saves, ['js-switch js-save'], 'ダイアログの欄はブラウザに覚えさせない（覚えるのは「詳細」の開閉だけ）');
+
+	# 選択肢に無い大きさも保存できる
+	my %SET = (action => 'set/editor', edit_thumb_size => 200, edit_paste => 'large', edit_paste_exif => 1, edit_paste_class => 'float-r');
+	my $r = $app->post('owner', 'set/editor', \%SET);
+	ok(AppTest::is_reload($r), '保存できる');
+	($btn, $form) = $edit->();
+	like($btn, qr{data-thumb-size="200" data-paste="large" data-exif="1" data-class="float-r"}, '貼り付けの値が設定になる');
+	like($form, qr{<option value="0" selected>大きい画像を貼付</option>}, 'ダイアログが大きい画像になる');
+	like($form, qr{id="paste-to-exif" checked}, 'ダイアログのExifが付く');
+	like($form, qr{<option value="float-r" selected>}, 'ダイアログの表示が右寄せになる');
+	like(body($app->get('owner', 'set/editor')), qr{<option value="200" selected>200px</option>}, '設定の画面にも出る');
+
+	# 範囲外や、選択肢に無い値は拒む
+	foreach my $bad ([ edit_thumb_size => 50 ], [ edit_thumb_size => 900 ], [ edit_paste => 'xx' ], [ edit_paste_class => 'xx' ]) {
+		$r = $app->post('owner', 'set/editor', { %SET, @$bad });
+		ok(!AppTest::is_reload($r), "$bad->[0]=$bad->[1] は保存できない");
+	}
+	($btn) = $edit->();
+	like($btn, qr{data-thumb-size="200" data-paste="large"}, '拒んだ後も前の設定のまま');
+
+	# サムネイルは、送られた大きさではなく設定の大きさで作る（元の画像は192px）
+	$r = $app->post('owner', 'set/editor', { %SET, edit_thumb_size => 100 });
+	ok(AppTest::is_reload($r), '大きさを100にする');
+	my $png = do {
+		open(my $fh, '<:raw', "$FindBin::Bin/../pub/assets/dist/default-icon.png") || die $!;
+		local $/; <$fh>;
+	};
+	my $thumb = "$dir/pub/attachments/test/.thumbnail/size.png.jpg";
+	require Satsuki::ImageFormat;
+	$r = $app->post('editor', '', [ action => 'media/upload_form', folder => 'test/', size => 640,
+		file_ary => { filename => 'size.png', content => $png, type => 'image/png' } ]);
+	like($r->{body}, qr/^ret=0$/m, 'アップロードできる');
+	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '100x100', 'アップロードでは設定の大きさで作る');
+
+	$r = $app->post('owner', 'set/editor', { %SET, edit_thumb_size => 150 });
+	$r = $app->post('editor', '', { action => 'media/remake_thumbnail', folder => 'test/', file_ary => 'size.png', size => 640 });
+	ok(json_ok($r), '再生成できる');
+	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '150x150', '再生成でも設定の大きさで作る');
+	like(body($app->get('editor', 'media/')), qr{data-size="150"}, 'メディアの画面に、動画のサムネイル用の大きさが出る');
+	unlike(body($app->get('editor', 'media/')), qr{name="size"|thumbnail-size}, 'メディアでサムネイルの大きさを選ばせない');
+};
+
+#-------------------------------------------------------------------------------
+# 公開画面のメタ情報とページ送り（PageSpeed Insights の指摘）
+#-------------------------------------------------------------------------------
+subtest 'メタディスクリプション' => sub {
+	# 記事は、トップに出ている最初の記事（ほかのテストで公開の状態が変わるため）
+	my ($art) = body($app->get('guest', '')) =~ m{<a href="[^"]*?(/\d+)" class="title">};
+	ok($art, "記事のURLが取れる（$art）");
+	foreach my $q ('', $art) {
+		my $b = body($app->get('guest', $q));
+		my @desc = $b =~ m{<meta name="description" content="([^"]*)">}g;
+		my ($og) = $b =~ m{<meta property="og:description" content="([^"]*)">};
+		is(scalar(@desc), 1, "?$q に1つだけ出る");
+		ok($desc[0] ne '' && $desc[0] eq $og, "?$q の中身はog:descriptionと同じ（$og）");
+	}
+};
+
+# 保存すると、送らなかったflagが0になるので最後に置く
+subtest 'ページ送りの行けない方向はリンクにしない' => sub {
+	my $r = $app->post('owner', 'set/detail', { action => 'set/detail', load_items => 1 });
+	ok(AppTest::is_reload($r), '1ページ1件にする');
+
+	# 前後だけの形（トップ）と、番号付きの形（検索）。最後のページまで「次のページ」を辿る
+	foreach my $base ('', '&q=' . AppTest::_uri_escape('記事')) {
+		my ($nav, @nohref, $first, $last);
+		for (my $p=1; $p<20; $p++) {
+			my $b = body($app->get('guest', "$base&p=$p"));
+			$nav = join('', $b =~ m{(<nav class="page-nav.*?</nav>)}sg);
+			push(@nohref, map { "p=$p $_" } $nav =~ m{(<a(?![^>]*\bhref=)[^>]*>)}g);
+			$first //= $nav;
+			$last = $p;
+			last if ($nav !~ /class="next-page" rel="next"/);
+		}
+		ok(1 < $last, "?$base は$last ページある");
+		is_deeply(\@nohref, [], "?$base のどのページのページ送りにも、hrefの無いaが無い");
+		like($first, qr{<span class="prev-page" aria-hidden="true">前のページ</span>}, "?$base の1ページ目の「前のページ」は見えないspan");
+		like($first, qr{<a href="[^"]+" class="next-page" rel="next">次のページ</a>},  "?$base の1ページ目の「次のページ」はリンク");
+		like($nav, qr{<a href="[^"]*" class="prev-page" rel="prev">前のページ</a>},    "?$base の最後のページの「前のページ」はリンク");
+		like($nav, qr{<span class="next-page" aria-hidden="true">次のページ</span>},  "?$base の最後のページの「次のページ」は見えないspan");
+	}
 };
 
 done_testing();

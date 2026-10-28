@@ -33,7 +33,6 @@
 	<$art.name    = Auth.name>
 	<$art.enable  = s.enable>
 	<$art.com_ok  = s.com_ok>
-	<$art.hcom_ok = s.hcom_ok>
 	<$art.nsfw    = s.nsfw>
 	<$art.ping    = s.ping>
 	<$art.wiki    = s.wiki>
@@ -82,7 +81,7 @@
 	</select>
 	<div id="open-draft-buttons">
 	<button type="button" id="open-draft">開く</button>
-	<button type="button" id="open-template">テンプレートに使用</button><span class="help-text">テンプレートとして開くと、編集・保存しても元にした下書きは残り続けます。</span>
+	<button type="button" id="open-template">テンプレートに使用</button>
 	</div>
 </div>
 </article>
@@ -124,7 +123,7 @@
 	<button class="helper" type="button" data-type="list"   data-msg="箇条書きにしたい項目を１行ずつ入力">リスト</button>
 	<button class="helper" type="button" data-type="quote"  data-msg="引用したい文章を入力" data-sp-msg="引用元サイトがある場合、そのURLを入力してください" data-sp-val="http://" data-sp-match="^https?:\/\/.+">引用</button>
 	<button class="helper" type="button" data-type="anno"   data-msg="注釈にしたい文字列を入力">注釈</button>
-	<button class="helper" type="button" data-type="album"  data-url="<@v.myself>?album/&amp;popup=1">画像</button>
+	<button class="helper" type="button" data-type="album"  data-url="<@v.myself>?media/&amp;popup=1">画像</button>
 
 	<select id="other-helper" title="その他の機能を呼び出します。">
 		<option value="" selected>その他</option>
@@ -178,7 +177,7 @@
 		<option value="<@t.key>"<@if(art.parser eq t.key, ' selected')>><@t.val></option>
 		<$end>
 	</select></span>
-	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'posts/%y/')>" data-title="ファイルを選択">Upload</button>
+	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'posts/%y/')>" data-thumb-size="<@v.thumbnail_size()>" data-paste="<@s.edit_paste>" data-exif="<@if(s.edit_paste_exif, 1, 0)>" data-class="<@s.edit_paste_class>" data-title="ファイルを選択">Upload</button>
 	<@ifexec(edit_pkey, begin)>
 	<button type="button" id="edit-revision" data-title="更新履歴">履歴</button>
 	<$end>
@@ -198,7 +197,7 @@
 	<div id="eyecatch-preview" data-blog-image="<@Basepath><@if(s.blog_image, s.blog_image, #'<@v.pubdist_dir>default-icon.png')>"></div>
 	<p id="eyecatch-note"></p>
 	<p class="edit-buttons">
-	<button type="button" id="eyecatch-pick" data-url="<@v.myself>?album/&amp;popup=1&amp;eyecatch=1">アイキャッチ画像を設定</button>
+	<button type="button" id="eyecatch-pick" data-url="<@v.myself>?media/&amp;popup=1&amp;eyecatch=1">アイキャッチ画像を設定</button>
 	<button type="button" id="eyecatch-remove">アイキャッチ画像を削除</button>
 	</p>
 	</section>
@@ -249,14 +248,13 @@
 		<$end> <@\>
 		記事を公開</label></li>
 	<@ifexec(edit_pkey, begin)>
-		<li><label><input type="checkbox" name="keep_update_tm" value="1">更新日時を変えない</label><span class="help-text">誤字の直しなど、更新として扱いたくないときに使います。RSSや記事に出る更新日時が変わりません</span></li>
+		<li><label><input type="checkbox" name="keep_update_tm" value="1">更新日時を変えない</label></li>
 	<$end>
 		<li><label><input type="checkbox" id="art-detail-sw" data-target="#art-detail" class="js-switch js-save"> <@\>
 		詳細設定</label>
 		<ul id="art-detail" class="checkbox">
 			<li><label><input type="checkbox" name="com_ok" value="1"<@if(art.com_ok, ' checked')>>コメントを受け付ける</label></li>
-			<li><label><input type="checkbox" name="hcom_ok" value="1"<@if(art.hcom_ok, ' checked')>>非公開コメントを許可する</label></li>
-			<li><label><input type="checkbox" name="nsfw" value="1"<@if(art.nsfw, ' checked')>>NSFW（年齢確認を出す）</label><span class="help-text"><@if(s.nsfw_force, 'ブログ全体がNSFWに設定されているので、この記事にも年齢確認が出ます。', '開いたときに本文をぼかし、18歳以上かを確認します。検索エンジンにも成人向けと伝えます。')></span></li>
+			<li><label><input type="checkbox" name="nsfw" value="1"<@if(art.nsfw, ' checked')>>NSFW（年齢確認を出す）</label></li>
 		<@ifexec(!s.private && (art.draft || !edit_pkey), begin)>
 			<@ifexec(v.sys.ping_servers_txt, begin)>
 			<li><label><input type="checkbox" name="ping" value="1"<@if(s.ping, ' checked')>>更新通知Pingを送信する</label></li>
@@ -351,29 +349,21 @@
 	<input type="file" name="file_ary" multiple id="file-btn" class="display-none">
 </div>
 
+<@> 初期値は編集画面の設定から出す。ブラウザには覚えさせない（js-saveを付けない）
 <select id="paste-thumbnail" name="paste">
 	<option value="1">サムネイルを貼付</option>
-	<option value="0">大きい画像を貼付</option>
+	<option value="0"<@if(s.edit_paste eq 'large', ' selected')>>大きい画像を貼付</option>
 </select>&ensp;
-
-サムネイル<select name="size" id="thumbnail-size" class="r js-save js-combo" data-target="#size-other" data-format="%vpx">
-	<option value="120" selected>120px</option>
-	<option value="160">160px</option>
-	<option value="240">240px</option>
-	<option value="320">320px</option>
-	<option value="480">480px</option>
-	<option value="640">640px</option>
-</select>
 	<label><input type="checkbox" class="js-switch js-save" data-target="#paste-detail">詳細</label><br>
 
 <ul id="paste-detail">
-	<li><label><input type="checkbox" id="paste-to-exif" class="js-save">Exifも貼り付ける</label>
+	<li><label><input type="checkbox" id="paste-to-exif"<@if(s.edit_paste_exif, ' checked')>>Exifも貼り付ける</label>
 	<li>キャプション <input type="text" name="paste_caption" id="paste-caption" class="w200">
-	<li>表示 <select id="paste-class" name="paste_class" class="js-save">
+	<li>表示 <select id="paste-class" name="paste_class">
 		<option value="">そのまま</option>
-		<option value="center">センタリング</option>
-		<option value="float-l">左寄せ（回り込み）</option>
-		<option value="float-r">右寄せ（回り込み）</option>
+		<option value="center" <@if(s.edit_paste_class eq 'center',  ' selected')>>センタリング</option>
+		<option value="float-l"<@if(s.edit_paste_class eq 'float-l', ' selected')>>左寄せ（回り込み）</option>
+		<option value="float-r"<@if(s.edit_paste_class eq 'float-r', ' selected')>>右寄せ（回り込み）</option>
 	</select>
 </ul>
 
@@ -381,10 +371,6 @@
 
 </form><!-- End of upload dialog -->
 
-
-<div id="size-other" data-title="サムネイルサイズ">
-<input type="number" value="120" class="w50" min="60" max="800">px （60～800）
-</div>
 
 <@> 更新履歴ダイアログ
 <div id="revision-dialog">

@@ -3,7 +3,7 @@
 <$ifsuperjump_clear(! v.allow_edit, '_sub/error_message_403', 'ブログが存在しないか権限がありません')>
 
 <@> システムモード
-<$v.system_mode("画像アルバム")>
+<$v.system_mode("メディア")>
 
 <@> 階層ツリー
 <@ifexec(v.allow_edit, begin)>
@@ -22,7 +22,7 @@
 <$v.regist_js    ("<@v.script_dir>album.js")>
 
 
-<@call('album/_main')>
+<@call('media/_main')>
 
 <div id="element-box" style="display:none">
 <!--=========================================================================-->
@@ -64,20 +64,10 @@
 <@> ダイアログ
 <div id="move-dialog" data-title="移動先を選択" data-ok="移動する" data-cancel="キャンセル">
 </div>
-<div id="remake-thumbnail-dialog" data-title="サムネイルのサイズ" data-ok="再生成する" data-cancel="キャンセル">
-<select id="dialog-thumbnail-size" class="r js-save js-combo" data-target="#size-other" data-format="%vpx">
-			<option value="120" selected>120px</option>
-			<option value="160">160px</option>
-			<option value="240">240px</option>
-			<option value="320">320px</option>
-			<option value="480">480px</option>
-			<option value="640">640px</option>
-</select>
-</div>
-
-<@> その他のサイズ入力
-<div id="size-other" data-title="サムネイルサイズ">
-<input type="number" value="120" class="w50" min="60" max="800">px （60～800）
+<@> サムネイルの大きさは編集画面の設定で決める（v.thumbnail_size）。動画のサムネイルを作るときに使う
+<div id="remake-thumbnail-dialog" data-title="サムネイルの再生成" data-ok="再生成する" data-cancel="キャンセル" data-size="<@v.thumbnail_size()>">
+選択したファイルのサムネイルを、<@v.thumbnail_size()>pxで作り直します。<br>
+大きさは<a href="<@v.myself>?set/editor">編集画面の設定</a>で変えられます。
 </div>
 
 <!--=========================================================================-->

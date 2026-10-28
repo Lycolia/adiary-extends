@@ -102,12 +102,11 @@
 <$secure_id  = v.make_comment_token( t.pkey )>
 <$secure_ary = string2ordary( secure_id )>
 <aside class="comment comments" id="com">
-	<details class="comment-switch" open>
-	<summary class="caption"><span class="caption-title">コメント</span><span class="com-num">（<span class="num"><@coms></span>件）</span>
+	<div class="caption"><span class="caption-title">コメント</span><span class="com-num">（<span class="num"><@coms></span>件）</span>
 	<@ifexec(view && view<coms, begin)>
 	<span class="abbr-msg"><a href="<@permalink>?&amp;c=all#com">※古いコメントもすべて表示</a></span>
 	<$end>
-	</summary>
+	</div>
 	<div class="commentbody" id="c<@t.pkey>n-block">
 	<div class="commentview">
 	<@ifexec(coms && v.allow_edit, begin)>
@@ -121,7 +120,7 @@
 	<$cary = v.load_comments_current_blog(t, view)>
 	<$v.remove_newcom_flag(cary)>
 	<@forexec(c, cary, begin)>
-	<div class="comment-one<@if(c.by_admin, ' comment-admin')><@if(!c.enable, if(c.hidden, ' comment-hidden', ' comment-disable'))>" id="c<@c.num>">
+	<div class="comment-one<@if(c.by_admin, ' comment-admin')><@if(!c.enable, ' comment-disable')>" id="c<@c.num>">
 		<div class="commentator">
 			<span class="canchor"><a href="#c<@c.num>"><@c.num></a>:</span>	<@\>
 			<@ifexec(v.allow_edit, begin)>	<@\>
@@ -131,7 +130,7 @@
 			<@ifexec(c.url, begin)><span class="comment-url"><a href="<@c.url>" rel="nofollow ugc noopener noreferrer">URL</a></span><$end>
 			<span class="comment-date"><@print_tmf('%Y/%m/%d %H:%M:%S',c.tm)></span>
 			<@ifexec(!c.enable, begin)>
-			<@if(c.hidden, '<strong class="comment-hidden">（非公開コメント）', '<strong class="comment-disable">（非表示）')></strong>
+			<strong class="comment-disable">（非表示）</strong>
 			<$end>
 			<@if(v.allow_edit, '</label>')>
 		</div>
@@ -149,7 +148,6 @@
 	<button type="submit" name="disable" class="js-check-form" data-confirm="">非表示に設定</button>
 	<$end>
 	<button type="submit" name="delete"  class="js-check-form" id="del-submit" data-confirm="%c件のコメントを削除しますか？" data-focus="cancel">削除</button>
-	<@if(t.enable, '<span class="help-text">非公開コメントは表示することはできません</span>')>
 	</div>
 	</form>
 	<$end>
@@ -162,7 +160,6 @@
 	<@call('_sub/comment_form', 'dec_comment-form', t, permalink)>
 <@>$COMMENT_BOTTOM$------------------------------------------------------------
 	</div> <!-- commentbody -->
-	</details>
 </aside> <!-- comment -->
 <$end>
 </div> <!-- article-box -->

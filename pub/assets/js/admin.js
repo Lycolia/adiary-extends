@@ -10,6 +10,56 @@
 // 公開画面の処理（adiary.js）。asys.js を読んだページでは、adiary は asys.js（$$）になる
 const adiary_public = window.adiary_public;
 
+//##############################################################################
+// ■ダイアログのドラッグ（asys.js の $.fn.adiaryDraggable を置き換える）
+//##############################################################################
+// asys.js の版は、ダイアログの中のすべての mouseup で preventDefault する。
+// そのため、ダイアログの中の数値入力の矢印を押して離しても、値が増え（減り）続ける
+// （Chromeでは、離したときの既定の動作で繰り返しを止めるため）。
+// asys.min.js は元のソースがリポジトリに無いので、ここで mouseup の preventDefault だけを除いた版にする。
+// ダイアログは asys.js の初期化（DOMContentLoaded）より後に開くので、ここで置き換えれば足りる
+$.fn.adiaryDraggable = function(opt) {
+	let sx;
+	let sy;
+	let $obj;
+	this.addClass('aui-draggable');
+
+	this.on('mousedown', function(evt){
+		$('iframe').css('pointer-events', 'none');
+		const $tar = $(evt.target);
+		$obj = $tar.hasClass('aui-draggable') ? $tar : $tar.parentsOne('.aui-draggable');
+
+		if (opt) {
+			const $o = $tar;
+			if ($tar != $obj) $o.add($tar.parentsUntil('.aui-draggable'));
+			if (opt.cancel &&  $o.filter(opt.cancel).length) return;
+			if (opt.handle && !$o.filter(opt.handle).length) return;
+		}
+		const p = $obj.offset();
+		sx = p.left - evt.pageX;
+		sy = p.top  - evt.pageY;
+		document.addEventListener('mousemove', move);
+		evt.preventDefault();
+		return;
+	});
+
+	this.on('mouseup', function(evt){
+		$('iframe').css('pointer-events', 'auto');
+		document.removeEventListener('mousemove', move);
+	});
+
+	function move(evt) {
+		const x = sx + evt.pageX;
+		const y = sy + evt.pageY;
+		$obj.css({
+			position:	'absolute',
+			left:		x + 'px',
+			top:		y + 'px'
+		});
+		evt.preventDefault();
+	}
+};
+
 $(function(){
 //##############################################################################
 // ■initalize
@@ -401,14 +451,14 @@ $$.prepend_css = function(file) {
 //●動画のサムネイルを作って送る
 ////////////////////////////////////////////////////////////////////////////////
 // サーバーではコマンドを動かさず、ブラウザーで動画の1コマを切り出してJPEGにする。
-// 記事用（長い辺1280px）と画像アルバム用（opt.size）の2つを album/upload_video_thumbnail に送る
+// 記事用（長い辺960px）と画像アルバム用（opt.size）の2つを media/upload_video_thumbnail に送る
 //	opt.url    : 動画のURL
 //	opt.folder : 画像アルバムのフォルダ（posts/2026/）
 //	opt.name   : 動画のファイル名
 //	opt.size   : アルバム用のサムネイルの大きさ（px）
 //	ret        : Promise。再生できない形式などで作れなければ reject
 //
-const VIDEO_POSTER_MAX = 1280;
+const VIDEO_POSTER_MAX = 960;	// 記事での既定の表示（480px）の2倍
 const VIDEO_LOAD_TIMEOUT = 30000;
 
 $$.make_video_thumbnail = function(opt) {
@@ -419,7 +469,7 @@ $$.make_video_thumbnail = function(opt) {
 		return Promise.all([ video_to_jpeg(v, VIDEO_POSTER_MAX), video_to_jpeg(v, size) ]);
 	}).then(function(blobs){
 		const fd = new FormData();
-		fd.append('action', 'album/upload_video_thumbnail');
+		fd.append('action', 'media/upload_video_thumbnail');
 		fd.append('folder', opt.folder);
 		fd.append('file',   opt.name);
 		fd.append('poster', blobs[0], 'poster.jpg');

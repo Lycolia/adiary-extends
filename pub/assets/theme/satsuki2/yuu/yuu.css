@@ -559,10 +559,6 @@ div.commentator {
 div.comment-text {
 	margin-left:		2em;
 }
-/* 非公開コメント */
-.comment-hidden {
-	color:			#0ac;
-}
 /* 非表示コメント */
 .comment-disable {
 	color:			#c00;

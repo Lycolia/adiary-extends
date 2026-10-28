@@ -212,13 +212,13 @@ nav.page-nav a { overflow-wrap: anywhere; }
 nav.page-nav .prev-page { margin-right: auto; }
 nav.page-nav .upnode-page { margin: 0 auto; text-align: center; }
 nav.page-nav .next-page { margin-left: auto; text-align: right; }
-/* 矢印は base.css のアイコンではなく文字にする */
-nav.page-nav a.prev-page::before, nav.page-nav a.upnode-page::before, nav.page-nav a.next-page::after {
+/* 矢印は base.css のアイコンではなく文字にする。行けない方向の見えない span（base.css）も、リンクと同じ幅にする */
+nav.page-nav .prev-page::before, nav.page-nav .upnode-page::before, nav.page-nav .next-page::after {
 	width: auto; height: auto; vertical-align: baseline; background: none;
 }
-nav.page-nav a.prev-page::before { content: "← "; }
-nav.page-nav a.upnode-page::before { content: "↑ "; }
-nav.page-nav a.next-page::after { content: " →"; }
+nav.page-nav .prev-page::before { content: "← "; }
+nav.page-nav .upnode-page::before { content: "↑ "; }
+nav.page-nav .next-page::after { content: " →"; }
 
 /*--------------------------------------------------------------------
 ■記事
@@ -369,9 +369,9 @@ div.body-main > div > strong.warning { display: block; border: 1px solid #e0a800
 /* 参照元（_skel/_article.html）。見出しはコメントの見出しに合わせる */
 .backlinks-title { margin: 0 0 .5rem; font-size: 1.1rem; }
 .backlinks-list { margin: 0; padding-left: 1.5rem; }
-#com summary.caption { margin: 0 0 .5rem; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-#com summary.caption .com-num { font-weight: normal; color: var(--muted); font-size: .95rem; }
-#com summary.caption .abbr-msg { font-size: .85rem; font-weight: normal; margin-left: .5em; }
+#com div.caption { margin: 0 0 .5rem; font-size: 1.1rem; font-weight: bold; }
+#com div.caption .com-num { font-weight: normal; color: var(--muted); font-size: .95rem; }
+#com div.caption .abbr-msg { font-size: .85rem; font-weight: normal; margin-left: .5em; }
 #com div.swiches { margin-bottom: .5rem; font-size: .9rem; }
 div.comment-one { border-bottom: 1px solid var(--border); padding: .5rem 0; }
 div.commentator { color: var(--muted); font-size: .9rem; }
@@ -380,7 +380,7 @@ span.commentator.author { color: var(--text); font-weight: bold; margin-right: .
 span.commentator.author.login-user { color: var(--strong); }
 .comment-badge { border: 1px solid var(--border); padding: 0 .25em; font-size: .8rem; font-weight: normal; }
 div.comment-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: .25rem 0 0; }
-.comment-hidden, .comment-disable { color: var(--muted); }
+.comment-disable { color: var(--muted); }
 div.ip-host-agent { display: none; color: var(--muted); font-size: .85rem; }
 #com-form-separator { border: 0; border-top: 1px solid var(--border); margin: 1rem 0; }
 #comment-form { margin-top: 1rem; }

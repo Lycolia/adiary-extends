@@ -1,0 +1,138 @@
+<@7>
+<@local(logs,hits,t,x,opt,first,y_first,y_now,types,loads,page,pages,page_offset,page_max,base,url)>
+
+<!--=========================================================================-->
+<@> システムモード
+<$v.system_mode("操作の記録")>
+
+<@> 階層ツリー、権限チェック、エラー表示
+<@call("_sub/menu_tree")>
+
+<@>-----------------------------------------------
+<@> 検索、条件指定ロジック
+<@>-----------------------------------------------
+<$types = begin_hash>
+	login  = ログイン
+	logout = ログアウト
+	regist = 追加
+	update = 変更
+	delete = 削除
+<$end>
+
+<$page  = int(Query.page)  || 1>
+<$loads = int(Query.loads) || 100>
+<$ifset(loads < 10, loads, 10)>
+
+<$opt = {}>
+<$opt.limit  = loads>
+<$opt.offset = loads*(page-1)>
+<@> 保存するときにタグをエスケープしているので、そろえてから比べる
+<$opt.id     = esc(Query.id)>
+<$opt.type   = if(types.(Query.type), Query.type)>
+<$opt.result = if(Query.result eq 'ok' || Query.result eq 'fail', Query.result)>
+<$opt.year   = int(Query.year)>
+<$opt.mon    = int(Query.mon)>
+
+<$(logs,hits) = Auth.load_logs(opt)>
+
+<@> 年の選択肢は、いちばん古い記録の年から今年まで
+<$x = {}>
+<$x.limit = 1>
+<$x.sort  = 'tm'>
+<$first   = Auth.load_logs(x)>
+<$y_now   = int(print_tmf('%Y'))>
+<$y_first = if(first#0, int(print_tmf('%Y', first#0.tm)), y_now)>
+
+<@>-----------------------------------------------
+<@> ページ送りロジック
+<@>-----------------------------------------------
+<$pages = int((hits+loads-1)/loads)>
+<$page_offset = if(6<page, page-6, 0)>
+<$page_max    = page_offset+10>
+<$ifset(pages<page_max, page_max, pages)>
+<$page_offset = page_max - 10>
+<$ifset(page_offset<0, page_offset, 0)>
+
+<@> 文字列の中では関数を呼べないので、エンコードは先に済ませる
+<$x    = encode_uricom(x = Query.id)>
+<$base = "<@v.myself>?<@v.skeleton>&amp;loads=<@loads>&amp;">
+<$url  = "<@base>id=<@x>&amp;type=<@opt.type>&amp;result=<@opt.result>&amp;year=<@opt.year>&amp;mon=<@opt.mon>&amp;">
+
+<!--=========================================================================-->
+<article class="system setting">
+<h2><@v.title></h2>
+<div class="body">
+	<form action="<@v.myself>" method="GET">
+	<input type="hidden" name="_" value="<@v.skeleton>">
+	<p>
+		ID <input type="text" name="id" value="<@opt.id>" class="w120">
+		種類<select name="type">
+			<option value="">すべて</option>
+			<@foreach_hash(t, types, begin)>
+			<option value="<@t.key>"<@if(opt.type eq t.key, ' selected')>><@t.val></option>
+			<$end>
+		</select>
+		結果<select name="result">
+			<option value="">すべて</option>
+			<option value="ok"  <@if(opt.result eq 'ok',   ' selected')>>成功</option>
+			<option value="fail"<@if(opt.result eq 'fail', ' selected')>>失敗</option>
+		</select>
+		期間<select name="year">
+			<option value="">すべて</option>
+			<@foreach_num(x, y_first, y_now, begin)>
+			<$t = y_now + y_first - x>
+			<option value="<@t>"<@if(opt.year == t, ' selected')>><@t>年</option>
+			<$end>
+		</select>
+		<select name="mon">
+			<option value="">－</option>
+			<@foreach_num(x, 12, begin)>
+			<option value="<@x>"<@if(opt.mon == x, ' selected')>><@x>月</option>
+			<$end>
+		</select>
+		表示<select name="loads" class="r">
+			<option value="50" <@if(loads== 50,' selected')>>50件</option>
+			<option value="100"<@if(loads==100,' selected')>>100件</option>
+			<option value="200"<@if(loads==200,' selected')>>200件</option>
+		</select>
+		<button type="submit">絞り込む</button>
+	</p>
+	</form>
+
+	<@ifexec(pages>1, begin)>
+	<nav class="page-nav">
+		<@if(1<page, #'<a href="<@url>page=' . (page-1) . '">&lt;</a>', '<a>&lt;</a>')> 
+		<@foreach_num(x, page_max-page_offset, begin)>
+			<$t = page_offset + x>
+			<@if(t!=page, #'<a href="<@url>page=<@t>"><@t></a>', "<strong><@t></strong>")> 
+		<$end>
+		<@if(page<pages, #'<a href="<@url>page=' . (page+1) . '">&gt;</a>', '<a>&gt;</a>')>
+	</nav>
+	<$end>
+
+	<table class="list-table">
+	<thead><tr>
+		<th>日時</th><th>ID</th><th>種類</th><th>結果</th><th>IPアドレス</th><th>ホスト</th><th>User-Agent</th>
+	</tr></thead>
+	<tbody class="small">
+	<@forexec(t, logs, begin)>
+	<tr>
+		<td class="c"><@print_tmf('%Y/%m/%d %H:%M:%S', t.tm)></td>
+		<td><@t.id></td>
+		<td><@types.(t.type) || t.type></td>
+		<@ifexec(t.msg eq '', begin, begin)>
+		<td>成功</td>
+		<$else>
+		<td><strong class="warning"><@if(t.msg eq 'fail', '失敗', if(t.msg eq 'fail (IP)', '失敗（IP制限）', t.msg))></strong></td>
+		<$end>
+		<td><@t.ip></td>
+		<td><@t.host></td>
+		<td class="list-wide"><@t.agent></td>
+	</tr>
+	<$end>
+	</tbody>
+	</table>
+
+	<p>全<@int(hits)>件</p>
+</div> <!-- end of body -->
+</article>

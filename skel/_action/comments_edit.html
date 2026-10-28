@@ -3,9 +3,9 @@
 <$ifbreak(!v.allow_edit)>
 
 <$ifset(exists(Form.enable ), mode, 'enable'  )>
-<$ifset(exists(Form.enable ), msg , '%d件のコメントを新たに表示しました')>
+<$ifset(exists(Form.enable ), msg , '%d件のコメントを承認しました')>
 <$ifset(exists(Form.disable), mode, 'disable' )>
-<$ifset(exists(Form.disable), msg , '%d件のコメントを非表示にしました')>
+<$ifset(exists(Form.disable), msg , '%d件のコメントの承認を取り消しました')>
 <$ifset(exists(Form.delete ), mode, 'delete'  )>
 <$ifset(exists(Form.delete ), msg , '%d件のコメントを削除しました')>
 

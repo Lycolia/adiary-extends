@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Perl Debug",
+      "type": "perl",
+      "request": "launch",
+      "program": "${workspaceFolder}/t/tools/bench.pl",
+      "args": ["hoge"]
+    },
+    {
+      "name": "lyndbaum.httpd.pl",
+      "type": "perl",
+      "request": "launch",
+      "program": "${workspaceFolder}/lyndbaum.httpd.pl",
+      "args": ["-D", "-p", "8888"],
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": false
+    },
+    {
+      "name": "lyndbaum.cgi",
+      "type": "perl",
+      "request": "launch",
+      "program": "${workspaceFolder}/lyndbaum.cgi",
+      "cwd": "${workspaceFolder}",
+      "stopOnEntry": false,
+      "env": {
+        "REQUEST_METHOD": "GET",
+        "SCRIPT_NAME": "/lyndbaum.cgi",
+        "REQUEST_URI": "/lyndbaum.cgi/",
+        "SERVER_NAME": "localhost",
+        "SERVER_PORT": "80",
+        "SERVER_PROTOCOL": "HTTP/1.1",
+        "REMOTE_ADDR": "127.0.0.1",
+        "HTTP_COOKIE": ""
+      }
+    }
+  ]
+}

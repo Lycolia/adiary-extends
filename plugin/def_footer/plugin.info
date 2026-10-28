@@ -7,7 +7,7 @@ author=nabe@abk
 url=https://twitter.com/nabe_abk
 license=WTFPL
 
-adiary_version=2.94
+adiary_version=4.18
 module_type=frame
 
 load_module_html_in_edit=1
@@ -15,7 +15,7 @@ module_id=footer
 
 *sample_html=<<HTML
 <footer id="<@id>" data-fix="1"><!--フッタ-->
-<span class="adiary"><a href="http://adiary.org/" title="HTML5 open source CMS">adiary</a> Version 3.00</span>
+<span class="adiary"><a href="https://github.com/Lycolia/lyndbaum4" title="Neo-Modern High-performance CMS">Lyndbaum</a> Version 4.18 (based on <a href="https://adiary.org/">adiary</a> 3.52dev)</span>
 </footer>
 HTML
 
@@ -25,7 +25,7 @@ HTML
 <footer id="<@id>" data-module-name="<@this>" data-fix="1"><!--フッタ-->
 <@ps.footer_txt>
 <@ifexec(ps.outver ne '0', begin)>
-<div class="adiary"><a href="http://adiary.org/" title="HTML5 open source CMS">adiary</a> Version <@v.OUTVERSION></div>
+<div class="adiary"><a href="<@v.REPOSITORY_URL>" title="<@v.SYSTEM_DESCRIPTION>"><@v.SYSTEM_NAME></a> Version <@v.OUTVERSION> (based on <a href="https://adiary.org/">adiary</a> 3.52dev)</div>
 <$end>
 </footer>
 HTML

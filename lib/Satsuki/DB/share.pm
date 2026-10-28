@@ -9,7 +9,6 @@ our $VERSION = '1.11';
 use Exporter 'import';
 our @EXPORT = qw(
 	select_match_pkey1 select_match_limit1 select_match
-	select_where_pkey1 select_where_limit1 select_where
 	set_debug set_noerror debug warning error
 	embed_timer_wrapper
 );
@@ -48,29 +47,6 @@ sub select_match {
 	return $self->select($table, \%h);
 }
 
-#-------------------------------------------------------------------------------
-# ●for RDB
-#-------------------------------------------------------------------------------
-sub select_where_pkey1 {
-	my $self  = shift;
-	my $table = shift;
-	my $where = shift;
-	my $h = $self->select($table, { RDB_where=>$where, RDB_values=>\@_, limit => 1, cols => 'pkey' })->[0];
-	return $h && $h->{pkey};
-}
-sub select_where_limit1 {
-	my $self  = shift;
-	my $table = shift;
-	my $where = shift;
-	return $self->select($table, { RDB_where=>$where, RDB_values=>\@_, limit => 1 })->[0];
-}
-sub select_where {
-	my $self  = shift;
-	my $table = shift;
-	my $where = shift;
-	return $self->select($table, { RDB_where=>$where, RDB_values=>\@_ });
-}
-
 ################################################################################
 # ■エラー処理
 ################################################################################
@@ -93,12 +69,9 @@ sub debug {
 	my $self = shift;
 	if (!$self->{DEBUG}) { return; }
 
-	my $sql  = shift;
-	my @ary  = @{ shift || [] };
+	my $msg  = shift;
 	my $ROBJ = $self->{ROBJ};
-
-	$sql =~ s/\?/@ary ? ($ary[0] =~ m|^\d+$| ? shift(@ary) : "'" . shift(@ary) . "'") : '?'/eg;
-	$ROBJ->_debug('['.$self->{_RDBMS}.'] '.$sql, 1);	# debug-safe
+	$ROBJ->_debug('['.$self->{_RDBMS}.'] '.$msg, 1);	# debug-safe
 }
 sub warning {
 	my $self = shift;

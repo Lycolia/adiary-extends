@@ -46,6 +46,15 @@ sub load_arts_list {
 		# エスケープした状態で保存されているのでエスケープして検索する必要がある
 		$ROBJ->tag_escape(@{ $h{search_words} });
 	}
+	# 種類で絞り込む（art:記事だけ、page:ページだけ、それ以外はすべて）
+	my $type = $opt->{type};
+	if ($type eq 'art') {
+		$h{match}     = { ctype => '' };
+	} elsif ($type eq 'page') {
+		$h{not_match} = { ctype => '' };
+	} else {
+		$type = '';
+	}
 
 	# オフセット、ロード数
 	if ($opt->{offset}) {
@@ -55,6 +64,10 @@ sub load_arts_list {
 		$h{limit} = int($opt->{loads});
 	}
 
+	# 公開・非公開で絞り込む（1:公開だけ、0:非公開だけ、それ以外はすべて）
+	my $enable = $opt->{enable};
+	if ($enable ne '1' && $enable ne '0') { $enable = ''; }
+
 	# ロード対象記事オプション
 	if (! $self->{allow_edit}) {
 		$h{flag} = {enable => 1};
@@ -62,6 +75,9 @@ sub load_arts_list {
 		$h{is_null} = ['tm'];
 	} elsif (!$opt->{load_draft}) {
 		$h{not_null} = ['tm'];
+	}
+	if ($self->{allow_edit} && $enable ne '') {
+		$h{flag} = {enable => int($enable)};
 	}
 
 	# ロードカラム
@@ -79,6 +95,8 @@ sub load_arts_list {
 	$ret{hits} = $hits;
 	$ret{sort} = $sort;
 	$ret{rev}  = $rev;
+	$ret{type} = $type;
+	$ret{enable} = $enable;
 	return wantarray ? ($logs, \%ret) : $logs;
 }
 
@@ -94,7 +112,7 @@ sub load_coms_list {
 	my $rev  = $opt->{rev};
 
 	# sortのチェック
-	my %a = ('enable'=>1,'tm'=>1,'name'=>1,'a_yyyymmdd'=>1);
+	my %a = ('hold'=>1,'tm'=>1,'name'=>1,'a_yyyymmdd'=>1);
 	$sort =~ s/\W//g;
 	if (!$a{$sort} || $sort eq '') { $sort='tm'; }
 	$rev = ($rev eq '' || $rev) ? 1 : 0;
@@ -111,9 +129,17 @@ sub load_coms_list {
 		$h{limit} = int($opt->{loads});
 	}
 
+	# 承認待ちかどうかで絞り込む（1:承認待ちだけ、0:承認済みだけ、それ以外はすべて）
+	my $hold = $opt->{hold};
+	if ($hold ne '1' && $hold ne '0') { $hold = ''; }
+
 	# ロード対象記事オプション
 	if (! $self->{allow_edit}) {
 		$h{flag} = {enable => 1};
+	} elsif ($hold eq '1') {
+		$h{flag} = {hold => 1};
+	} elsif ($hold eq '0') {
+		$h{not_match} = {hold => 1};	# holdが無い頃のコメントは空なので、1でないものを選ぶ
 	}
 
 	my ($logs,$hits) =  $DB->select("com", \%h);
@@ -128,6 +154,7 @@ sub load_coms_list {
 	$ret{hits} = $hits;
 	$ret{sort} = $sort;
 	$ret{rev}  = $rev;
+	$ret{hold} = $hold;
 	return wantarray ? ($logs,\%ret) : $logs;
 }
 
@@ -259,7 +286,6 @@ sub regist_article {
 	my %art;
 	$art{enable} = $form->{enable}  ? 1 : 0;
 	$art{com_ok} = $form->{com_ok}  ? 1 : 0;
-	$art{hcom_ok}= $form->{hcom_ok} ? 1 : 0;
 	$art{nsfw}   = $form->{nsfw}    ? 1 : 0;
 
 	#-------------------------------------------------------------
@@ -531,6 +557,14 @@ sub regist_article {
 				$opt->{comment_disable} = exists($update{enable});
 			 }
 		}
+		# 公開にしたら、承認済みのコメントを表示に戻す
+		if ($art{enable} && !$old->{enable} && $old->{coms_all}) {
+			my $r = $DB->update_match("com", { enable => 1 }, 'enable', 0, '-hold', 1, 'a_pkey', $pkey);
+			if ($r) { $opt->{comment_edit} = 1; }
+		}
+		if ($art{enable} != $old->{enable} && $opt->{comment_edit}) {
+			$self->calc_comments($pkey);
+		}
 	}
 
 	#-------------------------------------------------------------
@@ -751,7 +785,7 @@ sub json_long_text {
 # ほかの画面（別のタブや端末）で先に保存されていないかを見る。
 # 記事一覧やコンテンツの編集はupdate_tmを変えずに書き換えるので、中身で比べる。
 # コメント数や変換後の本文は、記事を書き換えなくても変わるので入れない。
-my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok nsfw
+my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok nsfw
 		    ctype link_key upnode priority main_image description);
 sub article_digest {
 	my ($self, $art) = @_;
@@ -1574,11 +1608,6 @@ sub post_comment {
 		$ROBJ->message('This article not allow comments');
 		return 12;
 	}
-	if ($form->{hidden} && (! $art->{hcom_ok} || $blog->{hcom_ok_force} eq '0')) {
-		# 非公開コメント不許可
-		$ROBJ->message('This article not allow hidden comments');
-		return 13;
-	}
 	# データ整理
 	if ($auth->{ok}) {
 		$form->{name} = $auth->{name};
@@ -1907,7 +1936,6 @@ sub regist_comment {
 	my $email  = $form->{email};	# 任意
 	my $url    = $form->{url};	# 任意
 	my $text   = $form->{comment_txt} ne '' ? $form->{comment_txt} : $form->{text};
-	my $hidden = $form->{hidden} ? 1 : 0;
 	$text =~ s/^(?:\s*\n)*//;	# 先頭は空行のみ除去
 	$text =~ s/[\s*\n]*$//;		# 末尾は\n\s全部除去
 	$ROBJ->trim($name, $email, $url);
@@ -1957,8 +1985,9 @@ sub regist_comment {
 	if ($opt->{num} != 0) {
 		$com{num} = int($opt->{num});
 	}
-	$com{enable} = ($form->{enable} && !$form->{hidden} && $art->{enable}) ? 1 : 0;
-	$com{hidden} =  $form->{hidden} ? 1 : 0;
+	# 表示しないもの（保留したもの、インポートで非表示だったもの）は承認待ちにする。承認済みでも記事が非公開なら出さない
+	$com{hold}   = $form->{enable} ? 0 : 1;
+	$com{enable} = (!$com{hold} && $art->{enable}) ? 1 : 0;
 
 	# 記事の情報をキャッシュして保存
 	$com{a_pkey}     = $a_pkey;

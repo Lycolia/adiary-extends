@@ -22,7 +22,7 @@ use Getopt::Long ();
 use JSON::PP ();
 
 my %opt = (
-	base	=> 'https://adiary.lycolia.info',
+	base	=> 'https://lyndbaum.lycolia.info',
 	'curl-config' => "$ENV{HOME}/.curl-dev.conf",
 	n	=> 50,
 	warmup	=> 3,
@@ -36,7 +36,6 @@ my @urls = $opt{url} ? @{ $opt{url} } : (
 	'/0501',		# 大きい記事
 	'/?&t=%e3%82%bd%e3%83%95%e3%83%88%e3%82%a6%e3%82%a7%e3%82%a2',	# タグ
 	'/?q=adiary',		# 検索
-	'/?artlist',		# 記事一覧
 );
 
 #-------------------------------------------------------------------------------

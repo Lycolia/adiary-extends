@@ -47,10 +47,6 @@ span.tag:not(:last-child) {
 	margin-right:		0.4em;
 }
 
-/* 非公開コメント */
-.comment-hidden {
-	color:			#808;
-}
 /* 非表示コメント */
 .comment-disable {
 	color:			#800;
@@ -1257,10 +1253,6 @@ div.messages div.message {
 	text-align:		right;
 	margin-right:		1em;
 	display:		none;
-}
-/* 非公開コメント */
-.comment-hidden {
-	color:			#808;
 }
 /* 非表示コメント */
 .comment-disable {

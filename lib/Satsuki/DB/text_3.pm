@@ -169,7 +169,7 @@ sub index_rebuild {
 	# キャッシュをクリアする
 	$self->clear_cache($table);
 
-	$self->{"$table.serial"} = $serial +1;
+	$self->{"$table.serial"} = $serial;	# 振った最大値。次の行は +1 から
 	$self->{"$table.tbl"}    = \@db;
 	$IndexCache{$table}     = \@db;
 	$self->save_index($table, 1);	# force
@@ -196,7 +196,7 @@ sub add_column {
 
 	my $col = $h->{name};
 	$col =~ s/\W//g;
-	if ($col eq '') { return 8; }
+	if ($col eq '') { $self->edit_index_exit($table); return 8; }
 
 	# カラム名の確認
 	my $cols = $self->{"$table.cols"};
@@ -212,13 +212,26 @@ sub add_column {
 	elsif ($h->{type} eq 'text')  { $self->{"$table.str"}  ->{$col}=1; }
 	elsif ($h->{type} eq 'ltext') { $self->{"$table.str"}  ->{$col}=1; }
 	else {
+		$self->edit_index_exit($table);
 		$self->error('Column "%s" have invalid type "%s"', $col, $h->{type});
 		return 10;
 	}
+	# create_table と同じ定義のキーを使う
 	$self->{"$table.cols"}->{$col}=1;
-	if ($h->{unique})  { $self->{"$table.unique"} ->{$col}=1; }	# UNIQUE
-	if ($h->{notnull}) { $self->{"$table.notnull"}->{$col}=1; }	# NOT NULL
-	if ($h->{index} || $h->{unique}) { $self->{"$table.idx"}->{$col}=1; }
+	if ($h->{unique})   { $self->{"$table.unique"} ->{$col}=1; }	# UNIQUE
+	if ($h->{not_null}) { $self->{"$table.notnull"}->{$col}=1; }	# NOT NULL
+	if ($h->{default} ne '') { $self->{"$table.default"}->{$col} = $h->{default}; }
+	if ($h->{index} || $h->{index_tdb} || $h->{unique}) { $self->{"$table.idx"}->{$col}=1; }
+
+	# 既存の行に既定値を入れる（RDBの ADD COLUMN ... DEFAULT と同じ）
+	if ($h->{default} ne '') {
+		my $v = $self->check_column_type($table, { $col => $h->{default} }, 1)->{$col};
+		$self->load_allrow($table);
+		foreach(@{ $self->{"$table.tbl"} }) {
+			$_->{$col} = $v;
+			$self->write_rowfile($table, $_);
+		}
+	}
 
 	# index の保存
 	$self->save_index($table);
@@ -298,18 +311,17 @@ sub add_index {
 	}
 
 	# テーブル情報の書き換え
+	$column =~ s/\W//g;
 	my $cols = $self->{"$table.cols"};
 	my $idx  = $self->{"$table.idx"};
-	if (! grep { $_ eq $column } @$cols) {	# カラムが存在しない
+	if (! $cols->{$column}) {	# カラムが存在しない
 		$self->edit_index_exit($table);
 		$self->error("On '%s' table, not exists '%s' column", $table, $column);
 		return 8;
 	}
-	if (! grep { $_ eq $column } @$idx) {	# index に追加
-		push(@$idx, $column);
-		my $dir     = $self->{dir} . $table . '/';
-		my $ext = $self->{ext};
-		$self->load_allrow($table);
+	if (! $idx->{$column}) {	# index に追加
+		$idx->{$column}=1;
+		$self->load_allrow($table);	# indexに書く値を行ファイルから読む
 	}
 	# index の保存
 	$self->save_index($table);

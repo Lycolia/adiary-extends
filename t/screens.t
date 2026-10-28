@@ -30,7 +30,7 @@ sub esc { AppTest::_uri_escape(shift) }
 #-------------------------------------------------------------------------------
 # 引数が要る画面は、画面の中のリンクと同じ引数を付ける
 my @ADMIN = qw(
-	menu personal/ edit /01?edit trash artlist comlist album/
+	menu personal/ edit /01?edit trash artlist comlist media/
 	set/ set/detail set/role set/editor
 	set2/ set2/tag_edit set2/contents_edit set2/usertag set2/header
 	design/ design/theme design/edit design/reset design/usercss design/art_sample
@@ -38,7 +38,7 @@ my @ADMIN = qw(
 	plugin/ plugin/modules plugin/mainte
 	plugin/plugin_setting&name=des_clock plugin/plugin_readme&name=des_clock
 	mainte/ mainte/blog_clear mainte/import mainte/import_img mainte/export
-	user/ user/add user/edit&id=user
+	user/ user/add user/edit&id=user user/log user/log&id=user&type=login&result=fail&year=2026&mon=10&page=2
 	system/setting system/update system/check system/copyright
 	etc/allow_tags&n=article etc/allow_tags&n=header etc/allow_tags&n=description
 	etc/satsuki_tags etc/parser_debug etc/load_session etc/ajax_dummy

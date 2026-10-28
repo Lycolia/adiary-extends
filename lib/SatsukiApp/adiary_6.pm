@@ -61,7 +61,8 @@ my @update_versions = (
 	{ ver => 4.16, plugin=>1, func => 'sys_update_416', rebuild_cond=>[	# ソーシャルボタンに汎用の共有ボタンを足した。記事にNSFWのフラグを足した
 		'\[youtube:', 'youtube\.com/watch',	# YouTubeはサムネイルだけを出す。動画は、アップデートの後にブラウザーでサムネイルを作ったときに作り直す
 		'\(\('					# 注釈（(())）の一覧が出ない、番号が続く、同じidが重なる、を直した
-	]}
+	]},
+	{ ver => 4.18, plugin=>1, func => 'sys_update_418' }	# 非公開コメントを廃止した。コメントフォームと記事のスケルトンは、デザインの作り直しで作り直す。コメントに承認待ち（hold）を足した
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -420,6 +421,51 @@ sub sys_update_416 {
 }
 
 #-------------------------------------------------------------------------------
+# ●システムアップデート for Ver4.18
+#-------------------------------------------------------------------------------
+# 非公開コメントを廃止した。書いた本人も見られず、やり取りもできないため
+# 残っている非公開コメントを消し、記事とコメントのテーブルからカラムを消す
+# コメントに承認待ち（hold）を足す。今あるコメントは承認済みとして扱うので、値は入れない
+sub sys_update_418 {
+	my $self = shift;
+	my $DB   = $self->{DB};
+
+	# 定義から外した後に作ったブログにはカラムが無く、エラーになるので出さない
+	my $noerr = $DB->set_noerror(1);
+
+	# 消した後は、edit_comment の削除と同じようにコメント数を数え直してイベントを呼ぶ
+	my $ary = $DB->select_match("com", 'hidden', 1, '*cols', ['pkey', 'a_pkey']) || [];
+	my @keylist = map { $_->{pkey} } @$ary;
+	if (@keylist) {
+		my %a_pkeys = map { $_->{a_pkey} => 1 } @$ary;
+		my @a_pkeys = sort { $a <=> $b } keys(%a_pkeys);
+		my $cnt = $DB->delete_match("com", 'pkey', \@keylist);
+		foreach(@a_pkeys) {
+			$self->calc_comments($_);
+		}
+		$self->call_event('COMMENTS_DELETE',      \@a_pkeys, \@keylist, $cnt);
+		$self->call_event('COMMENT_STATE_CHANGE', \@a_pkeys, \@keylist);
+		$self->call_event('ARTCOM_STATE_CHANGE',  \@a_pkeys, \@keylist);
+	}
+	$DB->delete_match("trashcom", 'hidden', 1);
+
+	$DB->drop_column("com",      'hidden');
+	$DB->drop_column("trashcom", 'hidden');
+	$DB->drop_column("art",      'hcom_ok');
+	$DB->drop_column("trash",    'hcom_ok');
+	$DB->set_noerror($noerr);
+
+	my $r = $DB->add_column("com",      {name=>'hold', type=>'flag'});
+	$r   += $DB->add_column("trashcom", {name=>'hold', type=>'flag'});
+	if ($r) { $self->{ROBJ}->message("Blog database error(%s)", $r); }
+
+	my $blog = $self->{blog};
+	foreach(qw(hcom_ok hcom_ok_force p:dec_comment-form:hidden_help)) {
+		$self->update_blogset($blog, $_, undef);
+	}
+}
+
+#-------------------------------------------------------------------------------
 # ●データの持ち方の変更（Ver4.10）
 #-------------------------------------------------------------------------------
 # ブログは1つだけにしたので、ブログIDを使わない持ち方にする。
@@ -552,7 +598,7 @@ sub move_dir_files_410 {
 # ●システムアップデート for Ver4.11
 #-------------------------------------------------------------------------------
 # 4.09〜4.11で消した機能の設定を片付ける
-# ・設定ファイル（adiary.conf.cgi）：公開フォルダのパスの定数、消したパーサー、消した設定
+# ・設定ファイル（lyndbaum.conf.cgi）：公開フォルダのパスの定数、消したパーサー、消した設定
 # ・ブログの設定とシステムの設定：消した機能のキー
 # ・新しいブログの初期設定のファイル（data/default_setting.dat）
 sub sys_update_411 {
@@ -585,9 +631,9 @@ sub sys_update_411 {
 }
 
 #-------------------------------------------------------------------------------
-# ●設定ファイル（adiary.conf.cgi）の書き換え（Ver4.11）
+# ●設定ファイル（lyndbaum.conf.cgi）の書き換え（Ver4.11）
 #-------------------------------------------------------------------------------
-# 設定ファイルはgitで管理していないので、見本（adiary.conf.cgi.sample）を変えても届かない。
+# 設定ファイルはgitで管理していないので、見本（lyndbaum.conf.cgi.sample）を変えても届かない。
 # 書き換える前のファイルは、データのフォルダに写しておく。書き込めなければ、消す行を知らせる
 my %Conf_path_411 = (
 	pubdist_dir	=> [ 'pub-dist/', 'pub/assets/dist/'  ],

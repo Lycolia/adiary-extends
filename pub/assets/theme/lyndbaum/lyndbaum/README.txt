@@ -1,7 +1,7 @@
 Title: lyndbaum
 Template: lyndbaum
 Author: Lycolia
-Access: https://github.com/Lycolia/adiary-extends
+Access: https://github.com/Lycolia/lyndbaum4
 License: AGPLv3
 Smartphone: yes
 Responsive: yes

@@ -3,13 +3,13 @@ use utf8;
 #-------------------------------------------------------------------------------
 # 画面と操作のテスト用ヘルパー
 #-------------------------------------------------------------------------------
-# 一時フォルダに空のデータで adiary を組み立て、adiary.cgi を CGI として呼ぶ。
+# 一時フォルダに空のデータでlyndbaumを組み立て、lyndbaum.cgiをCGIとして呼ぶ。
 # 本物の data/ や pub/ には触らない。
 #
 #	my $app = AppTest->new();		# 空のデータで作る
 #	my $app = AppTest->new(develop => 1);	# 開発モード（テンプレートのエラーを画面に出す）
 #	$app->setup();				# ユーザーとブログを作る
-#	my $r = $app->get('admin', 'menu');	# adminでログインして ?menu を開く
+#	my $r = $app->get('admin', 'menu');	# adminでログインして?menuを開く
 #	my $r = $app->post('admin', 'set/role', { action => 'set/role', ... });
 #
 package AppTest;
@@ -24,10 +24,10 @@ use Cwd ();
 
 my $ROOT = File::Spec->rel2abs( File::Basename::dirname(__FILE__) . '/../..' );
 
-# setup() で作るユーザー
+# setup()で作るユーザー
 #	admin  : システム管理者
-#	owner  : ブログ管理者（ブログの権限設定の admin_users）
-#	editor : 編集者（ブログの権限設定の editors）
+#	owner  : ブログ管理者（ブログの権限設定のadmin_users）
+#	editor : 編集者（ブログの権限設定のeditors）
 #	user   : ログインできるだけのユーザー
 #	guest  : ログインしていない人（Cookieなし）
 our @USERS = qw(admin owner editor user);
@@ -49,11 +49,11 @@ sub new {
 	mkdir("$dir/pub");
 	symlink("$ROOT/pub/assets", "$dir/pub/assets") || die "symlink pub/assets: $!";
 
-	# 設定は配布物の見本を使う（手元の adiary.conf.cgi に左右されないように）
-	_copy("$ROOT/adiary.cgi", "$dir/adiary.cgi");
-	_copy("$ROOT/adiary.conf.cgi.sample", "$dir/adiary.conf.cgi");
+	# 設定は配布物の見本を使う（手元のlyndbaum.conf.cgiに左右されないように）
+	_copy("$ROOT/lyndbaum.cgi", "$dir/lyndbaum.cgi");
+	_copy("$ROOT/lyndbaum.conf.cgi.sample", "$dir/lyndbaum.conf.cgi");
 	if ($opt{develop}) {
-		open(my $fh, '>', "$dir/adiary.env.cgi") || die "adiary.env.cgi: $!";
+		open(my $fh, '>', "$dir/lyndbaum.env.cgi") || die "lyndbaum.env.cgi: $!";
 		print $fh "<\$Develop=1>\n";
 		close($fh);
 	}
@@ -75,10 +75,10 @@ sub dir { $_[0]->{dir} }
 #-------------------------------------------------------------------------------
 # ●リクエスト
 #-------------------------------------------------------------------------------
-# $who はユーザーのID。'guest' ならCookieを送らない
-# $query は ? の後ろ。記事などは '/01' や '/01?edit' のように / から書く（PATH_INFO）
-# $form はハッシュか、同じ名前を何度も送るときは配列（[ name => value, ... ]）。
-# 値を { filename => 'a.png', content => '...' } にすると、ファイルとして multipart で送る
+# $whoはユーザーのID。'guest'ならCookieを送らない
+# $queryは ? の後ろ。記事などは'/01'や'/01?edit'のように/から書く（PATH_INFO）
+# $formはハッシュか、同じ名前を何度も送るときは配列（[ name => value, ... ]）。
+# 値を{ filename => 'a.png', content => '...' }にすると、ファイルとしてmultipartで送る
 sub get {
 	my ($self, $who, $query) = @_;
 	return $self->request($who, 'GET', $query);
@@ -137,8 +137,8 @@ sub request {
 		GATEWAY_INTERFACE => 'CGI/1.1',
 		REQUEST_METHOD  => $method,
 		QUERY_STRING    => $query,
-		REQUEST_URI     => "/adiary.cgi$path" . ($query ne '' ? "?$query" : ''),
-		SCRIPT_NAME     => '/adiary.cgi',
+		REQUEST_URI     => "/lyndbaum.cgi$path" . ($query ne '' ? "?$query" : ''),
+		SCRIPT_NAME     => '/lyndbaum.cgi',
 		PATH_INFO       => $path,
 		SERVER_NAME     => 'localhost',
 		SERVER_PORT     => 80,
@@ -159,7 +159,7 @@ sub request {
 	my $cwd = Cwd::getcwd();
 	chdir($self->{dir}) || die "chdir $self->{dir}: $!";
 	my $err = Symbol::gensym();
-	my $pid = IPC::Open3::open3(my $in, my $out, $err, $^X, 'adiary.cgi');
+	my $pid = IPC::Open3::open3(my $in, my $out, $err, $^X, 'lyndbaum.cgi');
 	chdir($cwd);
 	binmode($in);
 	binmode($out);
@@ -196,7 +196,7 @@ sub _parse_response {
 	}
 	if ($r{headers}->{location} && $r{status} == 200) { $r{status} = 302; }
 
-	# Cookieを覚える（guest は覚えない）。期限切れにされたものは消す
+	# Cookieを覚える（guestは覚えない）。期限切れにされたものは消す
 	foreach (@{$r{cookies}}) {
 		my ($pair, @attr) = split(/;\s*/, $_);
 		my ($name, $val) = split(/=/, $pair, 2);
@@ -222,7 +222,7 @@ sub _parse_response {
 sub setup {
 	my $self = shift;
 
-	# 初期セットアップ：システム管理者がいないので root* で自動ログインする
+	# 初期セットアップ：システム管理者がいないのでroot*で自動ログインする
 	my $r = $self->get('root*', 'login_auto');
 	die "login_auto failed: $r->{status}" if (!$self->{cookie}->{'root*'}->{session});
 
@@ -249,7 +249,7 @@ sub setup {
 	});
 	die "set/role failed: $r->{title}" if (!is_reload($r));
 
-	# 最初に管理画面を開いたときに書くもの（システムの情報の myself など）を、先に書かせておく
+	# 最初に管理画面を開いたときに書くもの（システムの情報のmyselfなど）を、先に書かせておく
 	$self->get($_, 'menu') foreach (@USERS);
 	return $self;
 }
@@ -257,15 +257,15 @@ sub setup {
 #-------------------------------------------------------------------------------
 # ●記事、コメント、画像を置く
 #-------------------------------------------------------------------------------
-# editor の記事（pkey=1）、owner の記事（pkey=2）、ゴミ箱の記事（pkey=3）、
-# 記事1へのコメント（pkey=1）、アルバムのフォルダ test/ と画像 test/a.png、
-# 動画 test/v.mp4（中身は動画ではない。名前で動画として扱われる）を作る
+# editorの記事（pkey=1）、ownerの記事（pkey=2）、ゴミ箱の記事（pkey=3）、
+# 記事1へのコメント（pkey=1）、アルバムのフォルダtest/と画像test/a.png、
+# 動画test/v.mp4（中身は動画ではない。名前で動画として扱われる）を作る
 our $IMAGE_FOLDER = 'test/';
 our $IMAGE_FILE   = 'a.png';
 our $VIDEO_FILE   = 'v.mp4';
 sub seed {
 	my $self = shift;
-	my %art = (parser => 'markdown', enable => 1, com_ok => 1, hcom_ok => 1, ymd => '2026-10-01');
+	my %art = (parser => 'markdown', enable => 1, com_ok => 1, ymd => '2026-10-01');
 	my $r;
 	$r = $self->post('editor', '', { %art, action => 'edit', title => 'editorの記事', body_txt => "本文1\n", tag_ary => 'タグ1' });
 	die "edit 1 failed: $r->{title}" if (!is_reload($r));
@@ -282,11 +282,11 @@ sub seed {
 
 	# アルバムの根元は、画像を初めて置くときに作られる。ここでは先に作っておく
 	mkdir("$self->{dir}/pub/attachments");
-	$r = $self->post('editor', '', { action => 'album/create_folder', folder => '/', name => 'test' });
+	$r = $self->post('editor', '', { action => 'media/create_folder', folder => '/', name => 'test' });
 	die "create_folder failed: $r->{body}" if (!$r->{json} || $r->{json}->{ret} ne '0');
 	_copy("$ROOT/pub/assets/dist/default-icon.png", "$self->{dir}/pub/attachments/$IMAGE_FOLDER$IMAGE_FILE");
 	_copy("$ROOT/pub/assets/dist/default-icon.png", "$self->{dir}/pub/attachments/$IMAGE_FOLDER$VIDEO_FILE");
-	$r = $self->post('editor', '', { action => 'album/refresh' });
+	$r = $self->post('editor', '', { action => 'media/refresh' });
 	return $self;
 }
 
@@ -323,7 +323,7 @@ sub login {
 #-------------------------------------------------------------------------------
 # ●データの指紋
 #-------------------------------------------------------------------------------
-# data/ と pub/ のファイルの中身のハッシュ。権限の無い操作で何も変わらないことを確かめる。
+# data/と pub/のファイルの中身のハッシュ。権限の無い操作で何も変わらないことを確かめる。
 # ログインのたびに変わるもの（セッション、ログインの記録、作業用）は除く。
 # 設定のファイルは保存のたびに行の順番が変わるので、行を並べ替えてから比べる。
 our @IGNORE = (
@@ -358,7 +358,7 @@ sub diff_fingerprint {
 #-------------------------------------------------------------------------------
 # ●今の状態を写す、戻す
 #-------------------------------------------------------------------------------
-# setup() の後の状態を写しておき、壊す操作のたびに戻す
+# setup()の後の状態を写しておき、壊す操作のたびに戻す
 sub snapshot {
 	my $self = shift;
 	my $snap = File::Temp::tempdir('adiary-snap-XXXXXX', TMPDIR => 1, CLEANUP => 1);
@@ -381,7 +381,7 @@ sub _copy_cookie {
 #-------------------------------------------------------------------------------
 # ●Cookie
 #-------------------------------------------------------------------------------
-# ブラウザーのJavaScriptが書くCookie（表示パスワードの view-pass など）を置く
+# ブラウザーのJavaScriptが書くCookie（表示パスワードのview-passなど）を置く
 sub set_cookie {
 	my ($self, $who, $name, $val) = @_;
 	$self->{cookie}->{$who}->{$name} = $val;

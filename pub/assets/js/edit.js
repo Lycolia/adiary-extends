@@ -924,10 +924,6 @@ function open_upload_dialog(files) {
 		$file_div.show();
 	}
 
-	// 設定済サムネイルサイズをロードさせるためのidの細工
-	var thsize = $upform.find('select.thumbnail-size');
-	if (thsize.length==1) thsize.attr('id', 'thumbnail-size');
-
 	// ボタンの設定
 	var buttons = {};
 	var ok_func = buttons['Upload'] = function(){
@@ -1042,7 +1038,7 @@ function upload_files_insert(data, opt) {
 		return { folder: opt.folder, name: file.name };
 	});
 	if (videos.length)
-		adiary.make_video_thumbnails(videos, adiary.Basepath + $('#image-dir').text());
+		adiary.make_video_thumbnails(videos, adiary.Basepath + $('#image-dir').text(), $fileup.data('thumb-size'));
 }
 
 //------------------------------------------------------------------------------
@@ -1158,7 +1154,6 @@ const uploadFile = (file, successCb, errorCb) => {
 	const fd = new FormData();
 
 	fd.append('paste', 1); // 謎パラメタ
-	fd.append('size', 320); // TODO: サムネサイズ：どっかで既定値を設定したい
 	fd.append('action', 'etc/ajax_upload');
 	fd.append('folder', folder);
 	fd.append('file_ary', file);
@@ -1194,10 +1189,11 @@ window.onload = () => {
 			uploadFile(file, (data, folder) => {
 				upload_files_insert(data, {
 					folder:		folder,
-					thumbnail:	true, // TODO: サムネ：どっかで既定値を設定したい
+					// 編集画面の設定（skel/edit.html）
+					thumbnail:	$fileup.data('paste') != 'large',
 					caption:	'',
-					exif:		false, // TODO: 回り込み指定：どっかで既定値を設定したい
-					class:		'' // TODO: 回り込み指定：どっかで既定値を設定したい
+					exif:		$fileup.data('exif') == 1,
+					class:		$fileup.data('class')
 				});
 			});
 		} else {

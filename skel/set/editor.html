@@ -1,5 +1,5 @@
 <@7>
-<@local(s, err)>
+<@local(s, err, size, t)>
 <$err=FormError>
 
 <@> システムモード
@@ -48,14 +48,6 @@
 	</tr>
 	<tr>
 		<td>
-			<label><input type="checkbox" name="hcom_ok" value="1"<@if( s.hcom_ok, ' checked')>>非公開コメントを許可する</label>
-		</td>
-		<td>
-			<label><input type="checkbox" name="hcom_ok_force" value="0"<@if(s.hcom_ok_force eq '0', ' checked')>>強制OFF</label>
-		</td>
-	</tr>
-	<tr>
-		<td>
 			<label><input type="checkbox" name="nsfw" value="1"<@if(s.nsfw, ' checked')>>NSFW（年齢確認を出す）</label>
 		</td>
 		<td>
@@ -85,6 +77,34 @@
 	<tr><th>Upload先</th>
 		<td<@err.c_edit_upload>><input type="text" class="w200" name="edit_upload" value="<@if(s.edit_upload eq '', 'posts/%y/', s.edit_upload)>"><br>
 		%y=年, %m=月（※記事の日付を参照します）<span class="help-text">編集画面から直接ファイル（画像）アップロードする機能を使った時、どのフォルダにアップロードするか設定します。</span></td>
+	</tr>
+	<$size = int(s.edit_thumb_size) || 320>
+	<tr><th>サムネイルの大きさ</th>
+		<td<@err.c_edit_thumb_size>><select name="edit_thumb_size" class="r js-combo" data-target="#size-other" data-format="%vpx">
+			<@forexec(t, [120, 160, 240, 320, 480, 640], begin)>
+			<option value="<@t>"<@if(size == t, ' selected')>><@t>px</option>
+			<$end>
+			<@ifexec(size != 120 && size != 160 && size != 240 && size != 320 && size != 480 && size != 640, begin)>
+			<option value="<@size>" selected><@size>px</option>
+			<$end>
+		</select>
+		<span class="help-text">画像のサムネイルの長い辺の大きさです。編集画面とメディアのどちらから上げても、この大きさで作ります。変えても、上げてある画像のサムネイルは作り直しません（メディアのサムネイルの再生成で作り直せます）。</span></td>
+	</tr>
+	<tr><th>画像の貼り付け</th>
+		<td>
+		<select name="edit_paste">
+			<option value="">サムネイルを貼付</option>
+			<option value="large"<@if(s.edit_paste eq 'large', ' selected')>>大きい画像を貼付</option>
+		</select>
+		表示 <select name="edit_paste_class">
+			<option value="">そのまま</option>
+			<option value="center" <@if(s.edit_paste_class eq 'center',  ' selected')>>センタリング</option>
+			<option value="float-l"<@if(s.edit_paste_class eq 'float-l', ' selected')>>左寄せ（回り込み）</option>
+			<option value="float-r"<@if(s.edit_paste_class eq 'float-r', ' selected')>>右寄せ（回り込み）</option>
+		</select>
+		<label><input type="checkbox" name="edit_paste_exif" value="1"<@if(s.edit_paste_exif, ' checked')>>Exifも貼り付ける</label>
+		<span class="help-text">編集画面に画像を貼り付けたときと、アップロードのダイアログを開いたときの既定値です。</span>
+		</td>
 	</tr>
 	<tr><th>Exif貼り付け形式</th>
 		<td><input type="text" class="w300" name="exif_tag" value="<@s.exif_tag>"><span class="help-text">%271:メーカー名<br>%272:機種名<br>%305:使用ソフト<br>%33434:露出時間<br>%33437:F値<br>%34855:ISO感度<br>%36867:撮影日時<br>%37386:焦点距離<br>%37380:露出補正(EV)</span><br>
@@ -145,6 +165,13 @@
 	</form>
 </div>
 </article>
+
+<@> サムネイルの大きさで「その他」を選んだときのダイアログ（js-combo）
+<div style="display:none">
+<div id="size-other" data-title="サムネイルの大きさ">
+<input type="number" value="<@size>" class="w50" min="60" max="800">px （60～800）
+</div>
+</div>
 
 <script-defer><!--
 $('#set-sanchor-number').click(function(){

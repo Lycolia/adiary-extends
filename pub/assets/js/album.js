@@ -26,11 +26,11 @@ $( function(){
 
 	// 表示設定
 	var all_select = $('#all-select');
-	var thumb_size = $('#thumb-maxsize');
 	var view_type  = $('#view-type');
 	var sort_type  = $('#sort-type');
 	var sort_rev   = $('#sort-rev');
 	var folder_icon= $('#folder-icon-change');
+	var name_filter= $('#name-filter');
 	var is_thumbview;
 
 	// ツリー関連
@@ -98,7 +98,7 @@ var set = {
 			data.icon  = 'trashbox.png';
 		}
 
-		// 開くフォルダの指定（?album/&folder=xxx/。記事作成画面のアイキャッチ画像から）
+		// 開くフォルダの指定（?media/&folder=xxx/。記事作成画面のアイキャッチ画像から）
 		var open_key = !isReloading && new URLSearchParams(location.search).get('folder');
 		var open_node = open_key && tree.dynatree("getTree").getNodeByKey(open_key);
 		if (open_node) open_node.activateSilently();
@@ -209,7 +209,8 @@ var img_draggable_option = {
 			// アイコンビューのとき
 			var imgs = view.find('.selected').clone();
 			imgs.removeClass('selected');
-			imgs.css( {'max-width': 60, 'max-height': 60 });
+			// 一覧のマスの指定（幅100%など）を受けるので、大きさと並べ方をここで決める
+			imgs.css( {width: 60, height: 60, display: 'inline-block'} );
 			div.css('max-width', 320);
 			imgs.css({
 				padding: 1,
@@ -665,8 +666,7 @@ function rename_file(obj, li, new_name) {
 		data: {
 			folder: cur_folder,
 			old:    li.data('name'),
-			name:   new_name,
-			size:	$('#thumbnail-size').val()
+			name:   new_name
 		},
 		success: function(data) {
 			if (data.ret !== 0) return error_msg('#msg-fail-rename-file');
@@ -834,7 +834,8 @@ all_select.change( function(){ all_select_change() } );
 
 function all_select_change(init) {
 	var stat = all_select.is(":checked");
-	var imgs = is_thumbview ? view.find('img') : view.find('.fileline');
+	// 名前で絞り込んでいれば、出ているものだけ
+	var imgs = view.children('a').not('.filtered-out').children(is_thumbview ? 'img' : '.fileline');
 	for(var i=0; i<imgs.length; i++) {
 		var obj = $(imgs[i]);
 		if (stat) {
@@ -862,6 +863,36 @@ function view_change() {
 	update_view(false, files);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// ●名前で絞り込み
+////////////////////////////////////////////////////////////////////////////////
+// 名前に語を含むファイルだけを出す（大文字と小文字は区別しない）。Lyndbaum 0 のメディアと同じ
+// 当たらないファイルは隠すだけで、選んでいれば選んだままにする。語はフォルダを移っても残す
+// 範囲選択、全選択、画像ビューアーは、出ているファイルだけを対象にする。ゴミ箱では絞り込まない
+name_filter.on('input', apply_filter);
+
+function apply_filter() {
+	var trash = cur_folder && cur_folder.substr(0,9) == '.trashbox';
+	name_filter.toggle( !trash );
+	var word  = trash ? '' : name_filter.val().trim().toLowerCase();
+	var links = view.children('a');
+	var shown = 0;
+	for(var i=0; i<links.length; i++) {
+		var link = $(links[i]);
+		var obj  = link.children().first();
+		var hit  = word == '' || String(obj.data('title')).toLowerCase().indexOf(word) >= 0;
+		link.toggleClass('filtered-out', !hit);
+		// 画像ビューアーは開くときに data-lythumb のリンクを集めるので、隠したものは外す
+		if (hit && obj.data('viewable'))
+			link.attr('data-lythumb', 'roadtrip');
+		else
+			link.removeAttr('data-lythumb');
+		if (hit) shown++;
+	}
+	view.children('.file-not-found').toggle( shown == 0 );
+	$('#current-count').text( trash ? '' : '(' + shown + '件)' );
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // ●ビューのアップデート
@@ -876,13 +907,16 @@ function update_view(flag, selected) {
 	// 選択済みファイルのハッシュ
 	selected = selected ? selected : {};
 
-	// ソート処理
+	// ソート処理。既定は日付の降順（skel/media/_main.html）。
+	// 同じ値（同じ秒に上げたファイルなど）は名前順にして、開くたびに並びが変わらないようにする
 	{
 		var type = sort_type.val();
-		var func = sort_rev.val() != 0
-			? function(a,b) { return (a[type] < b[type]) ?  1 : -1; }
-			: function(a,b) { return (a[type] < b[type]) ? -1 :  1; };
-		cur_files.sort( func );
+		var rev  = sort_rev.val() != 0 ? -1 : 1;
+		cur_files.sort(function(a,b) {
+			if (a[type] != b[type]) return (a[type] < b[type] ? -1 : 1) * rev;
+			if (a.name  != b.name ) return (a.name  < b.name  ? -1 : 1) * rev;
+			return 0;
+		});
 	}
 
 	view.empty();
@@ -977,12 +1011,13 @@ function update_view(flag, selected) {
 		span.draggable( { opacity: img_draggable_option.opacity_text } );
 	  }
 	}
-	// file not found.
-	if (cur_files.length == 0) {
+	// file not found.（名前で絞り込んで1つも出ないときも出す。apply_filter で切り替える）
+	{
 		var div = $('<div>').addClass('file-not-found');
 		div.text('(File not found)')
 		view.append( div );
 	}
+	apply_filter();
 
 	//--------------------------------------------------
 	// 画像のクリック
@@ -1021,8 +1056,9 @@ function update_view(flag, selected) {
 		if (prev_sel && evt.shiftKey && prev_sel[0] != obj[0]) {
 			var sel = obj[0];
 			var ary = [];
+			// 名前で絞り込んでいれば、出ているものだけ（apply_filter）
 			// 前方範囲選択
-			var objs = prev_sel.parent().prevAll().children();
+			var objs = prev_sel.parent().prevAll().not('.filtered-out').children();
 			var find = -1;
 			for(var i=0; i<objs.length; i++) {
 				if (objs[i] != sel) continue;
@@ -1031,7 +1067,7 @@ function update_view(flag, selected) {
 			}
 			for(var i=0; i<=find; i++) ary.push(objs[i]);
 			// 後方範囲選択
-			var objs = prev_sel.parent().nextAll().children();
+			var objs = prev_sel.parent().nextAll().not('.filtered-out').children();
 			var find = -1;
 			for(var i=0; i<objs.length; i++) {
 				if (objs[i] != sel) continue;
@@ -1071,27 +1107,6 @@ function update_view(flag, selected) {
 
 	// 選択ファイル情報更新
 	update_selected_files();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// ●サムネイル最大サイズの変更
-////////////////////////////////////////////////////////////////////////////////
-thumb_size.change( thumb_size_change )
-if (thumb_size.val() != 120) thumb_size_change();
-
-var apeend_style;
-function thumb_size_change() {
-	var size = Number( thumb_size.val() );
-	if (size<20 || 600<size) return;
-
-	if (apeend_style) apeend_style.remove();
-	apeend_style = $('<style>').text(
-		'#album-folder-view img {'
-		+ 'max-width:  ' + size + 'px;'
-		+ 'max-height: ' + size + 'px;'
-		+ '}'
-	);
-	$('head').append(apeend_style);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1205,7 +1220,7 @@ function make_video_thumbnails(folder, videos) {
 	var $msg = $('<div>').addClass('message');
 	message.append( $msg );
 	message.showDelay();
-	adiary.make_video_thumbnails(files, path, $('#thumbnail-size').val(), function(i){
+	adiary.make_video_thumbnails(files, path, $('#remake-thumbnail-dialog').data('size'), function(i){
 		$msg.text( $('#msg-making-video-thumbnail').text() + ' ' + (i+1) + ' / ' + files.length );
 	}).then(function(fail){
 		if (fail) {
@@ -1222,17 +1237,6 @@ function make_video_thumbnails(folder, videos) {
 ////////////////////////////////////////////////////////////////////////////////
 function remake_thumbnail(){
 	var $div = $('#remake-thumbnail-dialog');
-	var buttons = {};
-	var $sel = $('#dialog-thumbnail-size');
-	var val  = $('#thumbnail-size').val();
-	$sel.val( val );
-
-	if ($sel.val() != val) {
-		var $opt = $('<option>').attr('value', val);
-		$opt.text( $sel.data('format').replace('%v', val) );
-		$sel.append( $opt );
-		$sel.val( val );
-	}
 	album_dialog($div, do_remake_thumbnail);
 }
 
@@ -1245,8 +1249,7 @@ function do_remake_thumbnail(){
 		data: {
 			folder: cur_folder,
 			file_ary: files,
-			del_exif: 0,
-			size: $('#dialog-thumbnail-size').val()
+			del_exif: 0
 		},
 		success: function(data) {
 			if (data.ret !== 0) {

@@ -103,6 +103,7 @@ sub update_match {
 		my $v=$h->{$_};
 		$v =~ s![^\w\+\-\*\/\%\(\)\|\&\~<>]!!g;
 		if ($v =~ /\w\(/) {
+			$self->edit_index_exit($table);
 			$self->error("expression error(not allow function). table=$table, $v");
 			return 0;
 		}
@@ -111,12 +112,14 @@ sub update_match {
 		eval "\$func=sub {my \$h=shift; return $v;}";
 		# $ROBJ->debug("$v");
 		if ($@) {
+			$self->edit_index_exit($table);
 			$self->error("expression error. table=$table, $@");
 			return 0;
 		}
 		delete $h->{$_};
 		my $k=substr($_, 1);
 		if ($k eq 'pkey') {
+			$self->edit_index_exit($table);
 			$self->error("On '%s' table, disallow pkey update",$table);
 			return 0;
 		}
@@ -549,12 +552,13 @@ sub check_column_type {
 		}
 	}
 	# not null制約の確認
+	# 空文字はnullと同じに扱うので、渡さなかったときと同じく拒む（RDBと同じ）
 	my $notnull_cols = $self->{"$table.notnull"};
 	my @check_columns_ary = $is_update ? keys(%new_hash) : keys(%$notnull_cols);	# update or insert
 	foreach (@check_columns_ary) {
 		if (!$notnull_cols->{$_}) { next; }
 		if (!$is_update && $_ eq 'pkey') { next; }
-		if (!defined $h->{$_}) {
+		if (!defined $new_hash{$_}) {
 			$self->error("On '%s' table, '%s' column is constrained not null", $table, $_);
 			return undef;
 		}

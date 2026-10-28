@@ -52,10 +52,6 @@ span.tag:not(:last-child) {
 	margin-right:		0.4em;
 }
 
-/* 非公開コメント */
-.comment-hidden {
-	color:			#808;
-}
 /* 非表示コメント */
 .comment-disable {
 	color:			#800;

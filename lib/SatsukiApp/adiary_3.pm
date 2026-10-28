@@ -147,6 +147,18 @@ sub load_exif_files {
 }
 
 #-------------------------------------------------------------------------------
+# ●サムネイルの大きさ（長い辺）
+#-------------------------------------------------------------------------------
+# 編集画面の設定（edit_thumb_size）だけで決める。アップロードや再生成のときに選ばせない
+sub thumbnail_size {
+	my $self = shift;
+	my $size = $self->{blog} && int($self->{blog}->{edit_thumb_size}) || 320;
+	if ($size <  60) { $size= 60; }
+	if (800 < $size) { $size=800; }
+	return $size;
+}
+
+#-------------------------------------------------------------------------------
 # ●サムネイル生成
 #-------------------------------------------------------------------------------
 sub make_thumbnail {
@@ -171,7 +183,7 @@ sub make_thumbnail {
 				my $jpeg = $ROBJ->loadpm('Jpeg');
 				$jpeg->strip("$dir$_");
 			}
-			my $r = $self->make_thumbnail_for_image($dir, $_, $opt->{size});
+			my $r = $self->make_thumbnail_for_image($dir, $_);
 			if (!$r) { next; }
 		}
 		my $r = $self->make_thumbnail_for_notimage($dir, $_);
@@ -210,12 +222,8 @@ sub make_thumbnail_for_image {
 	my $self = shift;
 	my $dir  = shift;	# 実パス
 	my $file = shift;
-	my $size = int(shift) || 120;
+	my $size = $self->thumbnail_size();
 	my $ROBJ = $self->{ROBJ};
-
-	# リサイズ
-	if ($size <  60) { $size= 60; }
-	if (800 < $size) { $size=800; }
 
 	# Windowsで日本語ファイル名がなぜか読み書きできない
 	my $tmpfile;
@@ -395,7 +403,6 @@ sub image_upload_form {
 	my $form = shift;
 	my $ROBJ = $self->{ROBJ};
 
-	my $size = $form->{size};	# サムネイルサイズ
 	my $dir  = $self->image_folder_to_dir( $form->{folder} ); # 値check付
 
 	# アップロード
@@ -430,14 +437,13 @@ sub image_upload_form {
 
 	# サムネイル生成
 	$self->make_thumbnail( $dir, \@files, {
-		size     => $form->{size},
 		del_exif => $form->{del_exif}
 	});
 
 	# フォルダリストの再生成
 	$self->genarete_imgae_dirtree();
 
-	# 動画のサムネイルは、この後にブラウザーで作る（album/_action/upload_form、edit.js）
+	# 動画のサムネイルは、この後にブラウザーで作る（media/_action/upload_form、edit.js）
 	$self->{uploaded_videos} = [ grep { $self->is_video($_) } @files ];
 
 	# メッセージ
@@ -589,12 +595,10 @@ sub remake_thumbnail {
 
 	my $dir   = $self->image_folder_to_dir( $form->{folder} ); # 値check付
 	my $files = $form->{file_ary};
-	my $size  = $form->{size};
 	my @names = @{ $files || [] };
 
 	# サムネイル生成
 	$self->make_thumbnail( $dir, $files, {
-		size     => $form->{size},
 		del_exif => $form->{del_exif},
 		force    => 1
 	});
@@ -669,7 +673,7 @@ sub rebuild_arts_using_files {
 #   thumb  : 画像アルバムの一覧に出す → .thumbnail/動画名.jpg
 # どちらもJPEGで、大きさが決めた範囲のものだけを保存する。保存する名前はここで決める
 #
-my $VIDEO_POSTER_MAX = 1280;	# 記事用のサムネイルの長い辺
+my $VIDEO_POSTER_MAX = 960;	# 記事用のサムネイルの長い辺（記事での既定の表示480pxの2倍）
 my $VIDEO_THUMB_MAX  = 800;	# アルバム用のサムネイルの長い辺（make_thumbnail_for_imageの上限）
 
 sub upload_video_thumbnail {
@@ -731,15 +735,17 @@ sub save_video_thumbnail {
 }
 
 #-------------------------------------------------------------------------------
-# ●サムネイルの無い動画の一覧
+# ●サムネイルを作る動画の一覧
 #-------------------------------------------------------------------------------
 # アップデート処理の後に、ブラウザーでまとめて作るときに使う。ゴミ箱は除く
+# サムネイルの無い動画と、記事用のサムネイルが今の大きさ（$VIDEO_POSTER_MAX）より大きい動画（4.18より前に作ったもの）
 # ret : [ { folder => 'posts/2026/', name => 'clip.mp4' }, ... ]
 #
-sub load_videos_without_thumbnail {
+sub load_videos_need_thumbnail {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $base = $self->blogimg_dir();
+	require Satsuki::ImageFormat;
 
 	my @ary;
 	my @dirs = ('');
@@ -751,7 +757,12 @@ sub load_videos_without_thumbnail {
 				push(@dirs, "$folder$_");
 				next;
 			}
-			if (!$self->is_video($_) || -e "${dir}.thumbnail/$_.poster.jpg") { next; }
+			if (!$self->is_video($_)) { next; }
+			my $poster = "${dir}.thumbnail/$_.poster.jpg";
+			if (-e $poster) {
+				my ($w, $h) = Satsuki::ImageFormat::get_size($poster);
+				if ($w && $w <= $VIDEO_POSTER_MAX && $h <= $VIDEO_POSTER_MAX) { next; }
+			}
 			push(@ary, { folder => $ROBJ->fs_decode("$folder"), name => $ROBJ->fs_decode("$_") });
 		}
 	}
@@ -917,7 +928,6 @@ sub rename_file {
 		$ROBJ->file_delete( "${dir}.thumbnail/$old.jpg" );
 		# 新しいサムネイル生成
 		$self->make_thumbnail( $dir, [$name], {
-			size  => $form->{size},
 			force => 1
 		});
 	}
@@ -1080,7 +1090,7 @@ sub album_check_ext_one {
 sub load_album_allow_ext {
 	my $self = shift;
 	if (!$self->{album_allow_ext}->{'.'}) {
-		$self->{ROBJ}->call('album/_load_extensions');
+		$self->{ROBJ}->call('media/_load_extensions');
 	}
 	return $self->{album_allow_ext};
 }
@@ -1258,7 +1268,8 @@ sub edit_articles {
 
 	} elsif ($mode eq 'enable') {
 		# 表示に設定
-		$event_name = 'ARTICLES_EDIT';
+		$event_name  = 'ARTICLES_EDIT';
+		$cevent_name = 'COMMENTS_EDIT';
 		$cnt = $DB->update_match("art",
 			{ enable => 1 },
 			'enable', 0,
@@ -1268,6 +1279,26 @@ sub edit_articles {
 		$DB->update_match("tagart", {
 			'a_enable' => 1
 		}, 'a_pkey', $keylist);
+
+		# 公開した記事の、承認済みのコメントを表示に戻す
+		my $ary = $DB->select_match("art",
+			'enable', 1,
+			'-coms_all', 0,	# コメントがある
+			'pkey', $keylist,
+			'*cols', ['pkey']
+		);
+		my @pkeys = map { $_->{pkey} } @$ary;
+		if (@pkeys) {
+			$com = $DB->update_match("com",
+				{ enable => 1 },
+				'enable', 0,
+				'-hold',  1,
+				'a_pkey', \@pkeys
+			);
+			if ($com) {
+				foreach(@pkeys) { $self->calc_comments($_); }
+			}
+		}
 
 	} else {
 		# 非表示に設定
@@ -1297,6 +1328,9 @@ sub edit_articles {
 				'enable',  1,
 				'a_pkey', \@pkeys
 			);
+			if ($com) {
+				foreach(@pkeys) { $self->calc_comments($_); }
+			}
 		}
 	}
 
@@ -1519,9 +1553,14 @@ sub edit_comment {
 		$cnt = $DB->delete_match("com", 'pkey', $keylist);
 
 	} elsif ($mode eq 'enable') {
+		# 承認する。記事が非公開なら、記事を公開したときに表示する
 		$event_name = 'COMMENTS_EDIT';
+		$cnt = $DB->update_match("com",
+			{ hold => 0 },
+			'hold', 1,
+			'pkey', $keylist
+		);
 
-		# 非公開記事のコメントは公開しない
 		my $ary = $DB->select_match("art",
 			'pkey', \@a_pkeys,
 			'*cols', ['pkey', 'enable']
@@ -1531,20 +1570,28 @@ sub edit_comment {
 			if ($_->{enable}) { next; }
 			push(@exlist, $_->{pkey});
 		}
-		$cnt = $DB->update_match("com",
+		my $shown = $DB->update_match("com",
 			{ enable => 1 },
 			'enable', 0,
-			'hidden', 0,
 			'pkey', $keylist,
 			'-a_pkey', \@exlist	# not match
 		);
+		# 承認済みで表示していなかったもの（holdが無い頃のデータ）も数える
+		if ($cnt < $shown) { $cnt = $shown; }
 	} else {
+		# 承認を取り消す
 		$event_name = 'COMMENTS_EDIT';
 		$cnt = $DB->update_match("com",
+			{ hold => 1 },
+			'-hold', 1,
+			'pkey', $keylist
+		);
+		my $hidden = $DB->update_match("com",
 			{ enable => 0 },
 			'enable',  1,
 			'pkey', $keylist
 		);
+		if ($cnt < $hidden) { $cnt = $hidden; }
 	}
 
 	# イベント処理

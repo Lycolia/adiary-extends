@@ -43,7 +43,7 @@ my @SCREENS = (
 	[ 'trash'               , 'editor', 'ゴミ箱' ],
 	[ 'artlist'             , 'editor', '記事一覧' ],
 	[ 'comlist'             , 'editor', 'コメント一覧' ],
-	[ 'album/'              , 'editor', '画像アルバム' ],
+	[ 'media/'              , 'editor', 'メディア' ],
 	[ 'etc/myblog_create'   , 'admin' , sub { $_[0]->{status} == 200 } ],	# ブログはもうあるので、画面はエラーを出す
 
 	# ブログの設定
@@ -87,6 +87,7 @@ my @SCREENS = (
 	[ 'user/'               , 'admin' , 'ユーザーの一覧' ],
 	[ 'user/add'            , 'admin' , 'ユーザーの追加' ],
 	[ 'user/edit'           , 'admin' , 'ユーザーの編集' ],
+	[ 'user/log'            , 'admin' , '操作の記録' ],
 	[ 'system/setting'      , 'admin' , 'システム設定' ],
 	[ 'system/update'       , 'admin' , 'アップデート処理設定' ],
 	[ 'system/check'        , 'admin' , 'システム管理メニュー' ],

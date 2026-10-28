@@ -1,13 +1,13 @@
 <@40.is_function>
 <@local(h,order)>
 <$h = begin_hash>
-	album/index = 画像管理
+	media/index = メディア
 	artlist = 記事一覧
 	trash = ゴミ箱
 	comlist = コメント一覧
 <$end>
 <$order = array()>
-<$ifpush(v.allow_edit, order, 'album/index')>
+<$ifpush(v.allow_edit, order, 'media/index')>
 <$ifpush(v.allow_view && v.allow_edit, order, 'artlist')>
 <$ifpush(v.allow_view && v.allow_edit, order, 'trash')>
 <$ifpush(v.allow_view && v.allow_edit, order, 'comlist')>

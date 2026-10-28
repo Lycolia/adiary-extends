@@ -6,6 +6,9 @@ our $SPEC_VER = '1.12';	# specification version for compatibility
 ################################################################################
 # Satsuki system - HTTP Server
 #					Copyright (C)2019-2023 nabe@abk
+#
+# 脆弱性などの確認を一切していないため、デバッグ以外での利用は推奨しません
+#
 ################################################################################
 # Last Update : 2023/02/02
 #
@@ -15,7 +18,7 @@ BEGIN {
 	if ($path) { chdir($path); }
 	unshift(@INC, './lib');
 }
-use Socket;
+use Socket qw(:DEFAULT IPPROTO_IPV6 IPV6_V6ONLY IN6ADDR_ANY inet_ntop);
 use Fcntl;
 use threads;		# for ithreads
 use POSIX;		# for waitpid(<pid>, WNOHANG);
@@ -51,6 +54,7 @@ my $PORT      = $IsWindows ? 80 : 8888;
 my $ITHREADS  = $IsWindows;
 my $TIMEOUT   =  3;
 my $DEAMONS   = 10;
+my $DEBUG_SINGLE = 0;	# single process mode for debugger
 my $KEEPALIVE = 1;
 my $BUFSIZE_u = '1M';	# 1MB
 my $BUFSIZE;		# byte / set from $BUFSIZE_u
@@ -76,7 +80,7 @@ if ($IsWindows) {
 # Web Server data
 #-------------------------------------------------------------------------------
 my %DENY_DIRS;
-my %MIME_TYPE = ( 
+my %MIME_TYPE = (
 	html => 'text/html',
 	htm  => 'text/html',
 	text => 'text/plain',
@@ -127,6 +131,7 @@ my %SIZE_UNIT = ('K' => 1024, 'M' => 1024*1024, 'G' => 1024*1024*1024);
 			if ($k eq 'n') { $key=$kx; $OPEN_BROWSER=0; next; }
 			if ($k eq 'i') { $key=$kx; $ITHREADS=1; next; }
 			if ($k eq 'f') { $key=$kx; $ITHREADS=0; next; }
+			if ($k eq 'D') { $key=$kx; $DEBUG_SINGLE=1; next; }
 
 			# keep-alive
 			if ($k2 eq 'k0') { $key=$ky; $KEEPALIVE=0; next; }
@@ -200,6 +205,16 @@ my %SIZE_UNIT = ('K' => 1024, 'M' => 1024*1024, 'G' => 1024*1024*1024);
 	}
 	if ($TIMEOUT < 0.001)	{ $TIMEOUT=0.001; }
 	if ($DEAMONS < 1) 	{ $DEAMONS=1;     }
+	if ($DEBUG_SINGLE) {
+		$ITHREADS = 0;
+		$DEAMONS  = 1;
+		$ENV{SatsukiReloadStop} = 1;	# keep breakpoints
+
+		# debugger matches breakpoints by absolute file name
+		# (use $0's dir, getcwd() resolves symlinks)
+		my $dir = $0 =~ m|^(/.*)/[^/]*$| ? $1 : Cwd::getcwd();
+		@INC = map { $_ =~ m|^\./(.*)| ? "$dir/$1" : $_ } @INC;
+	}
 	if ($MAX_CGI_REQUESTS == 0)		{ $MAX_CGI_REQUESTS=10000000; }
 	if ($MAX_CGI_REQUESTS > 10000000)	{ $MAX_CGI_REQUESTS=10000000; }
 	if ($MAX_CGI_REQUESTS <      100)	{ $MAX_CGI_REQUESTS=100; }
@@ -226,6 +241,7 @@ Available options are:
   -u filename	UNIX domain socket mode
   -f		use fork()
   -i		use threads (ithreads)
+  -D		single process mode for debugger (no fork, no auto reload)
   -k1		connection keep-alive enable (default)
   -k0		connection keep-alive disable
   -t0		set ENV SatsukiTimer=0
@@ -254,7 +270,7 @@ if ($0 =~ /\.exe$/i) {
 		}
 		close($fh);
 		if ($SPEC_VER ne $pl_ver) {
-			print STDERR "*** adiary.httpd.pl's specification version $pl_ver mismatch!!\n";	# debug-safe
+			print STDERR "*** lyndbaum.httpd.pl's specification version $pl_ver mismatch!!\n";	# debug-safe
 			print STDERR "*** Please update '$0'\n";						# debug-safe
 			print STDERR "\n<<push any key for exit>>";						# debug-safe
 			my $key = <STDIN>;
@@ -318,9 +334,19 @@ if ($UNIX_SOCK ne '') {
 	print	"\tUNIX domain socket: $UNIX_SOCK\n"
 
 } else {
-	socket($srv, PF_INET, SOCK_STREAM, getprotobyname('tcp'))	|| die "socket failed: $!";
+	# IPv6 + IPv4 dual stack. If IPv6 is not available, use IPv4 only.
+	my $v6 = eval {
+		socket($srv, PF_INET6, SOCK_STREAM, getprotobyname('tcp'))	|| die;
+		setsockopt($srv, IPPROTO_IPV6, IPV6_V6ONLY, pack("l", 0))	|| die;	# Windows default is 1
+		1;
+	};
+	if (!$v6) {
+		$srv && close($srv);
+		socket($srv, PF_INET, SOCK_STREAM, getprotobyname('tcp'))	|| die "socket failed: $!";
+	}
 	setsockopt($srv, SOL_SOCKET, SO_REUSEADDR, pack("l", 1))	|| die "setsockopt failed: $!";
-	bind($srv, sockaddr_in($PORT, INADDR_ANY))			|| die "bind port failed: $!";
+	bind($srv, $v6 ? pack_sockaddr_in6($PORT, IN6ADDR_ANY) : sockaddr_in($PORT, INADDR_ANY))
+									|| die "bind port failed: $!";
 	listen($srv, SOMAXCONN)						|| die "listen failed: $!";
 }
 
@@ -329,7 +355,7 @@ print(
 		. " Timeout $TIMEOUT sec,"
 		. " Buffer ${BUFSIZE_u}B,"
 		. " Keep-Alive " . ($KEEPALIVE ? 'on' : 'off') . "\n"
-	. "\tStart up daemon: $DEAMONS " . ($ITHREADS ? 'threads' : 'process')
+	. ($DEBUG_SINGLE ? "\tSingle process mode (debug)" : "\tStart up daemon: $DEAMONS " . ($ITHREADS ? 'threads' : 'process'))
 	. ", Max cgi requests: $MAX_CGI_REQUESTS\n"
 );
 #-------------------------------------------------------------------------------
@@ -439,7 +465,11 @@ if ($GENERATE_CONF) {
 ################################################################################
 # main routine
 ################################################################################
-{
+if ($DEBUG_SINGLE) {
+	# run in this process for debugger
+	&daemon_main($srv);
+
+} else {
 	$SIG{USR1} = sub {};	# wake up for main process
 
 	# prefork / create_threads
@@ -547,9 +577,17 @@ sub accept_client {
 	binmode($sock);
 
 	if ($PORT) {
-		my ($port, $ip_bin) = sockaddr_in($addr);
-		$ENV{REMOTE_ADDR} = inet_ntoa($ip_bin);
-		$ENV{REMOTE_PORT} = $port;
+		if (sockaddr_family($addr) == AF_INET6) {
+			my ($port, $ip_bin) = unpack_sockaddr_in6($addr);
+			my $ip = inet_ntop(AF_INET6, $ip_bin);
+			$ip =~ s/^::ffff:(\d+\.\d+\.\d+\.\d+)$/$1/i;	# IPv4-mapped address
+			$ENV{REMOTE_ADDR} = $ip;
+			$ENV{REMOTE_PORT} = $port;
+		} else {
+			my ($port, $ip_bin) = sockaddr_in($addr);
+			$ENV{REMOTE_ADDR} = inet_ntoa($ip_bin);
+			$ENV{REMOTE_PORT} = $port;
+		}
 		# print "[$PID] connection from $ip:$port\n";
 	} else {
 		# $ENV{REMOTE_ADDR} = '0.0.0.0';
@@ -667,7 +705,7 @@ sub parse_request {
 	#---------------------------------------------------
 	# Header check
 	#---------------------------------------------------
-	if ($ENV{HTTP_HOST} eq '' || $ENV{HTTP_HOST} !~ m/^[\w-]+(\.[\w\-]+)*(:\d+)?$/) {
+	if ($ENV{HTTP_HOST} eq '' || $ENV{HTTP_HOST} !~ m/^(?:[\w-]+(\.[\w\-]+)*|\[[0-9A-Fa-f:.]+\])(:\d+)?$/) {
 		&_400_bad_request($state);
 		return $state;
 	}
