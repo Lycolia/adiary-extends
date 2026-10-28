@@ -195,15 +195,26 @@ sub load_user_info {
 sub load_logs {
 	my $self  = shift;
 	my $query = shift;
+	if (!$self->{isadmin}) { return wantarray ? ([], 0) : []; }
 	my $DB    = $self->{DB};
 	my $table = $self->{table} . '_log';
 
 	my %h = (
 		limit	=> int($query->{limit}) || 100,
-		sort	=> $query->{sort} || '-tm'
+		offset	=> int($query->{offset}),
+		sort	=> $query->{sort} || ['-tm', '-pkey']
 	);
-	if ($query->{id}) {
+	if ($query->{id} ne '') {
 		$h{match}->{id} = $query->{id};
+	}
+	if ($query->{type} ne '') {
+		$h{match}->{type} = $query->{type};
+	}
+	# 失敗はmsgに'fail'などが入る。成功は空
+	if ($query->{result} eq 'ok') {
+		$h{is_null}  = ['msg'];
+	} elsif ($query->{result} eq 'fail') {
+		$h{not_null} = ['msg'];
 	}
 
 	my $y = int($query->{year});
@@ -215,12 +226,13 @@ sub load_logs {
 			if ($m==12) { $m=1; $y++; }
 			$h{max}->{tm} = Time::Local::timelocal(0,0,0,1,$m,  $y-1900) -1;
 		} else {
-			$h{min}->{tm} = Time::Local::timelocal(0,0,0,1,1,$y-1900);
-			$h{max}->{tm} = Time::Local::timelocal(0,0,0,1,1,$y-1900 +1);
+			$h{min}->{tm} = Time::Local::timelocal(0,0,0,1,0,$y-1900);
+			$h{max}->{tm} = Time::Local::timelocal(0,0,0,1,0,$y-1900 +1) -1;
 		}
 	};
 
-	return $DB->select($table, \%h);
+	my ($logs, $hits) = $DB->select($table, \%h);
+	return wantarray ? ($logs, $hits) : $logs;
 }
 
 ################################################################################

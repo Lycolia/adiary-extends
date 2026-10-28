@@ -87,6 +87,7 @@ my @SCREENS = (
 	[ 'user/'               , 'admin' , 'ユーザーの一覧' ],
 	[ 'user/add'            , 'admin' , 'ユーザーの追加' ],
 	[ 'user/edit'           , 'admin' , 'ユーザーの編集' ],
+	[ 'user/log'            , 'admin' , '操作の記録' ],
 	[ 'system/setting'      , 'admin' , 'システム設定' ],
 	[ 'system/update'       , 'admin' , 'アップデート処理設定' ],
 	[ 'system/check'        , 'admin' , 'システム管理メニュー' ],

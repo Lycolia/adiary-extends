@@ -340,4 +340,24 @@ subtest 'ユーザー' => sub {
 	unlike(body($app->get('admin', 'user/')), qr{>user<}, 'ユーザーの一覧から消える');
 };
 
+subtest '操作の記録' => sub {
+	# 無いIDでの失敗を12件。タグになる文字を混ぜて、エスケープとURLのエンコードも確かめる
+	$app->post('editor', '', { action => '_ajax_login', adiary_id => 'nobody<x>', pass => 'wrong' }) foreach (1..12);
+	my $rows = sub { my @r = (shift =~ m{<td>nobody&lt;x&gt;</td>\s*<td>ログイン</td>\s*<td><strong class="warning">失敗</strong></td>}g); scalar(@r) };
+
+	my $b = body($app->get('admin', 'user/log&loads=10&result=fail&id=' . AppTest::_uri_escape('nobody<x>')));
+	is($rows->($b), 10, '1ページ目に10件出る');
+	like($b, qr{全12件}, '絞り込んだ件数が出る');
+	unlike($b, qr{>user<}, '成功の記録やほかのIDは出ない');
+
+	# 画面のページ送りのリンクをそのまま辿る
+	my ($link) = $b =~ m{<a href="[^"?]*\?([^"]*page=2)">};
+	ok($link, '2ページ目へのリンクがある');
+	$link =~ s/&amp;/&/g;
+	unlike($link, qr{<|>}, 'リンクにテンプレートの書きかけが残っていない');
+	$b = body($app->get('admin', $link));
+	is($rows->($b), 2, '2ページ目に残りの2件が出る');
+	like($b, qr{全12件}, '2ページ目でも絞り込みが引き継がれる');
+};
+
 done_testing();
