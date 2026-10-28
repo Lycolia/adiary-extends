@@ -62,7 +62,7 @@ my @update_versions = (
 		'\[youtube:', 'youtube\.com/watch',	# YouTubeはサムネイルだけを出す。動画は、アップデートの後にブラウザーでサムネイルを作ったときに作り直す
 		'\(\('					# 注釈（(())）の一覧が出ない、番号が続く、同じidが重なる、を直した
 	]},
-	{ ver => 4.18, plugin=>1, func => 'sys_update_418' }	# 非公開コメントを廃止した。コメントフォームと記事のスケルトンは、デザインの作り直しで作り直す
+	{ ver => 4.18, plugin=>1, func => 'sys_update_418' }	# 非公開コメントを廃止した。コメントフォームと記事のスケルトンは、デザインの作り直しで作り直す。コメントに承認待ち（hold）を足した
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -425,6 +425,7 @@ sub sys_update_416 {
 #-------------------------------------------------------------------------------
 # 非公開コメントを廃止した。書いた本人も見られず、やり取りもできないため
 # 残っている非公開コメントを消し、記事とコメントのテーブルからカラムを消す
+# コメントに承認待ち（hold）を足す。今あるコメントは承認済みとして扱うので、値は入れない
 sub sys_update_418 {
 	my $self = shift;
 	my $DB   = $self->{DB};
@@ -453,6 +454,10 @@ sub sys_update_418 {
 	$DB->drop_column("art",      'hcom_ok');
 	$DB->drop_column("trash",    'hcom_ok');
 	$DB->set_noerror($noerr);
+
+	my $r = $DB->add_column("com",      {name=>'hold', type=>'flag'});
+	$r   += $DB->add_column("trashcom", {name=>'hold', type=>'flag'});
+	if ($r) { $self->{ROBJ}->message("Blog database error(%s)", $r); }
 
 	my $blog = $self->{blog};
 	foreach(qw(hcom_ok hcom_ok_force p:dec_comment-form:hidden_help)) {

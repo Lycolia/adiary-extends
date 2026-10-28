@@ -112,7 +112,7 @@ sub load_coms_list {
 	my $rev  = $opt->{rev};
 
 	# sortのチェック
-	my %a = ('enable'=>1,'tm'=>1,'name'=>1,'a_yyyymmdd'=>1);
+	my %a = ('hold'=>1,'tm'=>1,'name'=>1,'a_yyyymmdd'=>1);
 	$sort =~ s/\W//g;
 	if (!$a{$sort} || $sort eq '') { $sort='tm'; }
 	$rev = ($rev eq '' || $rev) ? 1 : 0;
@@ -129,9 +129,17 @@ sub load_coms_list {
 		$h{limit} = int($opt->{loads});
 	}
 
+	# 承認待ちかどうかで絞り込む（1:承認待ちだけ、0:承認済みだけ、それ以外はすべて）
+	my $hold = $opt->{hold};
+	if ($hold ne '1' && $hold ne '0') { $hold = ''; }
+
 	# ロード対象記事オプション
 	if (! $self->{allow_edit}) {
 		$h{flag} = {enable => 1};
+	} elsif ($hold eq '1') {
+		$h{flag} = {hold => 1};
+	} elsif ($hold eq '0') {
+		$h{not_match} = {hold => 1};	# holdが無い頃のコメントは空なので、1でないものを選ぶ
 	}
 
 	my ($logs,$hits) =  $DB->select("com", \%h);
@@ -146,6 +154,7 @@ sub load_coms_list {
 	$ret{hits} = $hits;
 	$ret{sort} = $sort;
 	$ret{rev}  = $rev;
+	$ret{hold} = $hold;
 	return wantarray ? ($logs,\%ret) : $logs;
 }
 
@@ -547,6 +556,14 @@ sub regist_article {
 				$opt->{comment_edit}    = 1;
 				$opt->{comment_disable} = exists($update{enable});
 			 }
+		}
+		# 公開にしたら、承認済みのコメントを表示に戻す
+		if ($art{enable} && !$old->{enable} && $old->{coms_all}) {
+			my $r = $DB->update_match("com", { enable => 1 }, 'enable', 0, '-hold', 1, 'a_pkey', $pkey);
+			if ($r) { $opt->{comment_edit} = 1; }
+		}
+		if ($art{enable} != $old->{enable} && $opt->{comment_edit}) {
+			$self->calc_comments($pkey);
 		}
 	}
 
@@ -1968,7 +1985,9 @@ sub regist_comment {
 	if ($opt->{num} != 0) {
 		$com{num} = int($opt->{num});
 	}
-	$com{enable} = ($form->{enable} && $art->{enable}) ? 1 : 0;
+	# 表示しないもの（保留したもの、インポートで非表示だったもの）は承認待ちにする。承認済みでも記事が非公開なら出さない
+	$com{hold}   = $form->{enable} ? 0 : 1;
+	$com{enable} = (!$com{hold} && $art->{enable}) ? 1 : 0;
 
 	# 記事の情報をキャッシュして保存
 	$com{a_pkey}     = $a_pkey;

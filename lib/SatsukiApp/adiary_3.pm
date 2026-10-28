@@ -1261,7 +1261,8 @@ sub edit_articles {
 
 	} elsif ($mode eq 'enable') {
 		# 表示に設定
-		$event_name = 'ARTICLES_EDIT';
+		$event_name  = 'ARTICLES_EDIT';
+		$cevent_name = 'COMMENTS_EDIT';
 		$cnt = $DB->update_match("art",
 			{ enable => 1 },
 			'enable', 0,
@@ -1271,6 +1272,26 @@ sub edit_articles {
 		$DB->update_match("tagart", {
 			'a_enable' => 1
 		}, 'a_pkey', $keylist);
+
+		# 公開した記事の、承認済みのコメントを表示に戻す
+		my $ary = $DB->select_match("art",
+			'enable', 1,
+			'-coms_all', 0,	# コメントがある
+			'pkey', $keylist,
+			'*cols', ['pkey']
+		);
+		my @pkeys = map { $_->{pkey} } @$ary;
+		if (@pkeys) {
+			$com = $DB->update_match("com",
+				{ enable => 1 },
+				'enable', 0,
+				'-hold',  1,
+				'a_pkey', \@pkeys
+			);
+			if ($com) {
+				foreach(@pkeys) { $self->calc_comments($_); }
+			}
+		}
 
 	} else {
 		# 非表示に設定
@@ -1300,6 +1321,9 @@ sub edit_articles {
 				'enable',  1,
 				'a_pkey', \@pkeys
 			);
+			if ($com) {
+				foreach(@pkeys) { $self->calc_comments($_); }
+			}
 		}
 	}
 
@@ -1522,9 +1546,14 @@ sub edit_comment {
 		$cnt = $DB->delete_match("com", 'pkey', $keylist);
 
 	} elsif ($mode eq 'enable') {
+		# 承認する。記事が非公開なら、記事を公開したときに表示する
 		$event_name = 'COMMENTS_EDIT';
+		$cnt = $DB->update_match("com",
+			{ hold => 0 },
+			'hold', 1,
+			'pkey', $keylist
+		);
 
-		# 非公開記事のコメントは公開しない
 		my $ary = $DB->select_match("art",
 			'pkey', \@a_pkeys,
 			'*cols', ['pkey', 'enable']
@@ -1534,19 +1563,28 @@ sub edit_comment {
 			if ($_->{enable}) { next; }
 			push(@exlist, $_->{pkey});
 		}
-		$cnt = $DB->update_match("com",
+		my $shown = $DB->update_match("com",
 			{ enable => 1 },
 			'enable', 0,
 			'pkey', $keylist,
 			'-a_pkey', \@exlist	# not match
 		);
+		# 承認済みで表示していなかったもの（holdが無い頃のデータ）も数える
+		if ($cnt < $shown) { $cnt = $shown; }
 	} else {
+		# 承認を取り消す
 		$event_name = 'COMMENTS_EDIT';
 		$cnt = $DB->update_match("com",
+			{ hold => 1 },
+			'-hold', 1,
+			'pkey', $keylist
+		);
+		my $hidden = $DB->update_match("com",
 			{ enable => 0 },
 			'enable',  1,
 			'pkey', $keylist
 		);
+		if ($cnt < $hidden) { $cnt = $hidden; }
 	}
 
 	# イベント処理

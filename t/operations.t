@@ -145,18 +145,94 @@ subtest 'ログインしていない人のコメント' => sub {
 	like(body($app->get('editor', 'comlist')), qr{ゲストのコメント}, 'コメント一覧に出る');
 };
 
-subtest 'コメントの表示・非表示・削除' => sub {
+subtest 'コメントの承認の取り消し・承認・削除' => sub {
 	my $r = $app->post('editor', '', { action => 'comments_edit', disable => 1, pkey_ary => 1 });
-	ok(AppTest::is_reload($r), '非表示にできる');
+	ok(AppTest::is_reload($r), '承認を取り消せる');
 	unlike(body($app->get('guest', '/01')), qr{seedのコメント}, 'ログインしていない人には出ない');
 	like(body($app->get('editor', '/01')), qr{seedのコメント}, '編集者には出る');
 
 	$r = $app->post('editor', '', { action => 'comments_edit', enable => 1, pkey_ary => 1 });
-	ok(AppTest::is_reload($r), '表示に戻せる');
+	ok(AppTest::is_reload($r), '承認できる');
+	like(body($app->get('guest', '/01')), qr{seedのコメント}, 'ログインしていない人にも出る');
 
 	$r = $app->post('editor', '', { action => 'comments_edit', delete => 1, pkey_ary => 1 });
 	ok(AppTest::is_reload($r), '削除できる');
 	ok(!-e "$dir/data/db/com/00001.dat" || read_file("$dir/data/db/com/00001.dat") !~ /\S/, 'コメントが消える');
+};
+
+subtest 'コメントの承認待ちと記事の公開・非公開' => sub {
+	# コメント一覧の、そのコメントの行の「状態」
+	my $state = sub {
+		my ($text, $q) = @_;
+		my $b = body($app->get('editor', 'comlist' . ($q // '')));
+		foreach ($b =~ m{<tr>\s*<td class="c"><input.*?</tr>}sg) {
+			next if (index($_, $text) < 0);
+			my @td = map { s/<[^>]*>//gr } /<td[^>]*>(.*?)<\/td>/sg;
+			return $td[1];
+		}
+		return '';
+	};
+	my $recent = sub {
+		my ($b) = body($app->get('guest', '')) =~ m{id="side-recent-comment"(.*?)</ul>}s;
+		return $b // '';
+	};
+	my $coms = sub {
+		my ($n) = body($app->get('editor', 'menu')) =~ m{<th>コメント</th><td>(\d+)件}s;
+		return $n;
+	};
+
+	# URLを書くと承認待ちになる（com_hold_url）
+	my ($secure) = body($app->get('visitor', '/02')) =~ /data-secure="([^"]+)"/;
+	my @ary = split(/,/, $secure);
+	pop(@ary);
+	my $sid = join('', map { chr($_ ^ (2 & 255)) } @ary);
+	sleep(4);
+	my $r = $app->post('visitor', '/02', { action => 'comment_post', a_pkey => 2, secure_id => $sid, name => '保留の人', comment_txt => '保留のコメント', url => 'http://example.com/', website => '' });
+	like($r->{title}, qr/^処理結果/, '投稿できる');
+	unlike(body($app->get('guest', '/02')), qr{保留のコメント}, '承認待ちは記事のページに出ない');
+	is($state->('保留のコメント'), '承認待ち', 'コメント一覧で承認待ちと出る');
+	is($state->('ゲストのコメント'), '承認済み', 'ほかのコメントは承認済み');
+	is($state->('保留のコメント', '&hold=1'), '承認待ち', '承認待ちで絞り込むと出る');
+	is($state->('ゲストのコメント', '&hold=1'), '', '承認待ちで絞り込むと、承認済みは出ない');
+	is($state->('保留のコメント', '&hold=0'), '', '承認済みで絞り込むと、承認待ちは出ない');
+	is($coms->(), 1, 'ブログのコメント数に入らない');
+
+	my ($pkey) = body($app->get('editor', 'comlist')) =~ m{value="(\d+)" class="pkey-ary" id="com-\d+">.*?保留の人}s;
+	$r = $app->post('editor', 'comlist', { action => 'comments_edit', enable => 1, pkey_ary => $pkey, from_comlist => 1 });
+	ok(AppTest::is_reload($r), '承認できる');
+	like(body($app->get('guest', '/02')), qr{保留のコメント}, '承認すると記事のページに出る');
+	is($state->('保留のコメント'), '承認済み', '承認済みになる');
+	like($recent->(), qr{保留の人}, '最近のコメントに出る');
+	is($coms->(), 2, 'ブログのコメント数に入る');
+
+	# 記事を非公開にしても、承認したことは残る。公開に戻すと、承認済みのコメントだけまた出る
+	$r = $app->post('editor', '', { action => 'comments_edit', disable => 1, pkey_ary => $pkey });
+	ok(AppTest::is_reload($r), '承認を取り消せる');
+	is($state->('保留のコメント'), '承認待ち', '承認待ちに戻る');
+	$r = $app->post('editor', 'artlist', [ action => 'articles_edit', mode => 'disable', pkey_ary => 2 ]);
+	ok(AppTest::is_reload($r), '記事を非公開にできる');
+	is($state->('ゲストのコメント'), '承認済み', '記事を非公開にしても承認済みのまま');
+	unlike($recent->(), qr{通りすがり}, '非公開の記事のコメントは最近のコメントに出ない');
+	is($coms->(), 0, '非公開の記事のコメントはブログのコメント数に入らない');
+
+	$r = $app->post('editor', 'artlist', [ action => 'articles_edit', mode => 'enable', pkey_ary => 2 ]);
+	ok(AppTest::is_reload($r), '記事を公開に戻せる');
+	like(body($app->get('guest', '/02')), qr{ゲストのコメント}, '承認済みのコメントがまた出る');
+	unlike(body($app->get('guest', '/02')), qr{保留のコメント}, '承認待ちのコメントは出ない');
+	like($recent->(), qr{通りすがり}, '最近のコメントに戻る');
+	is($coms->(), 1, 'ブログのコメント数に戻る');
+
+	# 非公開の記事のコメントも承認できる。記事を公開したときに出る
+	$r = $app->post('owner', '', { %ART, edit_pkey_int => 2, title => 'ownerの記事', body_txt => "本文2\n", tag_ary => 'タグ2', enable => 0 });
+	ok(AppTest::is_reload($r), '編集画面で記事を非公開にできる');
+	$r = $app->post('editor', '', { action => 'comments_edit', enable => 1, pkey_ary => $pkey });
+	ok(AppTest::is_reload($r), '非公開の記事のコメントを承認できる');
+	is($state->('保留のコメント'), '承認済み', '承認済みになる');
+	is($coms->(), 0, '記事が非公開なので、ブログのコメント数には入らない');
+	$r = $app->post('owner', '', { %ART, edit_pkey_int => 2, title => 'ownerの記事', body_txt => "本文2\n", tag_ary => 'タグ2', enable => 1 });
+	ok(AppTest::is_reload($r), '編集画面で記事を公開にできる');
+	like(body($app->get('guest', '/02')), qr{保留のコメント}, '承認したコメントが出る');
+	is($coms->(), 2, 'ブログのコメント数に戻る');
 };
 
 #-------------------------------------------------------------------------------

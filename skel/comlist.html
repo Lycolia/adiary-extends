@@ -23,6 +23,7 @@
 <$opt.offset= loads*(page-1)>
 <$opt.sort = Query.sort>
 <$opt.rev  = Query.rev>
+<$opt.hold = Query.hold>
 
 <$(logs,ret) = v.load_coms_list(opt)>
 <$hits = ret.hits>
@@ -36,7 +37,7 @@
 <$page_offset  = page_max - 10>
 <$ifset(page_offset<0, page_offset, 0)>
 
-<$base = "<@v.myself>?<@v.skeleton>&amp;loads=<@loads>&amp;">
+<$base = "<@v.myself>?<@v.skeleton>&amp;loads=<@loads>&amp;hold=<@ret.hold>&amp;">
 <$url  = "<@base>sort=<@ret.sort>&amp;rev=<@ret.rev>&amp;">
 
 <@> 見出しを押して並べ替える。argv : 並べ替えの項目, 見出し, 最初に押したときに降順にするか
@@ -74,6 +75,13 @@
 			<option value="200"<@if(loads==200,' selected')>>200件</option>
 		</select>
 		</div>
+		<div class="element">
+		状態<select name="hold">
+			<option value="">すべて</option>
+			<option value="1"<@if(ret.hold eq '1', ' selected')>>承認待ち</option>
+			<option value="0"<@if(ret.hold eq '0', ' selected')>>承認済み</option>
+		</select>
+		</div>
 		<input type="hidden" name="sort" value="<@ret.sort>">
 		<input type="hidden" name="rev"  value="<@ret.rev>">
 		</form>
@@ -100,7 +108,7 @@
 	<thead><tr>
 		<@ifexec(v.allow_edit, begin)>
 		<th><input type="checkbox" name="all_check" class="js-checked" data-target="#comlist-table .pkey-ary"></th>
-		<th class="sort"><@exec(sort_th, 'enable',     '公開',   1)></th>
+		<th class="sort"><@exec(sort_th, 'hold',       '状態',   1)></th>
 		<$end>
 		<th class="sort"><@exec(sort_th, 'a_yyyymmdd', '投稿先', 1)></th>
 		<th class="sort"><@exec(sort_th, 'name',       '投稿者', 0)></th>
@@ -112,7 +120,7 @@
 	<tr>
 		<@ifexec(v.allow_edit, begin)>
 		<td class="c"><input type="checkbox" name="pkey_ary" value="<@t.pkey>" class="pkey-ary" id="com-<@t.pkey>"></td>
-		<td class="c"><label for="com-<@t.pkey>"><@if(t.enable, '公')></label></td>
+		<td class="c"><label for="com-<@t.pkey>"><@if(t.hold, '承認待ち', '承認済み')></label></td>
 		<$end>
 		<td><a href="<@v.myself2><@t.a_elink_key>" title="<@v.format_ymd(t.a_yyyymmdd)> <@t.a_title>"><@v.string_clip(t.a_title,10)></a></td>
 		<td><a href="<@v.myself2><@t.a_elink_key>#c<@t.num>"<@if(v.allow_edit, #' class="js-popup-com" data-target="<@t.pkey>"')>><@t.name></a></td>
@@ -131,10 +139,10 @@
 	</nav>
 
 <@ifexec(v.allow_edit, begin)>
-	<button type="submit" name="enable"  class="js-check-form" data-confirm="">表示に設定</button>
-	<button type="submit" name="disable" class="js-check-form" data-confirm="">非表示に設定</button>
+	<button type="submit" name="enable"  class="js-check-form" data-confirm="">承認</button>
+	<button type="submit" name="disable" class="js-check-form" data-confirm="">承認を取り消す</button>
 	<button type="submit" name="delete"  class="js-check-form" id="del-submit" data-confirm="%c件のコメントを削除しますか？" data-focus="cancel">削除</button>
-	<span class="help-text">記事が非公開の場合は表示することはできません</span>
+	<span class="help-text">記事が非公開のときは、承認しても記事を公開するまで表示されません</span>
 <@>	<label><input type="checkbox" name="del_check" class="js-enable" data-target="#del-submit">削除確認</label>
 	</form>
 <$end>
@@ -151,8 +159,8 @@
 			<span class="commentator author<@if(c.id, " login-user")>"><@ifexec(c.email && v.allow_edit, begin, begin)><a href="mailto:<@c.email>"><@c.name></a><$else><@c.name><$end></span><@if(c.by_admin, ' <span class="comment-badge">管理者</span>')>
 			<@ifexec(c.url, begin)><span class="comment-url"><a href="<@c.url>" rel="nofollow">URL</a></span><$end>
 			<span class="comment-date"><@print_tm(c.tm)></span>
-			<@ifexec(!c.enable, begin)>
-			<strong class="comment-disable">（非表示）</strong>
+			<@ifexec(c.hold, begin)>
+			<strong class="comment-disable">（承認待ち）</strong>
 			<$end>
 		</div>
 

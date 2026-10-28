@@ -580,7 +580,7 @@ sub com_table_info {
 	my %info;
 	$info{text}    = [ qw(text email url name id ip host agent a_title a_elink_key) ];
 	$info{int}     = [ qw(tm num a_pkey a_yyyymmdd) ];
-	$info{flag}    = [ qw(enable) ];
+	$info{flag}    = [ qw(enable hold) ];	# enable:公開の画面に出す（承認済みで記事が公開）、hold:承認待ち
 	$info{idx}     = [ qw(name id enable tm a_pkey) ];
 	$info{idx_tdb} = [ qw(ip num a_yyyymmdd) ];
 	$info{unique}  = [ ];
