@@ -445,4 +445,45 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 	unlike(body($app->get('editor', 'album/')), qr{name="size"|thumbnail-size}, 'アルバムでサムネイルの大きさを選ばせない');
 };
 
+#-------------------------------------------------------------------------------
+# 公開画面のメタ情報とページ送り（PageSpeed Insights の指摘）
+#-------------------------------------------------------------------------------
+subtest 'メタディスクリプション' => sub {
+	# 記事は、トップに出ている最初の記事（ほかのテストで公開の状態が変わるため）
+	my ($art) = body($app->get('guest', '')) =~ m{<a href="[^"]*?(/\d+)" class="title">};
+	ok($art, "記事のURLが取れる（$art）");
+	foreach my $q ('', $art) {
+		my $b = body($app->get('guest', $q));
+		my @desc = $b =~ m{<meta name="description" content="([^"]*)">}g;
+		my ($og) = $b =~ m{<meta property="og:description" content="([^"]*)">};
+		is(scalar(@desc), 1, "?$q に1つだけ出る");
+		ok($desc[0] ne '' && $desc[0] eq $og, "?$q の中身はog:descriptionと同じ（$og）");
+	}
+};
+
+# 保存すると、送らなかったflagが0になるので最後に置く
+subtest 'ページ送りの行けない方向はリンクにしない' => sub {
+	my $r = $app->post('owner', 'set/detail', { action => 'set/detail', load_items => 1 });
+	ok(AppTest::is_reload($r), '1ページ1件にする');
+
+	# 前後だけの形（トップ）と、番号付きの形（検索）。最後のページまで「次のページ」を辿る
+	foreach my $base ('', '&q=' . AppTest::_uri_escape('記事')) {
+		my ($nav, @nohref, $first, $last);
+		for (my $p=1; $p<20; $p++) {
+			my $b = body($app->get('guest', "$base&p=$p"));
+			$nav = join('', $b =~ m{(<nav class="page-nav.*?</nav>)}sg);
+			push(@nohref, map { "p=$p $_" } $nav =~ m{(<a(?![^>]*\bhref=)[^>]*>)}g);
+			$first //= $nav;
+			$last = $p;
+			last if ($nav !~ /class="next-page" rel="next"/);
+		}
+		ok(1 < $last, "?$base は$last ページある");
+		is_deeply(\@nohref, [], "?$base のどのページのページ送りにも、hrefの無いaが無い");
+		like($first, qr{<span class="prev-page" aria-hidden="true">前のページ</span>}, "?$base の1ページ目の「前のページ」は見えないspan");
+		like($first, qr{<a href="[^"]+" class="next-page" rel="next">次のページ</a>},  "?$base の1ページ目の「次のページ」はリンク");
+		like($nav, qr{<a href="[^"]*" class="prev-page" rel="prev">前のページ</a>},    "?$base の最後のページの「前のページ」はリンク");
+		like($nav, qr{<span class="next-page" aria-hidden="true">次のページ</span>},  "?$base の最後のページの「次のページ」は見えないspan");
+	}
+};
+
 done_testing();

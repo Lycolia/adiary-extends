@@ -212,13 +212,13 @@ nav.page-nav a { overflow-wrap: anywhere; }
 nav.page-nav .prev-page { margin-right: auto; }
 nav.page-nav .upnode-page { margin: 0 auto; text-align: center; }
 nav.page-nav .next-page { margin-left: auto; text-align: right; }
-/* 矢印は base.css のアイコンではなく文字にする */
-nav.page-nav a.prev-page::before, nav.page-nav a.upnode-page::before, nav.page-nav a.next-page::after {
+/* 矢印は base.css のアイコンではなく文字にする。行けない方向の見えない span（base.css）も、リンクと同じ幅にする */
+nav.page-nav .prev-page::before, nav.page-nav .upnode-page::before, nav.page-nav .next-page::after {
 	width: auto; height: auto; vertical-align: baseline; background: none;
 }
-nav.page-nav a.prev-page::before { content: "← "; }
-nav.page-nav a.upnode-page::before { content: "↑ "; }
-nav.page-nav a.next-page::after { content: " →"; }
+nav.page-nav .prev-page::before { content: "← "; }
+nav.page-nav .upnode-page::before { content: "↑ "; }
+nav.page-nav .next-page::after { content: " →"; }
 
 /*--------------------------------------------------------------------
 ■記事

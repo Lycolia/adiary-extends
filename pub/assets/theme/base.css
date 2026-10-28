@@ -1070,6 +1070,11 @@ figure.center, figure.c {
 .prev-page:before 	{ background-position: -32px -16px; }
 .upnode-page:before	{ background-position: -48px -16px; }
 .next-page:after	{ background-position: -64px -16px; }
+/* 記事の一覧のページ送りで、行けない方向（_sub/page_nav_main）。見せずに場所だけ取り、ほかのリンクの位置を変えない */
+nav.page-nav span.prev-page,
+nav.page-nav span.next-page {
+	visibility:		hidden;
+}
 
 .sw-show .ui-icon.switch-icon {
 	background-position:	-0px -16px;

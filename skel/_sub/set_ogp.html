@@ -1,11 +1,15 @@
 <@7>
-<@local(s,img)>
+<@local(s,img,desc)>
 <$s = v.blog>
 <$img = ServerURL . Basepath . (argv#4 || s.blog_image || v.pubdist_dir . 'default-icon.png')>
 <@>
 <@> OGP/Twitter CARDの設定
 <@>
 <$v.add_header(exec(begin, argv#0, argv#1, argv#2, argv#3, argv#4))>
+<@> 検索結果の説明文の候補。中身はog:descriptionと同じ（記事は本文の先頭を自動で切り出したもの）。空なら出さない
+<@> 文字列の中では式が展開されないので、先に変数に入れる
+<$desc = argv#3 || s.description_notag>
+<@if(desc ne '', #'<meta name="description" content="<@desc>">\n')>
 <!-- OGP -->
 <meta property="og:type" content="<@argv#0>">
 <meta property="og:url" content="<@ServerURL><@argv#1>">
