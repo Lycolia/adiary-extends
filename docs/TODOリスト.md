@@ -88,15 +88,7 @@ Lyndbaum 0（`~/develop/perl/lyndbaum0`）にある機能のうち、Lyndbaum 4�
 
 ### 整理・削除
 
-- デッドロジック掃除
-  - DB項目や本体処理の中に使われていないゴミがありそう
-  - 更新が放置されてる機能は全て消してよいと思う
-  - `docs/仕様/機能一覧.md`の【掃除候補】から進める。今は印の付いたものは無い（4.10で【要確認】を片付けた）ので、見つけたら印を付ける
-  - 見直して残すと決めたもの（2026-10-27）
-    - `des_system-info`：PukiWikiなどにもある、よくある機能
-    - `dem_hatena-star`、`des_clock`、`des_memo`：使っている
-    - 麻雀の記法（`Tag_mahjong`と`pub/assets/dist/mahjong/`）：害が無い
-    - `pub/assets/dist/VL-PGothic-Regular.ttf`：画像以外をアップロードしたときのサムネイルに、ファイルの情報を描くのに使う（`v.album_font`）
+- Markdown ParserとSatsuki Parserを分離して他のシステムでも使いまわせるようにする
 
 ### ドキュメント・調査
 
