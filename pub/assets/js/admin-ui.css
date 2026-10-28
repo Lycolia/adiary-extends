@@ -197,19 +197,31 @@ ul.dynatree-container a {
 	display:		inline-block;
 }
 
-/* サムネイル表示 */
+/* サムネイル表示。縦長や横長の画像も見やすく押しやすいよう、同じ大きさのマスに全体を収める（切り取らない）。
+   マスの大きさは固定で、列の数は幅に合わせて変わる（Lyndbaum 0 のメディアの一覧と同じ）。
+   選択はimgに付くので、マスの枠や余白もimgに付ける */
+#album-folder-view.thumb-view {
+	display:		grid;
+	grid-template-columns:	repeat(auto-fill, minmax(8.5rem, 1fr));
+	gap:			0.5rem;
+}
+#album-folder-view.thumb-view a {
+	margin:			0;
+	display:		block;
+}
 #album-folder-view img {
-	border:			3px solid transparent;
-	vertical-align:		middle;
-	max-width:		120px;
-	max-height:		120px;
-	/* for IE */
-	width:	auto;
-	height:	auto;
+	display:		block;
+	box-sizing:		border-box;
+	width:			100%;
+	height:			calc(7rem + 0.7rem + 2px);	/* 画像7rem＋余白＋枠 */
+	padding:		0.35rem;
+	border:			1px solid var(--admin-border, #c3c4c7);
+	background-color:	var(--admin-bg, #f0f0f1);
+	object-fit:		contain;
 }
 #album-folder-view img.selected {
-	border-color:		#f88;
-	background-color:	#f88;
+	outline:		3px solid var(--admin-link, #2271b1);
+	outline-offset:		-1px;
 }
 /* ファイル名一覧 */
 #album-folder-view.name-view {

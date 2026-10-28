@@ -11,17 +11,6 @@
 			<$end>
 		</div>
 		<div class="view-option">
-			<span class="option-item">最大
-			<select id="thumb-maxsize" class="r js-save">
-				<option value=" 60"> 60px</option>
-				<option value=" 80"> 80px</option>
-				<option value="100">100px</option>
-				<option value="120" selected>120px</option>
-				<option value="160">160px</option>
-				<option value="240">240px</option>
-				<option value="320">320px</option>
-			</select>
-			</span>
 			<span class="option-item">
 			<select id="view-type">
 				<option value="thumb">サムネイル</option>
@@ -31,15 +20,14 @@
 			<span class="option-item">ソート
 			<select id="sort-type">
 				<option value="name">名前</option>
-				<option value="date">日付</option>
+				<option value="date" selected>日付</option>
 				<option value="size">サイズ</option>
 			</select>
 			<select id="sort-rev">
 				<option value="0">昇順</option>
-				<option value="1">降順</option>
+				<option value="1" selected>降順</option>
 			</select>
 			</span>
-			<span class="help-text">サムネイルの表示最大サイズを指定します。指定サイズより小さいサムネイルはそのままです。</span>
 		</div>
 	</div>
 <@call('album/_main-view')>

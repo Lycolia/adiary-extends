@@ -26,7 +26,6 @@ $( function(){
 
 	// 表示設定
 	var all_select = $('#all-select');
-	var thumb_size = $('#thumb-maxsize');
 	var view_type  = $('#view-type');
 	var sort_type  = $('#sort-type');
 	var sort_rev   = $('#sort-rev');
@@ -209,7 +208,8 @@ var img_draggable_option = {
 			// アイコンビューのとき
 			var imgs = view.find('.selected').clone();
 			imgs.removeClass('selected');
-			imgs.css( {'max-width': 60, 'max-height': 60 });
+			// 一覧のマスの指定（幅100%など）を受けるので、大きさと並べ方をここで決める
+			imgs.css( {width: 60, height: 60, display: 'inline-block'} );
 			div.css('max-width', 320);
 			imgs.css({
 				padding: 1,
@@ -875,13 +875,16 @@ function update_view(flag, selected) {
 	// 選択済みファイルのハッシュ
 	selected = selected ? selected : {};
 
-	// ソート処理
+	// ソート処理。既定は日付の降順（skel/album/_main.html）。
+	// 同じ値（同じ秒に上げたファイルなど）は名前順にして、開くたびに並びが変わらないようにする
 	{
 		var type = sort_type.val();
-		var func = sort_rev.val() != 0
-			? function(a,b) { return (a[type] < b[type]) ?  1 : -1; }
-			: function(a,b) { return (a[type] < b[type]) ? -1 :  1; };
-		cur_files.sort( func );
+		var rev  = sort_rev.val() != 0 ? -1 : 1;
+		cur_files.sort(function(a,b) {
+			if (a[type] != b[type]) return (a[type] < b[type] ? -1 : 1) * rev;
+			if (a.name  != b.name ) return (a.name  < b.name  ? -1 : 1) * rev;
+			return 0;
+		});
 	}
 
 	view.empty();
@@ -1070,27 +1073,6 @@ function update_view(flag, selected) {
 
 	// 選択ファイル情報更新
 	update_selected_files();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// ●サムネイル最大サイズの変更
-////////////////////////////////////////////////////////////////////////////////
-thumb_size.change( thumb_size_change )
-if (thumb_size.val() != 120) thumb_size_change();
-
-var apeend_style;
-function thumb_size_change() {
-	var size = Number( thumb_size.val() );
-	if (size<20 || 600<size) return;
-
-	if (apeend_style) apeend_style.remove();
-	apeend_style = $('<style>').text(
-		'#album-folder-view img {'
-		+ 'max-width:  ' + size + 'px;'
-		+ 'max-height: ' + size + 'px;'
-		+ '}'
-	);
-	$('head').append(apeend_style);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
