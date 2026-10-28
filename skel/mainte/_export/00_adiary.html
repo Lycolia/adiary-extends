@@ -46,8 +46,7 @@
 	pkey="<@t.pkey>"
 	enable="<@t.enable>"
 	tm="<@t.tm>"
-	allow_hcom="<@t.com_ok>"
-	allow_com="<@t.hcom_ok>"
+	allow_com="<@t.com_ok>"
 	tags="<@tag_escape_amp(t.tags)>"
 	parser="<@t.parser>"
 <@>
@@ -73,7 +72,6 @@
 <@forexec(t2, v.load_comments_current_blog(t), begin)>
 <comment>
 	<enable><@t2.enable></enable>
-	<hidden><@t2.hidden></hidden>
 	<id><@t2.id></id>
 	<username><@tag_escape_amp(t2.name)></username>
 	<num><@t2.num></num>

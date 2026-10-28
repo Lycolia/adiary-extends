@@ -265,7 +265,7 @@ our $IMAGE_FILE   = 'a.png';
 our $VIDEO_FILE   = 'v.mp4';
 sub seed {
 	my $self = shift;
-	my %art = (parser => 'markdown', enable => 1, com_ok => 1, hcom_ok => 1, ymd => '2026-10-01');
+	my %art = (parser => 'markdown', enable => 1, com_ok => 1, ymd => '2026-10-01');
 	my $r;
 	$r = $self->post('editor', '', { %art, action => 'edit', title => 'editorの記事', body_txt => "本文1\n", tag_ary => 'タグ1' });
 	die "edit 1 failed: $r->{title}" if (!is_reload($r));

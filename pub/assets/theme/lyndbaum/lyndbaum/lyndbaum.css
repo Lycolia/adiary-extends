@@ -380,7 +380,7 @@ span.commentator.author { color: var(--text); font-weight: bold; margin-right: .
 span.commentator.author.login-user { color: var(--strong); }
 .comment-badge { border: 1px solid var(--border); padding: 0 .25em; font-size: .8rem; font-weight: normal; }
 div.comment-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: .25rem 0 0; }
-.comment-hidden, .comment-disable { color: var(--muted); }
+.comment-disable { color: var(--muted); }
 div.ip-host-agent { display: none; color: var(--muted); font-size: .85rem; }
 #com-form-separator { border: 0; border-top: 1px solid var(--border); margin: 1rem 0; }
 #comment-form { margin-top: 1rem; }

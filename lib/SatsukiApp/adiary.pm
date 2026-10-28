@@ -13,7 +13,7 @@ our $SYSTEM_DESCRIPTION = 'Neo-Modern High-performance CMS software';
 # データ管理上数値しか解釈できないので文字列にしてはならない
 our $VERSION    = 4.18;
 our $OUTVERSION = "$VERSION";
-our $DATA_VERSION = 4.16;
+our $DATA_VERSION = 4.18;
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -1097,7 +1097,7 @@ sub load_articles {
 	# フラグのオーバーライド確認
 	#-------------------------------------------------------------
 	if (!$opt->{no_override}) {
-		foreach my $flag (qw(com_ok hcom_ok nsfw)) {
+		foreach my $flag (qw(com_ok nsfw)) {
 			if ($blog->{"${flag}_force"} ne '') {
 				my $ow = $blog->{"${flag}_force"};
 				foreach(@$logs) {

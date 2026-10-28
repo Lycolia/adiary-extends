@@ -567,11 +567,11 @@ sub art_table_info {
 	$info{text}    = [ qw(title parser tags name id ip host agent link_key ctype main_image description backlinks) ];
 	$info{ltext}   = [ qw(text text_s _text) ];
 	$info{int}     = [ qw(yyyymmdd tm update_tm coms coms_all upnode priority) ];
-	$info{flag}    = [ qw(enable com_ok hcom_ok nsfw) ];
+	$info{flag}    = [ qw(enable com_ok nsfw) ];
 	$info{idx}     = [ qw(name id link_key ctype upnode yyyymmdd tm update_tm coms coms_all enable priority) ];
 	$info{idx_tdb} = [ qw(title tags) ];
 	$info{unique}  = [ qw(link_key) ];
-	$info{notnull} = [ qw(enable com_ok hcom_ok coms coms_all yyyymmdd link_key) ];
+	$info{notnull} = [ qw(enable com_ok coms coms_all yyyymmdd link_key) ];
 	$info{ref}     = { };	# upnode => "art.pkey" をすると記事が削除できなくなる
 	return \%info;
 }
@@ -580,11 +580,11 @@ sub com_table_info {
 	my %info;
 	$info{text}    = [ qw(text email url name id ip host agent a_title a_elink_key) ];
 	$info{int}     = [ qw(tm num a_pkey a_yyyymmdd) ];
-	$info{flag}    = [ qw(enable hidden) ];
+	$info{flag}    = [ qw(enable) ];
 	$info{idx}     = [ qw(name id enable tm a_pkey) ];
-	$info{idx_tdb} = [ qw(ip num a_yyyymmdd hidden) ];
+	$info{idx_tdb} = [ qw(ip num a_yyyymmdd) ];
 	$info{unique}  = [ ];
-	$info{notnull} = [ qw(enable hidden text tm a_pkey a_yyyymmdd) ];
+	$info{notnull} = [ qw(enable text tm a_pkey a_yyyymmdd) ];
 	$info{ref}     = { a_pkey => "art.pkey" };
 	return \%info;
 }
@@ -851,9 +851,7 @@ sub import_events {
 # $art->{parser}	パーサー指定
 #
 # $art->{com_ok}	コメント受け付け
-# $art->{hcom_ok}	非公開コメント受け付け
 # $art->{allow_com}	※コメント受け付け（互換性のため）
-# $art->{allow_hcom}	※非公開コメント受け付け（互換性のため）
 #
 # $art->{ctype}		コンテンツタイプ
 # $art->{priority}	優先度, 重要度（整数値）
@@ -867,7 +865,6 @@ sub import_events {
 #
 # $c = $coms->[$n]	$n 番目の書き込み
 # $c->{enable}		コメントが有効か？ 1:enable 0:disable（省略時:1）
-# $c->{hidden}		非公開コメント？   1:非公開 0:公開   （省略時:0）
 # $c->{name}		名前（※必須）
 # $c->{text}		コメント本文（※必須） ※タグ無効、改行→<br>に変換される
 # $c->{tm}		コメントが投稿された日時（UTC）
@@ -979,10 +976,9 @@ sub save_article {
 	#-------------------------------------------------------------
 	# フラグチェック
 	#-------------------------------------------------------------
-	$art->{com_ok}  = defined $art->{com_ok}  ? $art->{com_ok}  : $art->{allow_com};
-	$art->{hcom_ok} = defined $art->{hcom_ok} ? $art->{hcom_ok} : $art->{allow_hcom};
+	$art->{com_ok} = defined $art->{com_ok} ? $art->{com_ok} : $art->{allow_com};
 
-	my @flags = qw(enable com_ok hcom_ok);
+	my @flags = qw(enable com_ok);
 	foreach(@flags) {
 		if (!defined $art->{$_}) { $art->{$_} = $blog->{$_}; }
 	}
@@ -1046,6 +1042,8 @@ sub save_article {
 	#---------------------------------------------------
 	my $com_flag;
 	foreach(@ary) {
+		# 非公開コメントは廃止したので取り込まない
+		if ($_->{hidden}) { next; }
 		if ($_->{_tb}) {
 			$_->{name} = $_->{author} ne '' ? $_->{author} : '(trackback)';
 			my $text = '[Trackback]';

@@ -112,7 +112,7 @@
 	<tr>
 		<@ifexec(v.allow_edit, begin)>
 		<td class="c"><input type="checkbox" name="pkey_ary" value="<@t.pkey>" class="pkey-ary" id="com-<@t.pkey>"></td>
-		<td class="c"><label for="com-<@t.pkey>"><@if(t.enable, '公', if(t.hidden, '非'))></label></td>
+		<td class="c"><label for="com-<@t.pkey>"><@if(t.enable, '公')></label></td>
 		<$end>
 		<td><a href="<@v.myself2><@t.a_elink_key>" title="<@v.format_ymd(t.a_yyyymmdd)> <@t.a_title>"><@v.string_clip(t.a_title,10)></a></td>
 		<td><a href="<@v.myself2><@t.a_elink_key>#c<@t.num>"<@if(v.allow_edit, #' class="js-popup-com" data-target="<@t.pkey>"')>><@t.name></a></td>
@@ -134,7 +134,7 @@
 	<button type="submit" name="enable"  class="js-check-form" data-confirm="">表示に設定</button>
 	<button type="submit" name="disable" class="js-check-form" data-confirm="">非表示に設定</button>
 	<button type="submit" name="delete"  class="js-check-form" id="del-submit" data-confirm="%c件のコメントを削除しますか？" data-focus="cancel">削除</button>
-	<span class="help-text">非公開コメントおよび記事が非公開の場合は表示することはできません</span>
+	<span class="help-text">記事が非公開の場合は表示することはできません</span>
 <@>	<label><input type="checkbox" name="del_check" class="js-enable" data-target="#del-submit">削除確認</label>
 	</form>
 <$end>
@@ -152,11 +152,11 @@
 			<@ifexec(c.url, begin)><span class="comment-url"><a href="<@c.url>" rel="nofollow">URL</a></span><$end>
 			<span class="comment-date"><@print_tm(c.tm)></span>
 			<@ifexec(!c.enable, begin)>
-			<@if(c.hidden, '<strong class="comment-hidden">（非公開コメント）', '<strong class="comment-disable">（非表示）')></strong>
+			<strong class="comment-disable">（非表示）</strong>
 			<$end>
 		</div>
 
-		<div class="comment-text<@if(!c.enable, if(c.hidden, ' comment-hidden', ' comment-disable'))>"><@c.text></div>
+		<div class="comment-text<@if(!c.enable, ' comment-disable')>"><@c.text></div>
 		<@ifexec(v.allow_edit, begin)>
 		<div class="ip-host-agent"><@c.host> (<@c.ip>)<br><@c.agent></div>
 		<$end>

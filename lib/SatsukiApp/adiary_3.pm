@@ -1534,7 +1534,6 @@ sub edit_comment {
 		$cnt = $DB->update_match("com",
 			{ enable => 1 },
 			'enable', 0,
-			'hidden', 0,
 			'pkey', $keylist,
 			'-a_pkey', \@exlist	# not match
 		);

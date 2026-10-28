@@ -259,7 +259,6 @@ sub regist_article {
 	my %art;
 	$art{enable} = $form->{enable}  ? 1 : 0;
 	$art{com_ok} = $form->{com_ok}  ? 1 : 0;
-	$art{hcom_ok}= $form->{hcom_ok} ? 1 : 0;
 	$art{nsfw}   = $form->{nsfw}    ? 1 : 0;
 
 	#-------------------------------------------------------------
@@ -751,7 +750,7 @@ sub json_long_text {
 # ほかの画面（別のタブや端末）で先に保存されていないかを見る。
 # 記事一覧やコンテンツの編集はupdate_tmを変えずに書き換えるので、中身で比べる。
 # コメント数や変換後の本文は、記事を書き換えなくても変わるので入れない。
-my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok hcom_ok nsfw
+my @DigestCols = qw(title _text tags parser enable yyyymmdd tm update_tm com_ok nsfw
 		    ctype link_key upnode priority main_image description);
 sub article_digest {
 	my ($self, $art) = @_;
@@ -1574,11 +1573,6 @@ sub post_comment {
 		$ROBJ->message('This article not allow comments');
 		return 12;
 	}
-	if ($form->{hidden} && (! $art->{hcom_ok} || $blog->{hcom_ok_force} eq '0')) {
-		# 非公開コメント不許可
-		$ROBJ->message('This article not allow hidden comments');
-		return 13;
-	}
 	# データ整理
 	if ($auth->{ok}) {
 		$form->{name} = $auth->{name};
@@ -1907,7 +1901,6 @@ sub regist_comment {
 	my $email  = $form->{email};	# 任意
 	my $url    = $form->{url};	# 任意
 	my $text   = $form->{comment_txt} ne '' ? $form->{comment_txt} : $form->{text};
-	my $hidden = $form->{hidden} ? 1 : 0;
 	$text =~ s/^(?:\s*\n)*//;	# 先頭は空行のみ除去
 	$text =~ s/[\s*\n]*$//;		# 末尾は\n\s全部除去
 	$ROBJ->trim($name, $email, $url);
@@ -1957,8 +1950,7 @@ sub regist_comment {
 	if ($opt->{num} != 0) {
 		$com{num} = int($opt->{num});
 	}
-	$com{enable} = ($form->{enable} && !$form->{hidden} && $art->{enable}) ? 1 : 0;
-	$com{hidden} =  $form->{hidden} ? 1 : 0;
+	$com{enable} = ($form->{enable} && $art->{enable}) ? 1 : 0;
 
 	# 記事の情報をキャッシュして保存
 	$com{a_pkey}     = $a_pkey;

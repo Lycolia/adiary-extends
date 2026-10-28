@@ -18,8 +18,7 @@
 <@>
 <$ifexec(action_return eq '0', begin)>
 	<$message('コメントを書き込みました')>
-	<$ifmessage( Form.hidden, 'このコメントは管理者にのみ表示されます')>
-	<$ifmessage(!Form.hidden && !Form.enable, 'このコメントは確認後表示されます')>
+	<$ifmessage(!Form.enable, 'このコメントは確認後表示されます')>
 
 	<$jump('_sub/reload_message_public', v.thisurl)>
 <$end>

@@ -33,7 +33,6 @@
 	<$art.name    = Auth.name>
 	<$art.enable  = s.enable>
 	<$art.com_ok  = s.com_ok>
-	<$art.hcom_ok = s.hcom_ok>
 	<$art.nsfw    = s.nsfw>
 	<$art.ping    = s.ping>
 	<$art.wiki    = s.wiki>
@@ -255,7 +254,6 @@
 		詳細設定</label>
 		<ul id="art-detail" class="checkbox">
 			<li><label><input type="checkbox" name="com_ok" value="1"<@if(art.com_ok, ' checked')>>コメントを受け付ける</label></li>
-			<li><label><input type="checkbox" name="hcom_ok" value="1"<@if(art.hcom_ok, ' checked')>>非公開コメントを許可する</label></li>
 			<li><label><input type="checkbox" name="nsfw" value="1"<@if(art.nsfw, ' checked')>>NSFW（年齢確認を出す）</label><span class="help-text"><@if(s.nsfw_force, 'ブログ全体がNSFWに設定されているので、この記事にも年齢確認が出ます。', '開いたときに本文をぼかし、18歳以上かを確認します。検索エンジンにも成人向けと伝えます。')></span></li>
 		<@ifexec(!s.private && (art.draft || !edit_pkey), begin)>
 			<@ifexec(v.sys.ping_servers_txt, begin)>
