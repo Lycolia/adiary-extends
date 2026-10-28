@@ -5,18 +5,17 @@
 <$dir  = v.skel_dir>
 <@>
 <@> 管理画面のグローバルナビ（_frame_admin から呼ばれる）
-<@> 今のページの項目には current を付ける。タグとページは set2/ の中にあるが、別の項目にする
+<@> 今のページの項目には current を付ける。タグは set2/ の中にあるが、別の項目にする
 <@>
 <$cur = {}>
 <$cur.menu    = (skel eq 'menu')>
 <$cur.artlist = (skel eq 'artlist' || skel eq 'edit')>
-<$cur.page    = (skel eq 'set2/contents_edit')>
 <$cur.trash   = (skel eq 'trash')>
 <$cur.album   = (dir eq 'media/')>
 <$cur.comlist = (skel eq 'comlist')>
 <$cur.tag     = (skel eq 'set2/tag_edit')>
 <$cur.set      = (dir eq 'set/')>
-<$cur.set2     = (dir eq 'set2/' && !cur.page && !cur.tag)>
+<$cur.set2     = (dir eq 'set2/' && !cur.tag)>
 <$cur.plugin   = (dir eq 'plugin/')>
 <$cur.design   = (0 == index(dir, 'design/'))>
 <$cur.mainte   = (dir eq 'mainte/')>
@@ -33,7 +32,6 @@
 	<li<@if(cur.menu, ' class="current"')>><a href="<@v.myself>?menu">ダッシュボード</a></li>
 <@ifexec(s && v.allow_edit, begin)>
 	<li<@if(cur.artlist, ' class="current"')>><a href="<@v.myself>?artlist">記事</a></li>
-	<li<@if(cur.page,    ' class="current"')>><a href="<@v.myself>?set2/contents_edit">ページ</a></li>
 	<li<@if(cur.trash,   ' class="current"')>><a href="<@v.myself>?trash">ゴミ箱</a></li>
 	<li<@if(cur.album,   ' class="current"')>><a href="<@v.myself>?media/">メディア</a></li>
 	<li<@if(cur.comlist, ' class="current"')>><a href="<@v.myself>?comlist">コメント<@if(s.newcom_flag, ' <span class="admin-nav-new">新着</span>')></a></li>
