@@ -3,13 +3,15 @@
 #--------------------------------------
 /*
 
+# VSCode config
+!.vscode/
+
 # github files
 !/.github
 
 #--------------------------------------
 # root files
 #--------------------------------------
-!/.htaccess.sample
 !/lyndbaum.cgi
 !/lyndbaum.fcgi
 !/lyndbaum.env.cgi.sample
