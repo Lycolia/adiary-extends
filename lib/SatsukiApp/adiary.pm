@@ -9,7 +9,7 @@ use Fcntl;
 #-------------------------------------------------------------------------------
 our $SYSTEM_NAME = 'Lyndbaum';
 our $REPOSITORY_URL = 'https://github.com/Lycolia/lyndbaum4';
-our $SYETEM_DESCRIPTION = 'Neo-Modern High-performance CMS software';
+our $SYSTEM_DESCRIPTION = 'Neo-Modern High-performance CMS software';
 # データ管理上数値しか解釈できないので文字列にしてはならない
 our $VERSION    = 4.18;
 our $OUTVERSION = "$VERSION";
@@ -47,12 +47,15 @@ sub new {
 	$self->{DB}      = $DB;
 	$self->{VERSION} = $VERSION;
 	$self->{OUTVERSION} = $OUTVERSION;
+	$self->{SYSTEM_NAME}        = $SYSTEM_NAME;
+	$self->{REPOSITORY_URL}     = $REPOSITORY_URL;
+	$self->{SYSTEM_DESCRIPTION} = $SYSTEM_DESCRIPTION;
 	$self->{HttpReferer} = $ENV{'HTTP_REFERER'} || '';
 
 	# ディフォルト値の設定
 	$self->SetDefaultValue();
 	$self->{_loaded_bset} = {};
-	$self->{http_agent} = "adiary $OUTVERSION on Satsuki-system $ROBJ->{VERSION}";
+	$self->{http_agent} = "$SYSTEM_NAME $OUTVERSION on Satsuki-system $ROBJ->{VERSION}";
 
 	# 現在の日時設定（日付変更時間対策）
 	$self->{now} = $ROBJ->{Now};
@@ -128,7 +131,7 @@ sub main {
 	$self->secure_http_host();
 
 	# 外部HTTPリクエストのUser-Agent
-	$ROBJ->{HttpAgent} = "adiary extends v$VERSION" . ($sys->{ServerURL} ? " ($sys->{ServerURL})" : '');
+	$ROBJ->{HttpAgent} = "$SYSTEM_NAME v$VERSION" . ($sys->{ServerURL} ? " ($sys->{ServerURL})" : '');
 
 	# pinfoとブログの選択。テーマ選択
 	$self->select_blog_and_pinfo();

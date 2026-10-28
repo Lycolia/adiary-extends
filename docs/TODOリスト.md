@@ -1,6 +1,6 @@
-# lyndbaumからのバックポート候補と、今後追加したい機能などのリスト一覧
+# Lyndbaum 0からのバックポート候補と、今後追加したい機能などのリスト一覧
 
-lyndbaum（`~/develop/perl/lyndbaum`）にある機能のうち、adiary-extendsに取り込めそうなものをまとめた。2026-10-20時点の調査。
+Lyndbaum 0（`~/develop/perl/lyndbaum0`）にある機能のうち、Lyndbaum 4に取り込めそうなものをまとめた。2026-10-20時点の調査。
 
 ## 前提
 
@@ -53,7 +53,7 @@ lyndbaum（`~/develop/perl/lyndbaum`）にある機能のうち、adiary-extends
 ### テスト
 
 - 回帰テスト
-  - 画面と操作のテストは、`t/lib/AppTest.pm`で一時フォルダに空のデータで組み立て、`adiary.cgi`を呼んで確かめる（本物の`data/`、`pub/`には触らない）
+  - 画面と操作のテストは、`t/lib/AppTest.pm`で一時フォルダに空のデータで組み立て、`lyndbaum.cgi`を呼んで確かめる（本物の`data/`、`pub/`には触らない）
   - 作ったもの
     - 権限：`t/permission_screen.t`、`t/permission_action.t`。`skel/`に画面や操作を足したら、表に足さないとテストが落ちる
     - 画面：`t/screens.t`。開発モードで、管理画面とすべてのテーマの公開画面を開き、テンプレートのエラーや警告が出ないこと、参照する`pub/assets/`のファイルがあることを確かめる
@@ -129,7 +129,7 @@ lyndbaum（`~/develop/perl/lyndbaum`）にある機能のうち、adiary-extends
 
 ### adiaryにすでにあるもの
 
-- FastCGI（`adiary.fcgi`）
+- FastCGI（`lyndbaum.fcgi`）
 - サイトマップ（`plugin/sitemap`）
 - 前後の記事へのリンク
 - `<head>`に入れるHTML（`dem_javascript`などのプラグインが近い）

@@ -3,7 +3,7 @@ use utf8;
 #-------------------------------------------------------------------------------
 # 画面と操作のテスト用ヘルパー
 #-------------------------------------------------------------------------------
-# 一時フォルダに空のデータで adiary を組み立て、adiary.cgi を CGI として呼ぶ。
+# 一時フォルダに空のデータで lyndbaum を組み立て、lyndbaum.cgi を CGI として呼ぶ。
 # 本物の data/ や pub/ には触らない。
 #
 #	my $app = AppTest->new();		# 空のデータで作る
@@ -49,11 +49,11 @@ sub new {
 	mkdir("$dir/pub");
 	symlink("$ROOT/pub/assets", "$dir/pub/assets") || die "symlink pub/assets: $!";
 
-	# 設定は配布物の見本を使う（手元の adiary.conf.cgi に左右されないように）
-	_copy("$ROOT/adiary.cgi", "$dir/adiary.cgi");
-	_copy("$ROOT/adiary.conf.cgi.sample", "$dir/adiary.conf.cgi");
+	# 設定は配布物の見本を使う（手元の lyndbaum.conf.cgi に左右されないように）
+	_copy("$ROOT/lyndbaum.cgi", "$dir/lyndbaum.cgi");
+	_copy("$ROOT/lyndbaum.conf.cgi.sample", "$dir/lyndbaum.conf.cgi");
 	if ($opt{develop}) {
-		open(my $fh, '>', "$dir/adiary.env.cgi") || die "adiary.env.cgi: $!";
+		open(my $fh, '>', "$dir/lyndbaum.env.cgi") || die "lyndbaum.env.cgi: $!";
 		print $fh "<\$Develop=1>\n";
 		close($fh);
 	}
@@ -137,8 +137,8 @@ sub request {
 		GATEWAY_INTERFACE => 'CGI/1.1',
 		REQUEST_METHOD  => $method,
 		QUERY_STRING    => $query,
-		REQUEST_URI     => "/adiary.cgi$path" . ($query ne '' ? "?$query" : ''),
-		SCRIPT_NAME     => '/adiary.cgi',
+		REQUEST_URI     => "/lyndbaum.cgi$path" . ($query ne '' ? "?$query" : ''),
+		SCRIPT_NAME     => '/lyndbaum.cgi',
 		PATH_INFO       => $path,
 		SERVER_NAME     => 'localhost',
 		SERVER_PORT     => 80,
@@ -159,7 +159,7 @@ sub request {
 	my $cwd = Cwd::getcwd();
 	chdir($self->{dir}) || die "chdir $self->{dir}: $!";
 	my $err = Symbol::gensym();
-	my $pid = IPC::Open3::open3(my $in, my $out, $err, $^X, 'adiary.cgi');
+	my $pid = IPC::Open3::open3(my $in, my $out, $err, $^X, 'lyndbaum.cgi');
 	chdir($cwd);
 	binmode($in);
 	binmode($out);

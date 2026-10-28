@@ -1,8 +1,8 @@
 <div align="center">
-  <img src="pub/assets/dist/default-icon.svg" height="64" width="64">
+  <img src="docs/assets/logo-vector.svg" height="64" width="64">
 </div>
 
-# adiary-extends
+# Lyndbaum 4 - Neo-Modern High-performance CMS software
 
 このプログラムは[nabe-abk/adiary](https://github.com/nabe-abk/adiary)のフォークです。
 原典となる著作権表記はオリジナルのREADMEである、[README.original.md](README.original.md)に記しています。
@@ -20,22 +20,22 @@
 
 Perl標準モジュールのほかに、使い方によって次のモジュールが必要です。
 
-| モジュール                        | 要るとき                                                                                                 |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| FCGI                              | FastCGIで動かすとき（`adiary.fcgi`）。ソケットで待ち受けるときはスレッド（ithreads）に対応したPerlも必要 |
-| DBI、DBD::PgまたはDBD::mysql      | PostgreSQLかMySQLを使うとき。既定のテキストDBでは要らない                                                |
-| Image::Magick                     | 画像のサムネイルを作るとき。無いと、画像のサムネイルの代わりにアイコンを出す                             |
-| Net::SSLeay                       | 外部のサイトとhttpsで通信するとき（更新通知、`[&URL]`のタイトルの取得、記事の画像の取り込みなど）        |
-| threads（スレッドに対応したPerl） | `adiary.httpd.pl`（Perlだけで動くWebサーバー）を使うとき                                                 |
-| Encode::Locale、Crypt::glibc      | Windowsで`adiary.httpd.pl`を使うとき                                                                     |
+| モジュール                        | 要るとき                                                                                                   |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| FCGI                              | FastCGIで動かすとき（`lyndbaum.fcgi`）。ソケットで待ち受けるときはスレッド（ithreads）に対応したPerlも必要 |
+| DBI、DBD::PgまたはDBD::mysql      | PostgreSQLかMySQLを使うとき。既定のテキストDBでは要らない                                                  |
+| Image::Magick                     | 画像のサムネイルを作るとき。無いと、画像のサムネイルの代わりにアイコンを出す                               |
+| Net::SSLeay                       | 外部のサイトとhttpsで通信するとき（更新通知、`[&URL]`のタイトルの取得、記事の画像の取り込みなど）          |
+| threads（スレッドに対応したPerl） | `lyndbaum.httpd.pl`（Perlだけで動くWebサーバー）を使うとき                                                 |
+| Encode::Locale、Crypt::glibc      | Windowsで`lyndbaum.httpd.pl`を使うとき                                                                     |
 
 # インストール方法
 
 1. 解凍してでてきたファイルをサーバ上の任意の位置に置く
-2. adiary.cgi に実行属性を付ける
+2. lyndbaum.cgi に実行属性を付ける
 3. `__cache/`, `data/`, `pub/`を`www`権限で書き込めるようにする。（suEXECの場合は不要）
-4. `adiary.conf.cgi.sample`を`adiary.conf.cgi`としてコピーし適当にいじる
-5. `adiary.cgi`にアクセスし、ID、パスワードを適当に入力してログイン。
+4. `lyndbaum.conf.cgi.sample`を`lyndbaum.conf.cgi`としてコピーし適当にいじる
+5. `lyndbaum.cgi`にアクセスし、ID、パスワードを適当に入力してログイン。
 6. その後、自分自身をユーザーとして追加する。
 
 詳細は[オンラインマニュアル](http://adiary.org/v3man/)を参照してください。

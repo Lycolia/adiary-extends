@@ -12,7 +12,7 @@
 <@ifcall(v.require_update, '_sub/require_update')>
 
 <@><!--=====================================================================-->
-<$title = "Welcome adiary">
+<$title = "Welcome " . v.SYSTEM_NAME>
 
 <!--トップ===================================================================-->
 <article class="system">
@@ -69,9 +69,9 @@
 <div class="hatena-moduletitle">外部リンク</div>
 <div class="hatena-modulebody">
 <ul class="hatena-section">
-<li><a href="https://adiary.org/">adiary公式サイト</a></li>
-<li><a href="https://adiary.org/v3man/">オンラインマニュアル</a></li>
-<li><a href="https://github.com/nabe-abk/adiary">Githubリポジトリ</a></li>
+<li><a href="<@v.REPOSITORY_URL>"><@v.SYSTEM_NAME>（Githubリポジトリ）</a></li>
+<li><a href="https://adiary.org/">adiary公式サイト（フォーク元）</a></li>
+<li><a href="https://adiary.org/v3man/">adiaryオンラインマニュアル</a></li>
 </ul>
 </div> <!-- hatena-modulebody -->
 </div> <!-- hatena-module -->

@@ -254,7 +254,7 @@ if ($0 =~ /\.exe$/i) {
 		}
 		close($fh);
 		if ($SPEC_VER ne $pl_ver) {
-			print STDERR "*** adiary.httpd.pl's specification version $pl_ver mismatch!!\n";	# debug-safe
+			print STDERR "*** lyndbaum.httpd.pl's specification version $pl_ver mismatch!!\n";	# debug-safe
 			print STDERR "*** Please update '$0'\n";						# debug-safe
 			print STDERR "\n<<push any key for exit>>";						# debug-safe
 			my $key = <STDIN>;

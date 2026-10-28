@@ -22,7 +22,7 @@ use Getopt::Long ();
 use JSON::PP ();
 
 my %opt = (
-	base	=> 'https://adiary.lycolia.info',
+	base	=> 'https://lyndbaum.lycolia.info',
 	'curl-config' => "$ENV{HOME}/.curl-dev.conf",
 	n	=> 50,
 	warmup	=> 3,
