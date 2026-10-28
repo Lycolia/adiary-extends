@@ -451,7 +451,7 @@ $$.prepend_css = function(file) {
 //●動画のサムネイルを作って送る
 ////////////////////////////////////////////////////////////////////////////////
 // サーバーではコマンドを動かさず、ブラウザーで動画の1コマを切り出してJPEGにする。
-// 記事用（長い辺960px）と画像アルバム用（opt.size）の2つを album/upload_video_thumbnail に送る
+// 記事用（長い辺960px）と画像アルバム用（opt.size）の2つを media/upload_video_thumbnail に送る
 //	opt.url    : 動画のURL
 //	opt.folder : 画像アルバムのフォルダ（posts/2026/）
 //	opt.name   : 動画のファイル名
@@ -469,7 +469,7 @@ $$.make_video_thumbnail = function(opt) {
 		return Promise.all([ video_to_jpeg(v, VIDEO_POSTER_MAX), video_to_jpeg(v, size) ]);
 	}).then(function(blobs){
 		const fd = new FormData();
-		fd.append('action', 'album/upload_video_thumbnail');
+		fd.append('action', 'media/upload_video_thumbnail');
 		fd.append('folder', opt.folder);
 		fd.append('file',   opt.name);
 		fd.append('poster', blobs[0], 'poster.jpg');

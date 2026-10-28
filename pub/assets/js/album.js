@@ -97,7 +97,7 @@ var set = {
 			data.icon  = 'trashbox.png';
 		}
 
-		// 開くフォルダの指定（?album/&folder=xxx/。記事作成画面のアイキャッチ画像から）
+		// 開くフォルダの指定（?media/&folder=xxx/。記事作成画面のアイキャッチ画像から）
 		var open_key = !isReloading && new URLSearchParams(location.search).get('folder');
 		var open_node = open_key && tree.dynatree("getTree").getNodeByKey(open_key);
 		if (open_node) open_node.activateSilently();
@@ -875,7 +875,7 @@ function update_view(flag, selected) {
 	// 選択済みファイルのハッシュ
 	selected = selected ? selected : {};
 
-	// ソート処理。既定は日付の降順（skel/album/_main.html）。
+	// ソート処理。既定は日付の降順（skel/media/_main.html）。
 	// 同じ値（同じ秒に上げたファイルなど）は名前順にして、開くたびに並びが変わらないようにする
 	{
 		var type = sort_type.val();

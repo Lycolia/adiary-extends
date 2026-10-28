@@ -12,7 +12,7 @@
 <$cur.artlist = (skel eq 'artlist' || skel eq 'edit')>
 <$cur.page    = (skel eq 'set2/contents_edit')>
 <$cur.trash   = (skel eq 'trash')>
-<$cur.album   = (dir eq 'album/')>
+<$cur.album   = (dir eq 'media/')>
 <$cur.comlist = (skel eq 'comlist')>
 <$cur.tag     = (skel eq 'set2/tag_edit')>
 <$cur.set      = (dir eq 'set/')>
@@ -35,7 +35,7 @@
 	<li<@if(cur.artlist, ' class="current"')>><a href="<@v.myself>?artlist">記事</a></li>
 	<li<@if(cur.page,    ' class="current"')>><a href="<@v.myself>?set2/contents_edit">ページ</a></li>
 	<li<@if(cur.trash,   ' class="current"')>><a href="<@v.myself>?trash">ゴミ箱</a></li>
-	<li<@if(cur.album,   ' class="current"')>><a href="<@v.myself>?album/">メディア</a></li>
+	<li<@if(cur.album,   ' class="current"')>><a href="<@v.myself>?media/">メディア</a></li>
 	<li<@if(cur.comlist, ' class="current"')>><a href="<@v.myself>?comlist">コメント<@if(s.newcom_flag, ' <span class="admin-nav-new">新着</span>')></a></li>
 	<li<@if(cur.tag,     ' class="current"')>><a href="<@v.myself>?set2/tag_edit">タグ</a></li>
 <$end>

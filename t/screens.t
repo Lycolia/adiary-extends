@@ -30,7 +30,7 @@ sub esc { AppTest::_uri_escape(shift) }
 #-------------------------------------------------------------------------------
 # 引数が要る画面は、画面の中のリンクと同じ引数を付ける
 my @ADMIN = qw(
-	menu personal/ edit /01?edit trash artlist comlist album/
+	menu personal/ edit /01?edit trash artlist comlist media/
 	set/ set/detail set/role set/editor
 	set2/ set2/tag_edit set2/contents_edit set2/usertag set2/header
 	design/ design/theme design/edit design/reset design/usercss design/art_sample

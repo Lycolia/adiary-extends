@@ -282,11 +282,11 @@ sub seed {
 
 	# アルバムの根元は、画像を初めて置くときに作られる。ここでは先に作っておく
 	mkdir("$self->{dir}/pub/attachments");
-	$r = $self->post('editor', '', { action => 'album/create_folder', folder => '/', name => 'test' });
+	$r = $self->post('editor', '', { action => 'media/create_folder', folder => '/', name => 'test' });
 	die "create_folder failed: $r->{body}" if (!$r->{json} || $r->{json}->{ret} ne '0');
 	_copy("$ROOT/pub/assets/dist/default-icon.png", "$self->{dir}/pub/attachments/$IMAGE_FOLDER$IMAGE_FILE");
 	_copy("$ROOT/pub/assets/dist/default-icon.png", "$self->{dir}/pub/attachments/$IMAGE_FOLDER$VIDEO_FILE");
-	$r = $self->post('editor', '', { action => 'album/refresh' });
+	$r = $self->post('editor', '', { action => 'media/refresh' });
 	return $self;
 }
 

@@ -443,7 +443,7 @@ sub image_upload_form {
 	# フォルダリストの再生成
 	$self->genarete_imgae_dirtree();
 
-	# 動画のサムネイルは、この後にブラウザーで作る（album/_action/upload_form、edit.js）
+	# 動画のサムネイルは、この後にブラウザーで作る（media/_action/upload_form、edit.js）
 	$self->{uploaded_videos} = [ grep { $self->is_video($_) } @files ];
 
 	# メッセージ
@@ -1083,7 +1083,7 @@ sub album_check_ext_one {
 sub load_album_allow_ext {
 	my $self = shift;
 	if (!$self->{album_allow_ext}->{'.'}) {
-		$self->{ROBJ}->call('album/_load_extensions');
+		$self->{ROBJ}->call('media/_load_extensions');
 	}
 	return $self->{album_allow_ext};
 }

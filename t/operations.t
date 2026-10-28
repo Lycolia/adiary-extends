@@ -256,23 +256,23 @@ subtest '画像アルバム' => sub {
 	};
 	my $img = "$dir/pub/attachments/test";
 
-	my $r = $app->post('editor', '', [ action => 'album/upload_form', folder => 'test/', size => 120,
+	my $r = $app->post('editor', '', [ action => 'media/upload_form', folder => 'test/', size => 120,
 		file_ary => { filename => 'up.png', content => $png, type => 'image/png' } ]);
 	like($r->{body}, qr/^ret=0$/m, 'アップロードできる');
 	ok(-f "$img/up.png", 'ファイルが置かれる');
 	ok(-f "$img/.thumbnail/up.png.jpg", 'サムネイルが作られる');
 
-	$r = $app->post('editor', '', { action => 'album/rename_file', folder => 'test/', old => 'up.png', name => 'renamed.png' });
+	$r = $app->post('editor', '', { action => 'media/rename_file', folder => 'test/', old => 'up.png', name => 'renamed.png' });
 	ok(json_ok($r), '名前を変えられる');
 	ok(!-e "$img/up.png" && -f "$img/renamed.png", 'ファイルの名前が変わる');
 
-	$r = $app->post('editor', '', { action => 'album/create_folder', folder => '/', name => 'other' });
+	$r = $app->post('editor', '', { action => 'media/create_folder', folder => '/', name => 'other' });
 	ok(json_ok($r), 'フォルダを作れる');
-	$r = $app->post('editor', '', { action => 'album/move_files', from => 'test/', to => 'other/', file_ary => 'renamed.png' });
+	$r = $app->post('editor', '', { action => 'media/move_files', from => 'test/', to => 'other/', file_ary => 'renamed.png' });
 	ok(json_ok($r), '移せる');
 	ok(!-e "$img/renamed.png" && -f "$dir/pub/attachments/other/renamed.png", 'ファイルが移る');
 
-	$r = $app->post('editor', '', { action => 'album/delete_files', folder => 'other/', file_ary => 'renamed.png' });
+	$r = $app->post('editor', '', { action => 'media/delete_files', folder => 'other/', file_ary => 'renamed.png' });
 	ok(json_ok($r), '削除できる');
 	ok(!-e "$dir/pub/attachments/other/renamed.png", 'フォルダから消える');
 };
@@ -290,7 +290,7 @@ subtest '動画のサムネイルの大きさの上限' => sub {
 	};
 	my $post = sub {
 		my ($w, $h) = @_;
-		return $app->post('editor', '', [ action => 'album/upload_video_thumbnail', folder => $AppTest::IMAGE_FOLDER, file => $AppTest::VIDEO_FILE,
+		return $app->post('editor', '', [ action => 'media/upload_video_thumbnail', folder => $AppTest::IMAGE_FOLDER, file => $AppTest::VIDEO_FILE,
 			poster => { filename => 'poster.jpg', content => $jpeg->($w, $h), type => 'image/jpeg' },
 			thumb  => { filename => 'thumb.jpg',  content => $jpeg->(1, 1),   type => 'image/jpeg' } ]);
 	};
@@ -432,17 +432,17 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 	};
 	my $thumb = "$dir/pub/attachments/test/.thumbnail/size.png.jpg";
 	require Satsuki::ImageFormat;
-	$r = $app->post('editor', '', [ action => 'album/upload_form', folder => 'test/', size => 640,
+	$r = $app->post('editor', '', [ action => 'media/upload_form', folder => 'test/', size => 640,
 		file_ary => { filename => 'size.png', content => $png, type => 'image/png' } ]);
 	like($r->{body}, qr/^ret=0$/m, 'アップロードできる');
 	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '100x100', 'アップロードでは設定の大きさで作る');
 
 	$r = $app->post('owner', 'set/editor', { %SET, edit_thumb_size => 150 });
-	$r = $app->post('editor', '', { action => 'album/remake_thumbnail', folder => 'test/', file_ary => 'size.png', size => 640 });
+	$r = $app->post('editor', '', { action => 'media/remake_thumbnail', folder => 'test/', file_ary => 'size.png', size => 640 });
 	ok(json_ok($r), '再生成できる');
 	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '150x150', '再生成でも設定の大きさで作る');
-	like(body($app->get('editor', 'album/')), qr{data-size="150"}, 'アルバムの画面に、動画のサムネイル用の大きさが出る');
-	unlike(body($app->get('editor', 'album/')), qr{name="size"|thumbnail-size}, 'アルバムでサムネイルの大きさを選ばせない');
+	like(body($app->get('editor', 'media/')), qr{data-size="150"}, 'メディアの画面に、動画のサムネイル用の大きさが出る');
+	unlike(body($app->get('editor', 'media/')), qr{name="size"|thumbnail-size}, 'メディアでサムネイルの大きさを選ばせない');
 };
 
 #-------------------------------------------------------------------------------
