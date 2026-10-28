@@ -51,6 +51,7 @@ my $PORT      = $IsWindows ? 80 : 8888;
 my $ITHREADS  = $IsWindows;
 my $TIMEOUT   =  3;
 my $DEAMONS   = 10;
+my $DEBUG_SINGLE = 0;	# single process mode for debugger
 my $KEEPALIVE = 1;
 my $BUFSIZE_u = '1M';	# 1MB
 my $BUFSIZE;		# byte / set from $BUFSIZE_u
@@ -127,6 +128,7 @@ my %SIZE_UNIT = ('K' => 1024, 'M' => 1024*1024, 'G' => 1024*1024*1024);
 			if ($k eq 'n') { $key=$kx; $OPEN_BROWSER=0; next; }
 			if ($k eq 'i') { $key=$kx; $ITHREADS=1; next; }
 			if ($k eq 'f') { $key=$kx; $ITHREADS=0; next; }
+			if ($k eq 'D') { $key=$kx; $DEBUG_SINGLE=1; next; }
 
 			# keep-alive
 			if ($k2 eq 'k0') { $key=$ky; $KEEPALIVE=0; next; }
@@ -200,6 +202,16 @@ my %SIZE_UNIT = ('K' => 1024, 'M' => 1024*1024, 'G' => 1024*1024*1024);
 	}
 	if ($TIMEOUT < 0.001)	{ $TIMEOUT=0.001; }
 	if ($DEAMONS < 1) 	{ $DEAMONS=1;     }
+	if ($DEBUG_SINGLE) {
+		$ITHREADS = 0;
+		$DEAMONS  = 1;
+		$ENV{SatsukiReloadStop} = 1;	# keep breakpoints
+
+		# debugger matches breakpoints by absolute file name
+		# (use $0's dir, getcwd() resolves symlinks)
+		my $dir = $0 =~ m|^(/.*)/[^/]*$| ? $1 : Cwd::getcwd();
+		@INC = map { $_ =~ m|^\./(.*)| ? "$dir/$1" : $_ } @INC;
+	}
 	if ($MAX_CGI_REQUESTS == 0)		{ $MAX_CGI_REQUESTS=10000000; }
 	if ($MAX_CGI_REQUESTS > 10000000)	{ $MAX_CGI_REQUESTS=10000000; }
 	if ($MAX_CGI_REQUESTS <      100)	{ $MAX_CGI_REQUESTS=100; }
@@ -226,6 +238,7 @@ Available options are:
   -u filename	UNIX domain socket mode
   -f		use fork()
   -i		use threads (ithreads)
+  -D		single process mode for debugger (no fork, no auto reload)
   -k1		connection keep-alive enable (default)
   -k0		connection keep-alive disable
   -t0		set ENV SatsukiTimer=0
@@ -329,7 +342,7 @@ print(
 		. " Timeout $TIMEOUT sec,"
 		. " Buffer ${BUFSIZE_u}B,"
 		. " Keep-Alive " . ($KEEPALIVE ? 'on' : 'off') . "\n"
-	. "\tStart up daemon: $DEAMONS " . ($ITHREADS ? 'threads' : 'process')
+	. ($DEBUG_SINGLE ? "\tSingle process mode (debug)" : "\tStart up daemon: $DEAMONS " . ($ITHREADS ? 'threads' : 'process'))
 	. ", Max cgi requests: $MAX_CGI_REQUESTS\n"
 );
 #-------------------------------------------------------------------------------
@@ -439,7 +452,11 @@ if ($GENERATE_CONF) {
 ################################################################################
 # main routine
 ################################################################################
-{
+if ($DEBUG_SINGLE) {
+	# run in this process for debugger
+	&daemon_main($srv);
+
+} else {
 	$SIG{USR1} = sub {};	# wake up for main process
 
 	# prefork / create_threads
