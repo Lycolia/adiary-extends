@@ -42,6 +42,7 @@ my @SCREENS = (
 	[ '/01?edit'            , 'editor', sub { $_[0]->{status} == 200 && ($_[0]->{title} // '') =~ /editorの記事 - 記事の編集/ } ],
 	[ 'trash'               , 'editor', 'ゴミ箱' ],
 	[ 'artlist'             , 'editor', '記事一覧' ],
+	[ 'artlist&enable=draft', 'editor', '記事一覧' ],	# 下書きの絞り込み
 	[ 'comlist'             , 'editor', 'コメント一覧' ],
 	[ 'media/'              , 'editor', 'メディア' ],
 	[ 'etc/myblog_create'   , 'admin' , sub { $_[0]->{status} == 200 } ],	# ブログはもうあるので、画面はエラーを出す

@@ -177,7 +177,8 @@ subtest 'コメントの承認待ちと記事の公開・非公開' => sub {
 		return $b // '';
 	};
 	my $coms = sub {
-		my ($n) = body($app->get('editor', 'menu')) =~ m{<th>コメント</th><td>(\d+)件}s;
+		# ブログのコメント数（v.blog.coms）。ダッシュボードには出さないので、全記事の削除の画面で見る
+		my ($n) = body($app->get('owner', 'mainte/blog_clear')) =~ m{<th>コメント</th>\s*<td>(\d+)件}s;
 		return $n;
 	};
 
@@ -445,6 +446,51 @@ subtest '再構築' => sub {
 	my $r = $app->post('owner', '', { action => 'mainte/blog_rebuild' });
 	ok(AppTest::is_reload($r), 'ブログを再構築できる');
 	ok(-s "$dir/pub/rss.xml", 'RSSが書き出し直される');
+};
+
+subtest 'ダッシュボード' => sub {
+	my $r = $app->post('editor', '', { %ART, title => '記事の下書き', body_txt => "下書き\n", draft => 1 });
+	ok(AppTest::is_reload($r), '記事の下書きを保存できる');
+	$r = $app->post('editor', '', { %ART, title => 'ページの下書き', body_txt => "下書き\n", draft => 1, wiki => 1, link_key_txt => 'draft-page' });
+	ok(AppTest::is_reload($r), 'ページの下書きを保存できる');
+
+	my $b = body($app->get('editor', 'menu'));
+	my ($glance) = $b =~ m{<ul class="dashboard-glance">(.*?)</ul>}s;
+	my @rows;
+	while (($glance // '') =~ m{<li><a href="[^"]*\?([^"]*)">([^<]+)</a><span class="dashboard-count">(\d+)件</span></li>}g) {
+		my ($query, $label, $count) = ($1, $2, $3);
+		push(@rows, { query => $query =~ s/&amp;/&/gr, label => $label, count => $count });
+	}
+	is_deeply([ map { $_->{label} } @rows ], [qw(
+		記事の下書き 公開中の記事 非公開の記事 ページの下書き 公開中のページ 非公開のページ
+		ゴミ箱 承認待ちのコメント 承認済みのコメント
+	)], '概要の項目と順番');
+
+	# 件数は、行き先の一覧の件数と同じ
+	my %count = map { $_->{label} => $_->{count} } @rows;
+	foreach (@rows) {
+		my $list = body($app->get('editor', $_->{query}));
+		my ($n) = $list =~ m{<p>Total (\d+) (?:articles|comments)\.</p>};
+		is($_->{count}, $n, "$_->{label}の件数は、一覧（?$_->{query}）と同じ");
+	}
+	is($count{'記事の下書き'},   1, '記事の下書きを数える');
+	is($count{'ページの下書き'}, 1, 'ページの下書きを数える');
+
+	# 記事一覧の「下書き」には、下書きだけが出る
+	my $drafts = body($app->get('editor', 'artlist&enable=draft'));
+	like($drafts, qr{記事の下書き}, '記事一覧の下書きに、記事の下書きが出る');
+	like($drafts, qr{ページの下書き}, '記事一覧の下書きに、ページの下書きが出る');
+	unlike($drafts, qr{editorの記事}, '記事一覧の下書きに、公開の記事は出ない');
+	my $all = body($app->get('editor', 'artlist'));
+	unlike($all, qr{記事の下書き}, '記事一覧の「すべて」には、今までどおり下書きが出ない');
+
+	# 書くは1つ。再構築はブログ管理者だけ
+	my @write = $b =~ m{<a class="button-primary" href="([^"]*)">}g;
+	is(scalar(@write), 1, '書くのボタンは1つ');
+	like($write[0] // '', qr{\?edit$}, '書くの行き先は編集画面');
+	unlike($b, qr{name="action" value="mainte/blog_rebuild"}, '編集者には再構築が出ない');
+	like(body($app->get('owner', 'menu')), qr{name="action" value="mainte/blog_rebuild"}, 'ブログ管理者には再構築が出る');
+	unlike(body($app->get('user', 'menu')), qr{dashboard-glance}, '編集者でなければ概要は出ない');
 };
 
 #-------------------------------------------------------------------------------

@@ -83,6 +83,7 @@
 			<option value="">すべて</option>
 			<option value="1"<@if(ret.enable eq '1', ' selected')>>公開</option>
 			<option value="0"<@if(ret.enable eq '0', ' selected')>>非公開</option>
+			<option value="draft"<@if(ret.enable eq 'draft', ' selected')>>下書き</option>
 		</select>
 		</div>
 		<input type="hidden" name="sort" value="<@ret.sort>">

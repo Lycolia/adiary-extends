@@ -291,6 +291,52 @@ article.system.notice {
 	border-left:		4px solid var(--admin-accent);
 }
 
+/* ダッシュボードの箱（概要、書く、再構築）を並べる */
+.dashboard-cards {
+	display:		grid;
+	grid-template-columns:	repeat(auto-fill, minmax(18rem, 1fr));
+	gap:			1rem;
+	align-items:		start;
+	margin:			0 0 1rem;
+}
+.dashboard-cards > article.system {
+	margin:			0;
+}
+/* 概要。行の左に一覧へのリンク、右に件数 */
+ul.dashboard-glance {
+	list-style:		none;
+	margin:			0;
+	padding:		0;
+}
+ul.dashboard-glance li {
+	display:		flex;
+	justify-content:	space-between;
+	gap:			1rem;
+	padding:		0.3rem 0;
+	border-bottom:		1px dashed var(--admin-border-light);
+}
+ul.dashboard-glance li:last-child {
+	border-bottom:		none;
+}
+.dashboard-count {
+	color:			var(--admin-muted);
+}
+/* 送信ボタンと同じ見た目のリンク */
+a.button-primary {
+	display:		inline-block;
+	padding:		0.25em 0.8em;
+	line-height:		1.3;
+	color:			#fff;
+	text-decoration:	none;
+	background-color:	var(--admin-accent);
+	border:			1px solid var(--admin-link);
+}
+a.button-primary:hover, a.button-primary:focus {
+	color:			#fff;
+	background-color:	var(--admin-link-hover);
+	border-color:		var(--admin-link-hover);
+}
+
 /* 箱のない見出し（ページのタイトル） */
 .main > h2 {
 	margin:			0 0 1rem;
