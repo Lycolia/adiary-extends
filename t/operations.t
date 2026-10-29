@@ -523,6 +523,65 @@ subtest 'ユーザー' => sub {
 	unlike(body($app->get('admin', 'user/')), qr{>user<}, 'ユーザーの一覧から消える');
 };
 
+subtest '同時ログイン数' => sub {
+	# システム設定の画面のフォームの値に、変えたい値を重ねて保存する
+	my $save = sub {
+		my %set = @_;
+		my $b = body($app->get('admin', 'system/setting'));
+		my %form;
+		while ($b =~ m{<input\b([^>]*)>}g) {
+			my $a = $1;
+			my ($name) = $a =~ /\bname="([^"]*)"/ or next;
+			my ($type) = $a =~ /\btype="([^"]*)"/;
+			my ($val)  = $a =~ /\bvalue="([^"]*)"/;
+			next if (($type // '') eq 'checkbox' && $a !~ /\bchecked\b/);
+			$form{$name} = $val // '';
+		}
+		while ($b =~ m{<textarea\b[^>]*\bname="([^"]*)"[^>]*>(.*?)</textarea>}sg) { $form{$1} = $2; }
+		return $app->post('admin', 'system/setting', { %form, %set, action => 'system/setting' });
+	};
+	# 同じユーザーで、別の端末（Cookie）からログインする
+	$app->user_add('admin', 'multi', 0);
+	# ログインの時刻（login_tm）は秒単位なので、どれが古いか分かるよう1秒あける
+	my $login = sub {
+		my $who = shift;
+		sleep(1);
+		return json_ok($app->post($who, '', { action => '_ajax_login', adiary_id => 'multi', pass => $AppTest::PASS }));
+	};
+	my $alive = sub { $app->get(shift, 'menu')->{status} == 200 };
+
+	like(body($app->get('admin', 'system/setting')), qr{name="max_sessions"[^>]*value="1"}, '設定ファイルに書いていなければ1');
+
+	ok(AppTest::is_reload($save->(max_sessions => 2)), '2にできる');
+	like(body($app->get('admin', 'system/setting')), qr{name="max_sessions"[^>]*value="2"}, '保存した値が出る');
+	ok($login->("multi-$_"), "${_}回目のログイン") foreach (1..3);
+	ok(!$alive->('multi-1'), '3回目のログインで、いちばん古いログインが切れる');
+	ok($alive->('multi-2') && $alive->('multi-3'), '新しい2つは残る');
+
+	ok(AppTest::is_reload($save->(max_sessions => 1)), '1にできる');
+	ok($login->('multi-4'), 'もう一度ログインする');
+	ok(!$alive->('multi-2') && !$alive->('multi-3'), '1にすると、前のログインがすべて切れる');
+	ok($alive->('multi-4'), '新しいログインは残る');
+
+	foreach (0, 11) {
+		ok(!AppTest::is_reload($save->(max_sessions => $_)), "${_}は保存できない");
+	}
+	like(body($app->get('admin', 'system/setting')), qr{name="max_sessions"[^>]*value="1"}, '保存できなかったときは前の値のまま');
+	unlike(body($app->get('guest', '')), qr{メンテナンス}, 'ほかの設定は変わらない');
+
+	# v4.19のアップデート処理で、設定ファイルの値（ここでは書いていないので1）をシステム設定に写す
+	my $sys = "$dir/data/system_config.dat";
+	my $conf = read_file($sys);
+	$conf =~ s/^max_sessions=.*\n//m;
+	$conf =~ s/^VERSION=.*$/VERSION=4.18/m;
+	open(my $fh, '>:utf8', $sys) || die "$sys: $!";
+	print $fh $conf;
+	close($fh);
+	ok(AppTest::is_reload($app->post('admin', 'system/update', { action => 'system/update' })), 'アップデート処理を行える');
+	like(read_file($sys), qr/^max_sessions=1$/m, 'アップデート処理で、同時ログイン数がシステム設定に入る');
+	like(read_file($sys), qr/^VERSION=4\.19$/m, 'バージョンが4.19になる');
+};
+
 subtest '操作の記録' => sub {
 	# 無いIDでの失敗を12件。タグになる文字を混ぜて、エスケープとURLのエンコードも確かめる
 	$app->post('editor', '', { action => '_ajax_login', adiary_id => 'nobody<x>', pass => 'wrong' }) foreach (1..12);

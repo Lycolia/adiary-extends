@@ -474,6 +474,12 @@ sub sys_update_418 {
 sub sys_update_419 {
 	my $self = shift;
 	$self->update_sysdat('video_poster_time', time());
+
+	# 同時ログイン数を設定ファイルからシステム設定に移す。今の値を写して、動きを変えない
+	if (!$self->{sys}->{max_sessions}) {
+		my $max = int($self->{ROBJ}->{Auth}->{max_sessions});
+		$self->update_sysdat('max_sessions', $max < 1 ? 1 : $max);
+	}
 }
 
 #-------------------------------------------------------------------------------

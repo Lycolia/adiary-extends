@@ -124,6 +124,11 @@ sub main {
 	# システム情報のロード
 	my $sys = $self->load_sysdat();
 
+	# 同時ログイン数（システム設定）。無ければ設定ファイルの値のまま
+	if ($sys->{max_sessions}) {
+		$ROBJ->{Auth}->{max_sessions} = $sys->{max_sessions};
+	}
+
 	# Cookieログイン処理
 	$self->authorization();
 
