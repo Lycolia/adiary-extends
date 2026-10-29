@@ -132,6 +132,11 @@ sub main {
 	# Cookieログイン処理
 	$self->authorization();
 
+	# ログイン中の画面は、途中のキャッシュにもブラウザーにも保存させない（管理バーや管理者だけの知らせが入るため）
+	if ($ROBJ->{Auth}->{ok}) {
+		$ROBJ->{Cache_control} = 'private, no-store';
+	}
+
 	# ServerURLのセキィリティを確保
 	$self->secure_http_host();
 

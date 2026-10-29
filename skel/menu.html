@@ -24,9 +24,7 @@
 	<$end>
 
 <@ifexec(!Auth.auto, begin)>
-	<@ifexec(Auth.isadmin && v.require_update, begin)>
-		<p><strong class="warning">すぐに<a href="<@v.myself>?system/update">アップデート処理</a>を実行してください。</strong></p>
-	<$end>
+	<@> アップデートが必要なときの知らせは、管理画面の枠（_sub/require_update_notice）で出す
 	<@ifexec(Auth.isadmin && (v.sys.myself ne myself || v.sys.myself2 ne myself2), begin)>
 		<p><a href="<@v.myself>?system/update">付加情報の再生成</a>が必要です。</p>
 	<$end>

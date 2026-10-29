@@ -290,6 +290,10 @@ article.system div.body p {
 article.system.notice {
 	border-left:		4px solid var(--admin-accent);
 }
+/* アップデートが必要なときの知らせ（_sub/require_update_notice） */
+article.system.notice.require-update {
+	border-left-color:	var(--admin-warning);
+}
 
 /* ダッシュボードの箱（概要、書く、再構築）を並べる */
 .dashboard-cards {

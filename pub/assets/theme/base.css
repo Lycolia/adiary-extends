@@ -673,10 +673,14 @@ html:has(.admin-bar) {
 	stroke-linejoin:	round;
 }
 /* 新着のコメントの印（押すとコメント一覧）。「ようこそ○○さん」（管理画面へのリンク）のすぐ後ろに付ける。
-   色は管理画面の新着の印（admin.css の admin-new-badge）にそろえる */
+   色は管理画面の新着の印（admin.css の admin-new-badge）にそろえる
+   アップデートが必要なときの印（押すとアップデート処理の画面。システム管理者だけ）も同じ形にする */
 .admin-bar .admin-bar-new,
 .admin-bar .admin-bar-new:link,
-.admin-bar .admin-bar-new:visited {
+.admin-bar .admin-bar-new:visited,
+.admin-bar .admin-bar-update,
+.admin-bar .admin-bar-update:link,
+.admin-bar .admin-bar-update:visited {
 	flex:			none;
 	padding:		0.1em 0.35em;
 	background-color:	#d63638;
@@ -708,7 +712,10 @@ html:has(.admin-bar) {
 	/* 「ようこそ」のリンクの右の余白（0.6rem）から少しだけ引き寄せ、隙間をPCの表示と同じくらいにする */
 	.admin-bar .admin-bar-new,
 	.admin-bar .admin-bar-new:link,
-	.admin-bar .admin-bar-new:visited {
+	.admin-bar .admin-bar-new:visited,
+	.admin-bar .admin-bar-update,
+	.admin-bar .admin-bar-update:link,
+	.admin-bar .admin-bar-update:visited {
 		align-self:		center;
 	}
 	.admin-bar .admin-bar-icon {
@@ -736,7 +743,10 @@ html:has(body.sp .admin-bar) {
 }
 .sp .admin-bar .admin-bar-new,
 .sp .admin-bar .admin-bar-new:link,
-.sp .admin-bar .admin-bar-new:visited {
+.sp .admin-bar .admin-bar-new:visited,
+.sp .admin-bar .admin-bar-update,
+.sp .admin-bar .admin-bar-update:link,
+.sp .admin-bar .admin-bar-update:visited {
 	align-self:		center;
 }
 .sp .admin-bar .admin-bar-icon {

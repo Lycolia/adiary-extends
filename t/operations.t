@@ -484,12 +484,10 @@ subtest 'ダッシュボード' => sub {
 	my $all = body($app->get('editor', 'artlist'));
 	unlike($all, qr{記事の下書き}, '記事一覧の「すべて」には、今までどおり下書きが出ない');
 
-	# 書くは1つ。再構築はブログ管理者だけ
+	# 書くは1つ
 	my @write = $b =~ m{<a class="button-primary" href="([^"]*)">}g;
 	is(scalar(@write), 1, '書くのボタンは1つ');
 	like($write[0] // '', qr{\?edit$}, '書くの行き先は編集画面');
-	unlike($b, qr{name="action" value="mainte/blog_rebuild"}, '編集者には再構築が出ない');
-	like(body($app->get('owner', 'menu')), qr{name="action" value="mainte/blog_rebuild"}, 'ブログ管理者には再構築が出る');
 	unlike(body($app->get('user', 'menu')), qr{dashboard-glance}, '編集者でなければ概要は出ない');
 };
 
@@ -580,6 +578,56 @@ subtest '同時ログイン数' => sub {
 	ok(AppTest::is_reload($app->post('admin', 'system/update', { action => 'system/update' })), 'アップデート処理を行える');
 	like(read_file($sys), qr/^max_sessions=1$/m, 'アップデート処理で、同時ログイン数がシステム設定に入る');
 	like(read_file($sys), qr/^VERSION=4\.19$/m, 'バージョンが4.19になる');
+};
+
+subtest 'アップデートが必要なときの知らせ' => sub {
+	# システム管理者でないログイン中の人は、前のテストの multi（multi-4 でログインしている）を使う
+	# （メンテナンスの画面はCookieを消すので、ほかのテストのユーザーは使わない）
+	ok($app->get('multi-4', 'menu')->{status} == 200, 'システム管理者でない人がログインしている');
+
+	# 公開している記事（アップデートが必要なときも、記事のページが404にならないことを確かめる）
+	ok(AppTest::is_reload($app->post('owner', '', { %ART, title => 'アップデート待ちの記事', body_txt => "本文\n" })), '記事を書く');
+	my ($pkey) = body($app->get('owner', 'artlist')) =~ m{href="[^"]*/0(\d+)\?edit"[^>]*>アップデート待ちの記事<};
+	my $art = "/0$pkey";
+	is($app->get('admin', $art)->{status}, 200, '書いた記事は見られる');
+
+	my $sys = "$dir/data/system_config.dat";
+	my $conf = read_file($sys);
+	$conf =~ s/^VERSION=.*$/VERSION=4.18/m;
+	open(my $fh, '>:utf8', $sys) || die "$sys: $!";
+	print $fh $conf;
+	close($fh);
+
+	my $link = qr{href="[^"]*\?system/update"};
+	foreach my $p ('menu', 'artlist', 'system/setting') {
+		my $b = body($app->get('admin', $p));
+		like($b, qr{<article class="system notice require-update">.*?アップデート処理が必要です。.*?$link}s, "管理画面（?$p）に、知らせとアップデート処理の画面へのリンクが出る");
+		unlike($b, qr{アップデートが必要です。}, "管理画面（?$p）に、リンクの無いメッセージは出ない");
+	}
+	unlike(body($app->get('admin', 'system/update')), qr{require-update}, 'アップデート処理の画面には、知らせを出さない');
+
+	foreach my $p ('', $art) {
+		my $r = $app->get('admin', $p);
+		is($r->{status}, 200, "公開画面（$p）は、システム管理者には200");
+		like(body($r), qr{<a class="admin-bar-update" $link}, "公開画面（$p）の管理バーに、アップデート処理の画面へのリンクが出る");
+		unlike(body($r), qr{require-update|アップデートが必要です。}, "公開画面（$p）の本文には出さない");
+		is($r->{headers}->{'cache-control'}, 'private, no-store', "ログイン中の公開画面（$p）は保存させない");
+	}
+	is($app->get('admin', 'menu')->{headers}->{'cache-control'}, 'private, no-store', 'ログイン中の管理画面は保存させない');
+
+	foreach my $who ('multi-4', 'guest') {
+		foreach my $p ('', $art, 'menu') {
+			my $r = $app->get($who, $p);
+			is($r->{status}, 503, "$who には、?$p はメンテナンスの画面");
+			unlike(body($r), qr{system/update}, "$who には、?$p にアップデート処理の画面へのリンクを出さない");
+		}
+	}
+	is($app->get('guest', $art)->{headers}->{'cache-control'}, 'no-cache', 'ログインしていない人の画面は今までどおり');
+
+	ok(AppTest::is_reload($app->post('admin', 'system/update', { action => 'system/update' })), 'アップデート処理を行える');
+	unlike(body($app->get('admin', 'menu')), qr{require-update}, 'アップデート処理の後は、管理画面に知らせが出ない');
+	unlike(body($app->get('admin', $art)), qr{admin-bar-update}, 'アップデート処理の後は、管理バーにリンクが出ない');
+	is($app->get('guest', $art)->{headers}->{'cache-control'}, 'no-cache', 'ログインしていない人の記事は、no-cacheのまま');
 };
 
 subtest '操作の記録' => sub {

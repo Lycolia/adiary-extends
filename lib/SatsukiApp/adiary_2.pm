@@ -2277,9 +2277,10 @@ sub mainte_mode {
 	my $auth = $ROBJ->{Auth};
 
 	# 管理者
+	# アップデートが必要なときは、メッセージではなく、リンク付きの知らせを出す（_sub/require_update_notice、_sub/admin_bar）
 	if ($auth->{isadmin}) {
-		if (!$ROBJ->{POST}) {
-			$ROBJ->message($self->{require_update} ? 'Require update' : 'Now maintenance mode');
+		if (!$ROBJ->{POST} && !$self->{require_update}) {
+			$ROBJ->message('Now maintenance mode');
 		}
 		return ;
 	}
