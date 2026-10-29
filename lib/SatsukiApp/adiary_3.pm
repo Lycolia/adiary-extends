@@ -222,7 +222,23 @@ sub make_thumbnail_for_image {
 	my $self = shift;
 	my $dir  = shift;	# 実パス
 	my $file = shift;
-	my $size = $self->thumbnail_size();
+	return $self->make_jpeg_thumbnail("$dir$file", "${dir}.thumbnail/$file.jpg", $self->thumbnail_size());
+}
+
+#-------------------------------------------------
+# ○画像を縮めてJPEGに書き出す
+#-------------------------------------------------
+# 画像のサムネイルと、動画のサムネイル（記事用と一覧用）で使う
+#	$src  : 読む画像の実パス
+#	$dest : 書き出すJPEGの実パス（拡張子は .jpg にする。ImageMagickは拡張子で形式を決める）
+#	$size : 長い辺の大きさ。これより小さい画像は縮めない
+#	ret   : 成功なら0
+#
+sub make_jpeg_thumbnail {
+	my $self = shift;
+	my $src  = shift;
+	my $dest = shift;
+	my $size = shift;
 	my $ROBJ = $self->{ROBJ};
 
 	# Windowsで日本語ファイル名がなぜか読み書きできない
@@ -235,7 +251,7 @@ sub make_thumbnail_for_image {
 	if (!$img) { return -99; }
 	my ($w, $h);
 	eval {
-		my $f = "$dir$file";
+		my $f = $src;
 		if ($tmpfile &&  $f =~ /[^\x20-\x7e]/) {
 			rename($f, $tmpfile);
 			$self->read_image( $img, $tmpfile );
@@ -269,7 +285,7 @@ sub make_thumbnail_for_image {
 	}
 	# ファイルに書き出し
 	$img->Set( quality => ($self->{album_jpeg_quality} || 80) );
-	my $f = "${dir}.thumbnail/$file.jpg";
+	my $f = $dest;
 	if ($tmpfile && $f =~ /[^\x20-\x7e]/) {
 		$tmpfile .= '.jpg';
 		$img->Write( $tmpfile );
@@ -668,13 +684,13 @@ sub rebuild_arts_using_files {
 #-------------------------------------------------------------------------------
 # ●動画のサムネイルを保存する
 #-------------------------------------------------------------------------------
-# サムネイルは、管理画面でブラウザーが動画の1コマから作って送る（サーバーではコマンドを動かさない）
-#   poster : 記事に出すサムネイル     → .thumbnail/動画名.poster.jpg
-#   thumb  : 画像アルバムの一覧に出す → .thumbnail/動画名.jpg
-# どちらもJPEGで、大きさが決めた範囲のものだけを保存する。保存する名前はここで決める
+# 動画の1コマは、管理画面でブラウザーが切り出してPNGで送る（サーバーではコマンドを動かさない）
+# サーバーは、それを画像のサムネイルと同じ処理（make_jpeg_thumbnail）でJPEGにする
+#   記事に出すサムネイル         → .thumbnail/動画名.poster.jpg
+#   画像アルバムの一覧に出すもの → .thumbnail/動画名.jpg
+# PNGで、大きさが決めた範囲のものだけを受け付ける。保存する名前はここで決める
 #
 my $VIDEO_POSTER_MAX = 960;	# 記事用のサムネイルの長い辺（記事での既定の表示480pxの2倍）
-my $VIDEO_THUMB_MAX  = 800;	# アルバム用のサムネイルの長い辺（make_thumbnail_for_imageの上限）
 
 sub upload_video_thumbnail {
 	my $self = shift;
@@ -682,12 +698,10 @@ sub upload_video_thumbnail {
 	my $ROBJ = $self->{ROBJ};
 
 	my $dir = $self->image_folder_to_dir( $form->{folder} ); # 値check付
-	my $r   = $self->save_video_thumbnail($dir, $form->{file}, $form->{poster}, $form->{thumb});
+	my $r   = $self->save_video_thumbnail($dir, $form->{file}, $form->{poster});
 
 	# 送られたファイルが残っていたら消す
-	foreach($form->{poster}, $form->{thumb}) {
-		if (ref($_) && $_->{tmp}) { $ROBJ->file_delete($_->{tmp}); }
-	}
+	if (ref($form->{poster}) && $form->{poster}->{tmp}) { $ROBJ->file_delete($form->{poster}->{tmp}); }
 	if ($r) { return $r; }
 
 	# 記事に<video>ではなくサムネイルを出すように、使っている記事を作り直す
@@ -696,41 +710,39 @@ sub upload_video_thumbnail {
 }
 
 sub save_video_thumbnail {
-	my ($self, $dir, $file, $poster, $thumb) = @_;
+	my ($self, $dir, $file, $poster) = @_;
 	my $ROBJ = $self->{ROBJ};
 	if (!$self->check_file_name($file) || !$self->is_video($file)) { return 1; }
 	$ROBJ->fs_encode(\$file);
 	if (!-f "$dir$file") { return 2; }
-	if (!ref($poster) || !ref($thumb)) { return 3; }
+	if (!ref($poster)) { return 3; }
 
 	require Satsuki::ImageFormat;
 	$ROBJ->mkdir("${dir}.thumbnail/");
-	my @save = (
-		[ "${dir}.thumbnail/$file.poster.jpg", $poster, $VIDEO_POSTER_MAX ],
-		[ "${dir}.thumbnail/$file.jpg",        $thumb,  $VIDEO_THUMB_MAX  ]
-	);
-	# 一度 .tmp に書き、どちらもJPEGで大きさが範囲内なら置き換える
+	# 送られたPNGを .tmp に書き、記事用と一覧用のJPEGを作れたら、記事用を置き換える
+	# どちらも送られたPNGから作る（JPEGからJPEGに縮めない）
+	my $f   = "${dir}.thumbnail/$file.poster.jpg";
+	my $new = "${dir}.thumbnail/$file.poster.new.jpg";
+	my $tmp = "$f.tmp";
+	if ($poster->{tmp} ? $ROBJ->file_move($poster->{tmp}, $tmp) : $ROBJ->fwrite_lines($tmp, $poster->{data})) {
+		$ROBJ->file_delete($tmp);
+		return 4;
+	}
+	my ($w, $h);
+	if (Satsuki::ImageFormat::detect($tmp) eq 'png') {
+		($w, $h) = Satsuki::ImageFormat::get_size($tmp);
+	}
 	my $fail;
-	foreach(@save) {
-		my ($f, $h, $max) = @$_;
-		my $tmp = "$f.tmp";
-		if ($h->{tmp} ? $ROBJ->file_move($h->{tmp}, $tmp) : $ROBJ->fwrite_lines($tmp, $h->{data})) {
-			$fail = 4; last;
-		}
-		my ($w, $ht);
-		if (Satsuki::ImageFormat::detect($tmp) eq 'jpeg') {
-			($w, $ht) = Satsuki::ImageFormat::get_size($tmp);
-		}
-		if (!$w || $max < $w || $max < $ht) { $fail = 5; last; }
+	if (!$w || $VIDEO_POSTER_MAX < $w || $VIDEO_POSTER_MAX < $h) {
+		$fail = 5;
+	} elsif ($self->make_jpeg_thumbnail($tmp, $new, $VIDEO_POSTER_MAX)
+	      || $self->make_jpeg_thumbnail($tmp, "${dir}.thumbnail/$file.jpg", $self->thumbnail_size())) {
+		$fail = 7;
+	} elsif (!rename($new, $f)) {
+		$fail = 6;
 	}
-	foreach(@save) {
-		my $f = $_->[0];
-		if ($fail) {
-			$ROBJ->file_delete("$f.tmp");
-		} elsif (!rename("$f.tmp", $f)) {
-			$fail = 6;
-		}
-	}
+	$ROBJ->file_delete($tmp);
+	if ($fail) { $ROBJ->file_delete($new); }
 	return $fail || 0;
 }
 
@@ -738,13 +750,18 @@ sub save_video_thumbnail {
 # ●サムネイルを作る動画の一覧
 #-------------------------------------------------------------------------------
 # アップデート処理の後に、ブラウザーでまとめて作るときに使う。ゴミ箱は除く
-# サムネイルの無い動画と、記事用のサムネイルが今の大きさ（$VIDEO_POSTER_MAX）より大きい動画（4.18より前に作ったもの）
+# 次の動画を返す
+#   サムネイルの無い動画
+#   記事用のサムネイルが今の大きさ（$VIDEO_POSTER_MAX）より大きい動画（4.18より前に作ったもの）
+#   記事用のサムネイルが、v4.19のアップデート処理（video_poster_time）より前に作ったものの動画
+#   （4.19より前は、ブラウザーが品質0.85のJPEGで作っていた）
 # ret : [ { folder => 'posts/2026/', name => 'clip.mp4' }, ... ]
 #
 sub load_videos_need_thumbnail {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $base = $self->blogimg_dir();
+	my $since = $self->{sys}->{video_poster_time};
 	require Satsuki::ImageFormat;
 
 	my @ary;
@@ -759,7 +776,7 @@ sub load_videos_need_thumbnail {
 			}
 			if (!$self->is_video($_)) { next; }
 			my $poster = "${dir}.thumbnail/$_.poster.jpg";
-			if (-e $poster) {
+			if (-e $poster && (!$since || $since <= (stat($poster))[9])) {
 				my ($w, $h) = Satsuki::ImageFormat::get_size($poster);
 				if ($w && $w <= $VIDEO_POSTER_MAX && $h <= $VIDEO_POSTER_MAX) { next; }
 			}

@@ -354,38 +354,62 @@ subtest '画像アルバム' => sub {
 };
 
 subtest '動画のサムネイルの大きさの上限' => sub {
-	require MIME::Base64;
+	require Image::Magick;
 	require Satsuki::ImageFormat;
-	# 1x1のJPEGの、SOF（FFC2）の高さと幅を書き換える。サーバーはヘッダーの大きさだけを見る
-	my $jpeg = sub {
-		my ($w, $h) = @_;
-		my $j = MIME::Base64::decode_base64('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=');
-		my $i = index($j, "\xFF\xC2");
-		substr($j, $i+5, 4) = pack('nn', $h, $w);
-		return $j;
+	# ブラウザーは動画の1コマをPNGで送る
+	my $image = sub {
+		my ($w, $h, $format) = @_;
+		my $img = Image::Magick->new(size => "${w}x$h");
+		$img->Read('xc:gray');
+		return $img->ImageToBlob(magick => $format || 'png');
 	};
-	my $post = sub {
-		my ($w, $h) = @_;
+	my $post_data = sub {
 		return $app->post('editor', '', [ action => 'media/upload_video_thumbnail', folder => $AppTest::IMAGE_FOLDER, file => $AppTest::VIDEO_FILE,
-			poster => { filename => 'poster.jpg', content => $jpeg->($w, $h), type => 'image/jpeg' },
-			thumb  => { filename => 'thumb.jpg',  content => $jpeg->(1, 1),   type => 'image/jpeg' } ]);
+			poster => { filename => 'poster.png', content => shift, type => 'image/png' } ]);
 	};
+	my $post = sub { return $post_data->( $image->(@_) ) };
 	my $poster = "$dir/pub/attachments/$AppTest::IMAGE_FOLDER.thumbnail/$AppTest::VIDEO_FILE.poster.jpg";
+	my $thumb  = "$dir/pub/attachments/$AppTest::IMAGE_FOLDER.thumbnail/$AppTest::VIDEO_FILE.jpg";
+	my $quality = sub {
+		my $img = Image::Magick->new;
+		$img->Read(shift);
+		return $img->Get('quality');
+	};
 
-	ok(!json_ok($post->(961, 540)), '記事用が961pxなら受け付けない');
-	ok(json_ok($post->(960, 540)), '記事用が960pxなら受け付ける');
-	is(join('x', Satsuki::ImageFormat::get_size($poster)), '960x540', '記事用のサムネイルが置かれる');
+	ok(!json_ok($post->(961, 540)), '961pxなら受け付けない');
+	ok(!-e $poster, '受け付けなければ、記事用のサムネイルは置かれない');
+	ok(json_ok($post->(960, 540)), '960pxなら受け付ける');
+	is(Satsuki::ImageFormat::detect($poster), 'jpeg', '記事用のサムネイルは、サーバーでJPEGにする');
+	is(join('x', Satsuki::ImageFormat::get_size($poster)), '960x540', '記事用のサムネイルの大きさ');
+	is($quality->($poster), 80, '記事用のサムネイルの品質は、画像のサムネイルと同じ');
+	is(Satsuki::ImageFormat::detect($thumb), 'jpeg', '一覧用のサムネイルもJPEG');
+	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '320x180', '一覧用のサムネイルは、設定の大きさに縮めて作る');
+	ok(!-e "$poster.tmp" && !-e "$dir/pub/attachments/$AppTest::IMAGE_FOLDER.thumbnail/$AppTest::VIDEO_FILE.poster.new.jpg", '作業用のファイルが残らない');
 	ok(!json_ok($post->(540, 961)), '縦長でも、長い辺が961pxなら受け付けない');
+	ok(!json_ok($post->(960, 540, 'jpeg')), 'JPEGは受け付けない（PNGだけ）');
+	ok(!json_ok($post_data->('not an image')), '画像でなければ受け付けない');
+	is(join('x', Satsuki::ImageFormat::get_size($poster)), '960x540', '受け付けなければ、前の記事用のサムネイルが残る');
 
 	# アップデートの画面で作る動画の一覧
 	my $listed = sub { return index(body($app->get('admin', 'system/update')), "data-name=\"$AppTest::VIDEO_FILE\"") >= 0; };
 	ok(!$listed->(), '今の大きさのサムネイルがあれば、アップデートの画面の一覧に出ない');
 	open(my $fh, '>:raw', $poster) || die "$poster: $!";
-	print $fh $jpeg->(1280, 720);
+	print $fh $image->(1280, 720, 'jpeg');
 	close($fh);
 	ok($listed->(), '4.18より前の大きさ（1280px）のサムネイルなら、一覧に出る');
 	unlink($poster);
 	ok($listed->(), 'サムネイルが無ければ、一覧に出る');
+	ok(json_ok($post->(960, 540)), '作り直せる');
+	ok(!$listed->(), '作り直すと、一覧から消える');
+
+	# v4.19のアップデート処理より前に作った記事用のサムネイル（ブラウザーが作ったJPEG）
+	my $sys = "$dir/data/system_config.dat";
+	my $time = time();
+	open($fh, '>>', $sys) || die "$sys: $!";
+	print $fh "video_poster_time=$time\n";
+	close($fh);
+	utime($time - 60, $time - 60, $poster);
+	ok($listed->(), 'アップデート処理より前に作ったサムネイルなら、一覧に出る');
 	ok(json_ok($post->(960, 540)), '作り直せる');
 	ok(!$listed->(), '作り直すと、一覧から消える');
 };
@@ -486,7 +510,7 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 	};
 
 	my ($btn, $form) = $edit->();
-	like($btn, qr{data-thumb-size="320" data-paste="" data-exif="0" data-class=""}, '設定していないときの貼り付けの値');
+	like($btn, qr{data-paste="" data-exif="0" data-class=""}, '設定していないときの貼り付けの値');
 	unlike($form, qr{name="size"}, 'ダイアログでサムネイルの大きさを選ばせない');
 	unlike($form, qr{ selected>(?:大きい画像|センタリング|左寄せ|右寄せ)|paste-to-exif" checked}, '設定していないときは、サムネイル、そのまま、Exifなし');
 	my @saves = $form =~ m{class="([^"]*\bjs-save\b[^"]*)"}g;
@@ -497,7 +521,7 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 	my $r = $app->post('owner', 'set/editor', \%SET);
 	ok(AppTest::is_reload($r), '保存できる');
 	($btn, $form) = $edit->();
-	like($btn, qr{data-thumb-size="200" data-paste="large" data-exif="1" data-class="float-r"}, '貼り付けの値が設定になる');
+	like($btn, qr{data-paste="large" data-exif="1" data-class="float-r"}, '貼り付けの値が設定になる');
 	like($form, qr{<option value="0" selected>大きい画像を貼付</option>}, 'ダイアログが大きい画像になる');
 	like($form, qr{id="paste-to-exif" checked}, 'ダイアログのExifが付く');
 	like($form, qr{<option value="float-r" selected>}, 'ダイアログの表示が右寄せになる');
@@ -509,7 +533,7 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 		ok(!AppTest::is_reload($r), "$bad->[0]=$bad->[1] は保存できない");
 	}
 	($btn) = $edit->();
-	like($btn, qr{data-thumb-size="200" data-paste="large"}, '拒んだ後も前の設定のまま');
+	like($btn, qr{data-paste="large"}, '拒んだ後も前の設定のまま');
 
 	# サムネイルは、送られた大きさではなく設定の大きさで作る（元の画像は192px）
 	$r = $app->post('owner', 'set/editor', { %SET, edit_thumb_size => 100 });
@@ -529,7 +553,6 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 	$r = $app->post('editor', '', { action => 'media/remake_thumbnail', folder => 'test/', file_ary => 'size.png', size => 640 });
 	ok(json_ok($r), '再生成できる');
 	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '150x150', '再生成でも設定の大きさで作る');
-	like(body($app->get('editor', 'media/')), qr{data-size="150"}, 'メディアの画面に、動画のサムネイル用の大きさが出る');
 	unlike(body($app->get('editor', 'media/')), qr{name="size"|thumbnail-size}, 'メディアでサムネイルの大きさを選ばせない');
 };
 

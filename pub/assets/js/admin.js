@@ -450,30 +450,27 @@ $$.prepend_css = function(file) {
 ////////////////////////////////////////////////////////////////////////////////
 //●動画のサムネイルを作って送る
 ////////////////////////////////////////////////////////////////////////////////
-// サーバーではコマンドを動かさず、ブラウザーで動画の1コマを切り出してJPEGにする。
-// 記事用（長い辺960px）と画像アルバム用（opt.size）の2つを media/upload_video_thumbnail に送る
+// サーバーではコマンドを動かさず、ブラウザーで動画の1コマを切り出してPNGにする。
+// 長い辺960pxのPNGを media/upload_video_thumbnail に送る。記事用と画像アルバム用のJPEGは、サーバーがこれから作る
 //	opt.url    : 動画のURL
 //	opt.folder : 画像アルバムのフォルダ（posts/2026/）
 //	opt.name   : 動画のファイル名
-//	opt.size   : アルバム用のサムネイルの大きさ（px）
 //	ret        : Promise。再生できない形式などで作れなければ reject
 //
 const VIDEO_POSTER_MAX = 960;	// 記事での既定の表示（480px）の2倍
 const VIDEO_LOAD_TIMEOUT = 30000;
 
 $$.make_video_thumbnail = function(opt) {
-	const size = Math.min(Math.max(parseInt(opt.size) || 120, 60), 800);	// サーバーの上限に合わせる
 	let video;
 	return load_video_frame(opt.url).then(function(v){
 		video = v;
-		return Promise.all([ video_to_jpeg(v, VIDEO_POSTER_MAX), video_to_jpeg(v, size) ]);
-	}).then(function(blobs){
+		return video_to_png(v, VIDEO_POSTER_MAX);
+	}).then(function(blob){
 		const fd = new FormData();
 		fd.append('action', 'media/upload_video_thumbnail');
 		fd.append('folder', opt.folder);
 		fd.append('file',   opt.name);
-		fd.append('poster', blobs[0], 'poster.jpg');
-		fd.append('thumb',  blobs[1], 'thumb.jpg');
+		fd.append('poster', blob, 'poster.png');
 		return fetch($$.myself + '?etc/ajax_dummy', { method: 'POST', body: fd, credentials: 'same-origin' });
 	}).then(function(res){
 		return res.json();
@@ -514,8 +511,8 @@ function load_video_frame(url) {
 	});
 }
 
-// 長い辺を max 以下にしたJPEG
-function video_to_jpeg(video, max) {
+// 長い辺を max 以下にしたPNG（JPEGにするのはサーバー。2回圧縮しないように）
+function video_to_png(video, max) {
 	let w = video.videoWidth;
 	let h = video.videoHeight;
 	if (max < w || max < h) {
@@ -530,7 +527,7 @@ function video_to_jpeg(video, max) {
 	return new Promise(function(resolve, reject){
 		canvas.toBlob(function(blob){
 			blob ? resolve(blob) : reject(new Error('toBlob'));
-		}, 'image/jpeg', 0.85);
+		}, 'image/png');
 	});
 }
 
@@ -542,13 +539,13 @@ function video_to_jpeg(video, max) {
 // progress(i, file, err) : 1つ終わるたびに呼ぶ（err は失敗したとき）
 // ret   : Promise。失敗した数で resolve する（1つ失敗しても続ける）
 //
-$$.make_video_thumbnails = function(files, base, size, progress) {
+$$.make_video_thumbnails = function(files, base, progress) {
 	let fail = 0;
 	let p = Promise.resolve();
 	files.forEach(function(file, i){
 		p = p.then(function(){
 			const url = base + (file.folder + file.name).split('/').map(encodeURIComponent).join('/');
-			return $$.make_video_thumbnail({ url: url, folder: file.folder, name: file.name, size: size })
+			return $$.make_video_thumbnail({ url: url, folder: file.folder, name: file.name })
 				.then(function(){ if (progress) progress(i, file) })
 				.catch(function(err){ fail++; if (progress) progress(i, file, err) });
 		});
@@ -572,7 +569,7 @@ $$.init( function(){
 
 	function start() {
 		$btn.prop('disabled', true);
-		$$.make_video_thumbnails(files, $box.data('url'), $box.data('size'), function(i, file, err){
+		$$.make_video_thumbnails(files, $box.data('url'), function(i, file, err){
 			file.$li.addClass(err ? 'error' : 'done');
 			$msg.text((i+1) + ' / ' + files.length);
 		}).then(function(fail){

@@ -11,9 +11,9 @@ our $SYSTEM_NAME = 'Lyndbaum';
 our $REPOSITORY_URL = 'https://github.com/Lycolia/lyndbaum4';
 our $SYSTEM_DESCRIPTION = 'Neo-Modern High-performance CMS software';
 # データ管理上数値しか解釈できないので文字列にしてはならない
-our $VERSION    = 4.18;
+our $VERSION    = 4.19;
 our $OUTVERSION = "$VERSION";
-our $DATA_VERSION = 4.18;
+our $DATA_VERSION = 4.19;
 ################################################################################
 # ■システム内部イベント
 ################################################################################

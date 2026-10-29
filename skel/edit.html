@@ -177,7 +177,7 @@
 		<option value="<@t.key>"<@if(art.parser eq t.key, ' selected')>><@t.val></option>
 		<$end>
 	</select></span>
-	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'posts/%y/')>" data-thumb-size="<@v.thumbnail_size()>" data-paste="<@s.edit_paste>" data-exif="<@if(s.edit_paste_exif, 1, 0)>" data-class="<@s.edit_paste_class>" data-title="ファイルを選択">Upload</button>
+	<button type="button" id="edit-file-upload" class="fileup" data-folder="<@if(s.edit_upload ne '', s.edit_upload, 'posts/%y/')>" data-paste="<@s.edit_paste>" data-exif="<@if(s.edit_paste_exif, 1, 0)>" data-class="<@s.edit_paste_class>" data-title="ファイルを選択">Upload</button>
 	<@ifexec(edit_pkey, begin)>
 	<button type="button" id="edit-revision" data-title="更新履歴">履歴</button>
 	<$end>
