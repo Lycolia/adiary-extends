@@ -31,10 +31,10 @@
 <ul>
 	<li<@if(cur.menu, ' class="current"')>><a href="<@v.myself>?menu">ダッシュボード</a></li>
 <@ifexec(s && v.allow_edit, begin)>
-	<li<@if(cur.artlist, ' class="current"')>><a href="<@v.myself>?artlist">記事</a></li>
+	<li<@if(cur.artlist, ' class="current"')>><a href="<@v.myself>?artlist">記事一覧</a></li>
 	<li<@if(cur.trash,   ' class="current"')>><a href="<@v.myself>?trash">ゴミ箱</a></li>
 	<li<@if(cur.album,   ' class="current"')>><a href="<@v.myself>?media/">メディア</a></li>
-	<li<@if(cur.comlist, ' class="current"')>><a href="<@v.myself>?comlist">コメント<@if(s.newcom_flag, ' <span class="admin-nav-new">新着</span>')></a></li>
+	<li<@if(cur.comlist, ' class="current"')>><a href="<@v.myself>?comlist">コメント一覧<@if(s.newcom_flag, ' <span class="admin-nav-new">新着</span>')></a></li>
 	<li<@if(cur.tag,     ' class="current"')>><a href="<@v.myself>?set2/tag_edit">タグ</a></li>
 <$end>
 	<li class="admin-nav-group<@if(setting, ' open')>">
