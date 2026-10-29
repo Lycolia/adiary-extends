@@ -128,7 +128,7 @@
 		<@> 題名は編集画面へのリンク。編集できない記事（投稿者だけが編集できる設定で、ほかの人の記事）は記事へのリンク
 		<td class="list-wide"><a href="<@v.myself2><@if(v.check_editor(t), '0' . t.pkey . '?edit', t.elink_key)>" title="<@t.pkey>"><@t.title></a></td>
 		<td class="c"><label for="art-<@t.pkey>"><@if(t.ctype, 'ページ', '記事')></label></td>
-		<td class="c"><label for="art-<@t.pkey>"><@if(t.enable, '公')></label></td>
+		<td class="c"><label for="art-<@t.pkey>"><@if(!t.tm, '下書き', if(t.enable, '公開', '非公開'))></label></td>
 		<td class="c"><label for="art-<@t.pkey>"><@v.format_ymd(t.yyyymmdd)></label></td>
 		<td class="c"><label for="art-<@t.pkey>"><@print_tmf('%Y-%m-%d', t.update_tm)></label></td>
 		<@> コメントがあれば、記事のコメント欄へのリンク

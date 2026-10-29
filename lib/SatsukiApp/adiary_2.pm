@@ -64,7 +64,7 @@ sub load_arts_list {
 		$h{limit} = int($opt->{loads});
 	}
 
-	# 公開・非公開で絞り込む（1:公開だけ、0:非公開だけ、draft:下書きだけ、それ以外はすべて）
+	# 公開・非公開で絞り込む（1:公開だけ、0:非公開だけ、draft:下書きだけ、それ以外は下書きも含めてすべて）
 	my $enable = $opt->{enable};
 	if ($enable ne '1' && $enable ne '0' && $enable ne 'draft') { $enable = ''; }
 
@@ -73,7 +73,8 @@ sub load_arts_list {
 		$h{flag} = {enable => 1};
 	} elsif ($opt->{draft_only} || $enable eq 'draft') {
 		$h{is_null} = ['tm'];
-	} elsif (!$opt->{load_draft}) {
+	} elsif (!$opt->{load_draft} && $enable ne '') {
+		# 公開・非公開で絞るときは下書きを除く（下書きは非公開として保存されている）
 		$h{not_null} = ['tm'];
 	}
 	if ($self->{allow_edit} && ($enable eq '1' || $enable eq '0')) {
