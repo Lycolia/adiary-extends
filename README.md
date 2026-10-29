@@ -31,7 +31,7 @@ Perl標準モジュールのほかに、使い方によって次のモジュー�
 # インストール方法
 
 1. 解凍してでてきたファイルをサーバ上の任意の位置に置く
-2. lyndbaum.cgi に実行属性を付ける
+2. lyndbaum.cgiに実行属性を付ける
 3. `__cache/`, `data/`, `pub/`を`www`権限で書き込めるようにする。（suEXECの場合は不要）
 4. `lyndbaum.conf.cgi.sample`を`lyndbaum.conf.cgi`としてコピーし適当にいじる
 5. `lyndbaum.cgi`にアクセスし、ID、パスワードを適当に入力してログイン。
@@ -74,7 +74,7 @@ AGPL(AFFERO GENERAL PUBLIC LICENSE) Vesrion 3またはそれ以降のバージ�
 - `plugin/`以下に存在するプラグインはそれぞれ個別の著作物です。
 - `pub/assets/theme/`以下に存在するテーマファイルはそれぞれ個別の著作物です。
 
-ライセンスについては、各ディレクトリ内の README 等を参照してください。
+ライセンスについては、各ディレクトリ内のREADME等を参照してください。
 
 ## フォント
 
