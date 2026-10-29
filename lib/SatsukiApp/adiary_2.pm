@@ -928,7 +928,6 @@ sub send_weblogUpdates_Ping {
 	# ライブラリロード
 	my $http = $ROBJ->loadpm('Base::HTTP');
 	$http->set_timeout( $self->{sys}->{http_timeout} );
-	$http->set_agent( $self->{http_agent} );
 
 	# option load
 	my $post_url = $data->{ping_server};
@@ -949,6 +948,8 @@ sub send_weblogUpdates_Ping {
 	if ($option eq 'adiary') {	# adiary extended
 		$method    = "weblogUpdates.adiary-extendedPing";
 		$check_url = $data->{art_title};
+		# adiary向けはUAをadiaryとして送る（拒否されるため）
+		$http->set_agent('adiary 3.52dev on on Satsuki-system 2.67');
 	}
 	# XML
 	$ROBJ->tag_escape_for_xml($blog_name, $url, $check_url, $rssurl);
