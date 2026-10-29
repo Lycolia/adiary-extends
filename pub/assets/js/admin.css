@@ -13,7 +13,7 @@
 	--admin-border:		#c3c4c7;
 	--admin-border-light:	#dcdcde;
 	--admin-muted:		#646970;
-	--admin-link:		#2271b1;
+	--admin-link:		#0a58ca;
 	--admin-link-hover:	#135e96;
 	--admin-accent:		#2271b1;
 	--admin-nav-bg:		#1d2327;
@@ -258,7 +258,7 @@ article.system > h2 {
 	margin:			0;
 	padding:		0.45rem 1rem;
 	font-size:		1.05rem;
-	font-weight:		normal;
+	font-weight:		bold;
 	border-bottom:		1px solid var(--admin-border-light);
 }
 article.system > h2 a {
