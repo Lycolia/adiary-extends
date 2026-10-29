@@ -96,19 +96,6 @@
 	</div>
 	</article>
 	<$end>
-
-	<@ifexec(v.blog_admin, begin)>
-	<article class="system">
-	<h2>再構築</h2>
-	<div class="body">
-	<p>すべての記事を再構築し、HTMLを書きなおします。記法やパーサーを変更したときに使います。</p>
-	<form action="<@v.myself>?<@v.skeleton>" method="POST">
-	<input type="hidden" name="action" value="mainte/blog_rebuild">
-	<button type="submit">全記事を再構築</button>
-	</form>
-	</div>
-	</article>
-	<$end>
 </div>
 <$end>
 
