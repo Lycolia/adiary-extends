@@ -42,9 +42,6 @@
 	<$end>
 <$end>
 
-	<@ifexec(v.allow_view, begin)>
-	<p>ブログ <a href="<@v.myself>"><@v.blog.blog_name></a></p>
-	<$end>
 	<p>ユーザー <@Auth.id><@if(Auth.isadmin, '（システム管理者）')></p>
 </div>
 </article>
