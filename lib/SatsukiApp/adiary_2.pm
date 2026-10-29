@@ -64,19 +64,19 @@ sub load_arts_list {
 		$h{limit} = int($opt->{loads});
 	}
 
-	# 公開・非公開で絞り込む（1:公開だけ、0:非公開だけ、それ以外はすべて）
+	# 公開・非公開で絞り込む（1:公開だけ、0:非公開だけ、draft:下書きだけ、それ以外はすべて）
 	my $enable = $opt->{enable};
-	if ($enable ne '1' && $enable ne '0') { $enable = ''; }
+	if ($enable ne '1' && $enable ne '0' && $enable ne 'draft') { $enable = ''; }
 
 	# ロード対象記事オプション
 	if (! $self->{allow_edit}) {
 		$h{flag} = {enable => 1};
-	} elsif ($opt->{draft_only}) {
+	} elsif ($opt->{draft_only} || $enable eq 'draft') {
 		$h{is_null} = ['tm'];
 	} elsif (!$opt->{load_draft}) {
 		$h{not_null} = ['tm'];
 	}
-	if ($self->{allow_edit} && $enable ne '') {
+	if ($self->{allow_edit} && ($enable eq '1' || $enable eq '0')) {
 		$h{flag} = {enable => int($enable)};
 	}
 
@@ -928,7 +928,6 @@ sub send_weblogUpdates_Ping {
 	# ライブラリロード
 	my $http = $ROBJ->loadpm('Base::HTTP');
 	$http->set_timeout( $self->{sys}->{http_timeout} );
-	$http->set_agent( $self->{http_agent} );
 
 	# option load
 	my $post_url = $data->{ping_server};
@@ -949,6 +948,8 @@ sub send_weblogUpdates_Ping {
 	if ($option eq 'adiary') {	# adiary extended
 		$method    = "weblogUpdates.adiary-extendedPing";
 		$check_url = $data->{art_title};
+		# adiary向けはUAをadiaryとして送る（拒否されるため）
+		$http->set_agent('adiary 3.52dev on on Satsuki-system 2.67');
 	}
 	# XML
 	$ROBJ->tag_escape_for_xml($blog_name, $url, $check_url, $rssurl);
@@ -2276,9 +2277,10 @@ sub mainte_mode {
 	my $auth = $ROBJ->{Auth};
 
 	# 管理者
+	# アップデートが必要なときは、メッセージではなく、リンク付きの知らせを出す（_sub/require_update_notice、_sub/admin_bar）
 	if ($auth->{isadmin}) {
-		if (!$ROBJ->{POST}) {
-			$ROBJ->message($self->{require_update} ? 'Require update' : 'Now maintenance mode');
+		if (!$ROBJ->{POST} && !$self->{require_update}) {
+			$ROBJ->message('Now maintenance mode');
 		}
 		return ;
 	}

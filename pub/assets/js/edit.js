@@ -1038,7 +1038,7 @@ function upload_files_insert(data, opt) {
 		return { folder: opt.folder, name: file.name };
 	});
 	if (videos.length)
-		adiary.make_video_thumbnails(videos, adiary.Basepath + $('#image-dir').text(), $fileup.data('thumb-size'));
+		adiary.make_video_thumbnails(videos, adiary.Basepath + $('#image-dir').text());
 }
 
 //------------------------------------------------------------------------------

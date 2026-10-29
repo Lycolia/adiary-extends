@@ -12,7 +12,7 @@
 <$s = v.sys>
 <$ifexec(POST, begin)>
 	<$s = Form>
-	<$tag_escape(s.ping_servers_txt, s.http_timeout, s.reload_time, s.clip_dots)>
+	<$tag_escape(s.ping_servers_txt, s.http_timeout, s.reload_time, s.clip_dots, s.max_sessions)>
 <$end>
 
 <!--=========================================================================-->
@@ -29,6 +29,13 @@
 		<td<@err.c_reload_time>>
 			<input type="number" name="edit_lock_interval" min="0" max="300" class="w50" value="<@if(s.edit_lock_interval eq '', 0, s.edit_lock_interval)>">秒（0-9秒＝無効。推奨：30秒）
 			<span class="help-text">同じ記事を複数編集したとき確認メッセージを出すシステムです。情報共有CMSなどに利用できます。使用する場合は編集状況の確認間隔（秒）を設定してください。</span>
+		</td>
+	</tr>
+	<tr>
+		<th>同時ログイン数</th>
+		<td<@err.c_max_sessions>>
+			<input type="number" name="max_sessions" min="1" max="10" class="w50" value="<@s.max_sessions || Auth.max_sessions || 1>">（1-10）
+			<span class="help-text">一つのIDが同時にログインできるセッション数。PCとスマホで同時に使いたいなら2とかにする。この数を超えたときは古いセッションから順にログアウトします。</span>
 		</td>
 	</tr>
 	<tr>
@@ -83,7 +90,7 @@
 	</tbody>
 	</table>
 
-	
+
 
 <$else>
 	<p>CGI動作時は設定できません。まず、<a href="https://adiary.org/v3man/install2/cgi-cache">CGI動作の高速化</a>を導入してください。</p>

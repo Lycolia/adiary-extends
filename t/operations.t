@@ -177,7 +177,8 @@ subtest 'コメントの承認待ちと記事の公開・非公開' => sub {
 		return $b // '';
 	};
 	my $coms = sub {
-		my ($n) = body($app->get('editor', 'menu')) =~ m{<th>コメント</th><td>(\d+)件}s;
+		# ブログのコメント数（v.blog.coms）。ダッシュボードには出さないので、全記事の削除の画面で見る
+		my ($n) = body($app->get('owner', 'mainte/blog_clear')) =~ m{<th>コメント</th>\s*<td>(\d+)件}s;
 		return $n;
 	};
 
@@ -354,38 +355,62 @@ subtest '画像アルバム' => sub {
 };
 
 subtest '動画のサムネイルの大きさの上限' => sub {
-	require MIME::Base64;
+	require Image::Magick;
 	require Satsuki::ImageFormat;
-	# 1x1のJPEGの、SOF（FFC2）の高さと幅を書き換える。サーバーはヘッダーの大きさだけを見る
-	my $jpeg = sub {
-		my ($w, $h) = @_;
-		my $j = MIME::Base64::decode_base64('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=');
-		my $i = index($j, "\xFF\xC2");
-		substr($j, $i+5, 4) = pack('nn', $h, $w);
-		return $j;
+	# ブラウザーは動画の1コマをPNGで送る
+	my $image = sub {
+		my ($w, $h, $format) = @_;
+		my $img = Image::Magick->new(size => "${w}x$h");
+		$img->Read('xc:gray');
+		return $img->ImageToBlob(magick => $format || 'png');
 	};
-	my $post = sub {
-		my ($w, $h) = @_;
+	my $post_data = sub {
 		return $app->post('editor', '', [ action => 'media/upload_video_thumbnail', folder => $AppTest::IMAGE_FOLDER, file => $AppTest::VIDEO_FILE,
-			poster => { filename => 'poster.jpg', content => $jpeg->($w, $h), type => 'image/jpeg' },
-			thumb  => { filename => 'thumb.jpg',  content => $jpeg->(1, 1),   type => 'image/jpeg' } ]);
+			poster => { filename => 'poster.png', content => shift, type => 'image/png' } ]);
 	};
+	my $post = sub { return $post_data->( $image->(@_) ) };
 	my $poster = "$dir/pub/attachments/$AppTest::IMAGE_FOLDER.thumbnail/$AppTest::VIDEO_FILE.poster.jpg";
+	my $thumb  = "$dir/pub/attachments/$AppTest::IMAGE_FOLDER.thumbnail/$AppTest::VIDEO_FILE.jpg";
+	my $quality = sub {
+		my $img = Image::Magick->new;
+		$img->Read(shift);
+		return $img->Get('quality');
+	};
 
-	ok(!json_ok($post->(961, 540)), '記事用が961pxなら受け付けない');
-	ok(json_ok($post->(960, 540)), '記事用が960pxなら受け付ける');
-	is(join('x', Satsuki::ImageFormat::get_size($poster)), '960x540', '記事用のサムネイルが置かれる');
+	ok(!json_ok($post->(961, 540)), '961pxなら受け付けない');
+	ok(!-e $poster, '受け付けなければ、記事用のサムネイルは置かれない');
+	ok(json_ok($post->(960, 540)), '960pxなら受け付ける');
+	is(Satsuki::ImageFormat::detect($poster), 'jpeg', '記事用のサムネイルは、サーバーでJPEGにする');
+	is(join('x', Satsuki::ImageFormat::get_size($poster)), '960x540', '記事用のサムネイルの大きさ');
+	is($quality->($poster), 80, '記事用のサムネイルの品質は、画像のサムネイルと同じ');
+	is(Satsuki::ImageFormat::detect($thumb), 'jpeg', '一覧用のサムネイルもJPEG');
+	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '320x180', '一覧用のサムネイルは、設定の大きさに縮めて作る');
+	ok(!-e "$poster.tmp" && !-e "$dir/pub/attachments/$AppTest::IMAGE_FOLDER.thumbnail/$AppTest::VIDEO_FILE.poster.new.jpg", '作業用のファイルが残らない');
 	ok(!json_ok($post->(540, 961)), '縦長でも、長い辺が961pxなら受け付けない');
+	ok(!json_ok($post->(960, 540, 'jpeg')), 'JPEGは受け付けない（PNGだけ）');
+	ok(!json_ok($post_data->('not an image')), '画像でなければ受け付けない');
+	is(join('x', Satsuki::ImageFormat::get_size($poster)), '960x540', '受け付けなければ、前の記事用のサムネイルが残る');
 
 	# アップデートの画面で作る動画の一覧
 	my $listed = sub { return index(body($app->get('admin', 'system/update')), "data-name=\"$AppTest::VIDEO_FILE\"") >= 0; };
 	ok(!$listed->(), '今の大きさのサムネイルがあれば、アップデートの画面の一覧に出ない');
 	open(my $fh, '>:raw', $poster) || die "$poster: $!";
-	print $fh $jpeg->(1280, 720);
+	print $fh $image->(1280, 720, 'jpeg');
 	close($fh);
 	ok($listed->(), '4.18より前の大きさ（1280px）のサムネイルなら、一覧に出る');
 	unlink($poster);
 	ok($listed->(), 'サムネイルが無ければ、一覧に出る');
+	ok(json_ok($post->(960, 540)), '作り直せる');
+	ok(!$listed->(), '作り直すと、一覧から消える');
+
+	# v4.19のアップデート処理より前に作った記事用のサムネイル（ブラウザーが作ったJPEG）
+	my $sys = "$dir/data/system_config.dat";
+	my $time = time();
+	open($fh, '>>', $sys) || die "$sys: $!";
+	print $fh "video_poster_time=$time\n";
+	close($fh);
+	utime($time - 60, $time - 60, $poster);
+	ok($listed->(), 'アップデート処理より前に作ったサムネイルなら、一覧に出る');
 	ok(json_ok($post->(960, 540)), '作り直せる');
 	ok(!$listed->(), '作り直すと、一覧から消える');
 };
@@ -423,6 +448,49 @@ subtest '再構築' => sub {
 	ok(-s "$dir/pub/rss.xml", 'RSSが書き出し直される');
 };
 
+subtest 'ダッシュボード' => sub {
+	my $r = $app->post('editor', '', { %ART, title => '記事の下書き', body_txt => "下書き\n", draft => 1 });
+	ok(AppTest::is_reload($r), '記事の下書きを保存できる');
+	$r = $app->post('editor', '', { %ART, title => 'ページの下書き', body_txt => "下書き\n", draft => 1, wiki => 1, link_key_txt => 'draft-page' });
+	ok(AppTest::is_reload($r), 'ページの下書きを保存できる');
+
+	my $b = body($app->get('editor', 'menu'));
+	my ($glance) = $b =~ m{<ul class="dashboard-glance">(.*?)</ul>}s;
+	my @rows;
+	while (($glance // '') =~ m{<li><a href="[^"]*\?([^"]*)">([^<]+)</a><span class="dashboard-count">(\d+)件</span></li>}g) {
+		my ($query, $label, $count) = ($1, $2, $3);
+		push(@rows, { query => $query =~ s/&amp;/&/gr, label => $label, count => $count });
+	}
+	is_deeply([ map { $_->{label} } @rows ], [qw(
+		記事の下書き 公開中の記事 非公開の記事 ページの下書き 公開中のページ 非公開のページ
+		ゴミ箱 承認待ちのコメント 承認済みのコメント
+	)], '概要の項目と順番');
+
+	# 件数は、行き先の一覧の件数と同じ
+	my %count = map { $_->{label} => $_->{count} } @rows;
+	foreach (@rows) {
+		my $list = body($app->get('editor', $_->{query}));
+		my ($n) = $list =~ m{<p>Total (\d+) (?:articles|comments)\.</p>};
+		is($_->{count}, $n, "$_->{label}の件数は、一覧（?$_->{query}）と同じ");
+	}
+	is($count{'記事の下書き'},   1, '記事の下書きを数える');
+	is($count{'ページの下書き'}, 1, 'ページの下書きを数える');
+
+	# 記事一覧の「下書き」には、下書きだけが出る
+	my $drafts = body($app->get('editor', 'artlist&enable=draft'));
+	like($drafts, qr{記事の下書き}, '記事一覧の下書きに、記事の下書きが出る');
+	like($drafts, qr{ページの下書き}, '記事一覧の下書きに、ページの下書きが出る');
+	unlike($drafts, qr{editorの記事}, '記事一覧の下書きに、公開の記事は出ない');
+	my $all = body($app->get('editor', 'artlist'));
+	unlike($all, qr{記事の下書き}, '記事一覧の「すべて」には、今までどおり下書きが出ない');
+
+	# 書くは1つ
+	my @write = $b =~ m{<a class="button-primary" href="([^"]*)">}g;
+	is(scalar(@write), 1, '書くのボタンは1つ');
+	like($write[0] // '', qr{\?edit$}, '書くの行き先は編集画面');
+	unlike(body($app->get('user', 'menu')), qr{dashboard-glance}, '編集者でなければ概要は出ない');
+};
+
 #-------------------------------------------------------------------------------
 # ユーザー
 #-------------------------------------------------------------------------------
@@ -451,6 +519,115 @@ subtest 'ユーザー' => sub {
 	$r = $app->post('admin', '', { action => '_ajax_user_delete', id => 'user' });
 	ok(json_ok($r), 'ユーザーを削除できる');
 	unlike(body($app->get('admin', 'user/')), qr{>user<}, 'ユーザーの一覧から消える');
+};
+
+subtest '同時ログイン数' => sub {
+	# システム設定の画面のフォームの値に、変えたい値を重ねて保存する
+	my $save = sub {
+		my %set = @_;
+		my $b = body($app->get('admin', 'system/setting'));
+		my %form;
+		while ($b =~ m{<input\b([^>]*)>}g) {
+			my $a = $1;
+			my ($name) = $a =~ /\bname="([^"]*)"/ or next;
+			my ($type) = $a =~ /\btype="([^"]*)"/;
+			my ($val)  = $a =~ /\bvalue="([^"]*)"/;
+			next if (($type // '') eq 'checkbox' && $a !~ /\bchecked\b/);
+			$form{$name} = $val // '';
+		}
+		while ($b =~ m{<textarea\b[^>]*\bname="([^"]*)"[^>]*>(.*?)</textarea>}sg) { $form{$1} = $2; }
+		return $app->post('admin', 'system/setting', { %form, %set, action => 'system/setting' });
+	};
+	# 同じユーザーで、別の端末（Cookie）からログインする
+	$app->user_add('admin', 'multi', 0);
+	# ログインの時刻（login_tm）は秒単位なので、どれが古いか分かるよう1秒あける
+	my $login = sub {
+		my $who = shift;
+		sleep(1);
+		return json_ok($app->post($who, '', { action => '_ajax_login', adiary_id => 'multi', pass => $AppTest::PASS }));
+	};
+	my $alive = sub { $app->get(shift, 'menu')->{status} == 200 };
+
+	like(body($app->get('admin', 'system/setting')), qr{name="max_sessions"[^>]*value="1"}, '設定ファイルに書いていなければ1');
+
+	ok(AppTest::is_reload($save->(max_sessions => 2)), '2にできる');
+	like(body($app->get('admin', 'system/setting')), qr{name="max_sessions"[^>]*value="2"}, '保存した値が出る');
+	ok($login->("multi-$_"), "${_}回目のログイン") foreach (1..3);
+	ok(!$alive->('multi-1'), '3回目のログインで、いちばん古いログインが切れる');
+	ok($alive->('multi-2') && $alive->('multi-3'), '新しい2つは残る');
+
+	ok(AppTest::is_reload($save->(max_sessions => 1)), '1にできる');
+	ok($login->('multi-4'), 'もう一度ログインする');
+	ok(!$alive->('multi-2') && !$alive->('multi-3'), '1にすると、前のログインがすべて切れる');
+	ok($alive->('multi-4'), '新しいログインは残る');
+
+	foreach (0, 11) {
+		ok(!AppTest::is_reload($save->(max_sessions => $_)), "${_}は保存できない");
+	}
+	like(body($app->get('admin', 'system/setting')), qr{name="max_sessions"[^>]*value="1"}, '保存できなかったときは前の値のまま');
+	unlike(body($app->get('guest', '')), qr{メンテナンス}, 'ほかの設定は変わらない');
+
+	# v4.19のアップデート処理で、設定ファイルの値（ここでは書いていないので1）をシステム設定に写す
+	my $sys = "$dir/data/system_config.dat";
+	my $conf = read_file($sys);
+	$conf =~ s/^max_sessions=.*\n//m;
+	$conf =~ s/^VERSION=.*$/VERSION=4.18/m;
+	open(my $fh, '>:utf8', $sys) || die "$sys: $!";
+	print $fh $conf;
+	close($fh);
+	ok(AppTest::is_reload($app->post('admin', 'system/update', { action => 'system/update' })), 'アップデート処理を行える');
+	like(read_file($sys), qr/^max_sessions=1$/m, 'アップデート処理で、同時ログイン数がシステム設定に入る');
+	like(read_file($sys), qr/^VERSION=4\.19$/m, 'バージョンが4.19になる');
+};
+
+subtest 'アップデートが必要なときの知らせ' => sub {
+	# システム管理者でないログイン中の人は、前のテストの multi（multi-4 でログインしている）を使う
+	# （メンテナンスの画面はCookieを消すので、ほかのテストのユーザーは使わない）
+	ok($app->get('multi-4', 'menu')->{status} == 200, 'システム管理者でない人がログインしている');
+
+	# 公開している記事（アップデートが必要なときも、記事のページが404にならないことを確かめる）
+	ok(AppTest::is_reload($app->post('owner', '', { %ART, title => 'アップデート待ちの記事', body_txt => "本文\n" })), '記事を書く');
+	my ($pkey) = body($app->get('owner', 'artlist')) =~ m{href="[^"]*/0(\d+)\?edit"[^>]*>アップデート待ちの記事<};
+	my $art = "/0$pkey";
+	is($app->get('admin', $art)->{status}, 200, '書いた記事は見られる');
+
+	my $sys = "$dir/data/system_config.dat";
+	my $conf = read_file($sys);
+	$conf =~ s/^VERSION=.*$/VERSION=4.18/m;
+	open(my $fh, '>:utf8', $sys) || die "$sys: $!";
+	print $fh $conf;
+	close($fh);
+
+	my $link = qr{href="[^"]*\?system/update"};
+	foreach my $p ('menu', 'artlist', 'system/setting') {
+		my $b = body($app->get('admin', $p));
+		like($b, qr{<article class="system notice require-update">.*?アップデート処理が必要です。.*?$link}s, "管理画面（?$p）に、知らせとアップデート処理の画面へのリンクが出る");
+		unlike($b, qr{アップデートが必要です。}, "管理画面（?$p）に、リンクの無いメッセージは出ない");
+	}
+	unlike(body($app->get('admin', 'system/update')), qr{require-update}, 'アップデート処理の画面には、知らせを出さない');
+
+	foreach my $p ('', $art) {
+		my $r = $app->get('admin', $p);
+		is($r->{status}, 200, "公開画面（$p）は、システム管理者には200");
+		like(body($r), qr{<a class="admin-bar-update" $link}, "公開画面（$p）の管理バーに、アップデート処理の画面へのリンクが出る");
+		unlike(body($r), qr{require-update|アップデートが必要です。}, "公開画面（$p）の本文には出さない");
+		is($r->{headers}->{'cache-control'}, 'private, no-store', "ログイン中の公開画面（$p）は保存させない");
+	}
+	is($app->get('admin', 'menu')->{headers}->{'cache-control'}, 'private, no-store', 'ログイン中の管理画面は保存させない');
+
+	foreach my $who ('multi-4', 'guest') {
+		foreach my $p ('', $art, 'menu') {
+			my $r = $app->get($who, $p);
+			is($r->{status}, 503, "$who には、?$p はメンテナンスの画面");
+			unlike(body($r), qr{system/update}, "$who には、?$p にアップデート処理の画面へのリンクを出さない");
+		}
+	}
+	is($app->get('guest', $art)->{headers}->{'cache-control'}, 'no-cache', 'ログインしていない人の画面は今までどおり');
+
+	ok(AppTest::is_reload($app->post('admin', 'system/update', { action => 'system/update' })), 'アップデート処理を行える');
+	unlike(body($app->get('admin', 'menu')), qr{require-update}, 'アップデート処理の後は、管理画面に知らせが出ない');
+	unlike(body($app->get('admin', $art)), qr{admin-bar-update}, 'アップデート処理の後は、管理バーにリンクが出ない');
+	is($app->get('guest', $art)->{headers}->{'cache-control'}, 'no-cache', 'ログインしていない人の記事は、no-cacheのまま');
 };
 
 subtest '操作の記録' => sub {
@@ -486,7 +663,7 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 	};
 
 	my ($btn, $form) = $edit->();
-	like($btn, qr{data-thumb-size="320" data-paste="" data-exif="0" data-class=""}, '設定していないときの貼り付けの値');
+	like($btn, qr{data-paste="" data-exif="0" data-class=""}, '設定していないときの貼り付けの値');
 	unlike($form, qr{name="size"}, 'ダイアログでサムネイルの大きさを選ばせない');
 	unlike($form, qr{ selected>(?:大きい画像|センタリング|左寄せ|右寄せ)|paste-to-exif" checked}, '設定していないときは、サムネイル、そのまま、Exifなし');
 	my @saves = $form =~ m{class="([^"]*\bjs-save\b[^"]*)"}g;
@@ -497,7 +674,7 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 	my $r = $app->post('owner', 'set/editor', \%SET);
 	ok(AppTest::is_reload($r), '保存できる');
 	($btn, $form) = $edit->();
-	like($btn, qr{data-thumb-size="200" data-paste="large" data-exif="1" data-class="float-r"}, '貼り付けの値が設定になる');
+	like($btn, qr{data-paste="large" data-exif="1" data-class="float-r"}, '貼り付けの値が設定になる');
 	like($form, qr{<option value="0" selected>大きい画像を貼付</option>}, 'ダイアログが大きい画像になる');
 	like($form, qr{id="paste-to-exif" checked}, 'ダイアログのExifが付く');
 	like($form, qr{<option value="float-r" selected>}, 'ダイアログの表示が右寄せになる');
@@ -509,7 +686,7 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 		ok(!AppTest::is_reload($r), "$bad->[0]=$bad->[1] は保存できない");
 	}
 	($btn) = $edit->();
-	like($btn, qr{data-thumb-size="200" data-paste="large"}, '拒んだ後も前の設定のまま');
+	like($btn, qr{data-paste="large"}, '拒んだ後も前の設定のまま');
 
 	# サムネイルは、送られた大きさではなく設定の大きさで作る（元の画像は192px）
 	$r = $app->post('owner', 'set/editor', { %SET, edit_thumb_size => 100 });
@@ -529,7 +706,6 @@ subtest '編集画面の画像の既定値とサムネイルの大きさ' => sub
 	$r = $app->post('editor', '', { action => 'media/remake_thumbnail', folder => 'test/', file_ary => 'size.png', size => 640 });
 	ok(json_ok($r), '再生成できる');
 	is(join('x', Satsuki::ImageFormat::get_size($thumb)), '150x150', '再生成でも設定の大きさで作る');
-	like(body($app->get('editor', 'media/')), qr{data-size="150"}, 'メディアの画面に、動画のサムネイル用の大きさが出る');
 	unlike(body($app->get('editor', 'media/')), qr{name="size"|thumbnail-size}, 'メディアでサムネイルの大きさを選ばせない');
 };
 

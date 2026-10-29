@@ -32,9 +32,9 @@
 	<$videos = if(v.allow_view, v.load_videos_need_thumbnail())>
 	<@ifexec(videos && ##videos>=0, begin)>
 	<h3>動画のサムネイル</h3>
-	<div id="video-thumbnail" data-url="<@Basepath><@v.blogimg_dir()>" data-size="<@v.thumbnail_size()>"<@if(Query.video_thumbnail, ' data-auto="1"')>
+	<div id="video-thumbnail" data-url="<@Basepath><@v.blogimg_dir()>"<@if(Query.video_thumbnail, ' data-auto="1"')>
 	 data-msg-done="サムネイルを作りました" data-msg-fail="%n本の動画はサムネイルを作れませんでした（このブラウザーで再生できない形式など）">
-	<p>サムネイルの無い動画か、サムネイルが古い大きさ（記事用の長い辺が960pxより大きい）の動画が<@##videos+1>本あります。サムネイルの無い動画は、作るまで記事に今までどおりプレーヤーで表示されます。
+	<p>サムネイルの無い動画か、サムネイルが古い作り方（4.19より前）の動画が<@##videos+1>本あります。サムネイルの無い動画は、作るまで記事に今までどおりプレーヤーで表示されます。
 	<button type="button" class="make">サムネイルを作る</button> <span class="status"></span></p>
 	<ul class="small">
 	<@forexec(t, videos, begin)>

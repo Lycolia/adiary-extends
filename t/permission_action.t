@@ -17,7 +17,6 @@ use Test::More;
 our $TODO;
 use File::Find ();
 use File::Spec ();
-use MIME::Base64 ();
 use AppTest;
 
 binmode(Test::More->builder->$_, ':utf8') foreach (qw(output failure_output todo_output));
@@ -30,8 +29,6 @@ my $PNG = do {
 	open(my $fh, '<:raw', "$FindBin::Bin/../pub/assets/dist/default-icon.png") || die $!;
 	local $/; <$fh>;
 };
-# 1x1のJPEG（動画のサムネイルはJPEGしか受け付けない）
-my $JPEG = MIME::Base64::decode_base64('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=');
 my $FOLDER = $AppTest::IMAGE_FOLDER;
 my $FILE   = $AppTest::IMAGE_FILE;
 my $VIDEO  = $AppTest::VIDEO_FILE;
@@ -116,8 +113,7 @@ my @ACTIONS = (
 	  form => {} },
 	{ action => 'media/upload_video_thumbnail', min => 'editor', ok => \&json_ret0,
 	  form => [ folder => $FOLDER, file => $VIDEO,
-		poster => { filename => 'poster.jpg', content => $JPEG, type => 'image/jpeg' },
-		thumb  => { filename => 'thumb.jpg',  content => $JPEG, type => 'image/jpeg' } ] },
+		poster => { filename => 'poster.png', content => $PNG, type => 'image/png' } ] },
 	{ action => 'etc/ajax_upload', min => 'editor', ok => \&json_ret0,
 	  form => [ folder => $FOLDER, size => 120, file_ary => { filename => 'up2.png', content => $PNG, type => 'image/png' } ] },
 

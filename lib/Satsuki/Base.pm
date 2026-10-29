@@ -780,10 +780,11 @@ sub http_headers {
 	if ($clen ne '') {
 		$header .= "Content-Length: $clen\r\n";
 	}
+	my $cache = $self->{Cache_control} || 'no-cache';
 	$header .= <<HEADER;
 Content-Type: $ctype; charset=$charset;\r
 X-Content-Type-Options: nosniff\r
-Cache-Control: no-cache\r
+Cache-Control: $cache\r
 \r
 HEADER
 	return $header;

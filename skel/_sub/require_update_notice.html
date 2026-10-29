@@ -1,0 +1,13 @@
+<@7>
+<@>
+<@> アップデートが必要なときの知らせ（管理画面の本文の上。_frame_admin から呼ばれる）
+<@>	システム管理者だけに出す。アップデート処理の画面では出さない
+<@>	公開画面では、管理バー（_sub/admin_bar）にリンクを出す
+<@>
+<@ifexec(Auth.isadmin && v.require_update && v.skeleton ne 'system/update', begin)>
+<article class="system notice require-update">
+<div class="body">
+	<p><strong class="warning">アップデート処理が必要です。</strong> <a href="<@v.myself>?system/update">アップデート処理の画面へ</a></p>
+</div>
+</article>
+<$end>

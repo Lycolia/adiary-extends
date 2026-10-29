@@ -1,4 +1,5 @@
 <@7>
+<@local(glance_arts,glance_coms,trash)>
 <$ifjump_clear(! Auth.ok, '_sub/error_message_403', 'ログインしていません')>
 
 <@> システムモード
@@ -23,9 +24,7 @@
 	<$end>
 
 <@ifexec(!Auth.auto, begin)>
-	<@ifexec(Auth.isadmin && v.require_update, begin)>
-		<p><strong class="warning">すぐに<a href="<@v.myself>?system/update">アップデート処理</a>を実行してください。</strong></p>
-	<$end>
+	<@> アップデートが必要なときの知らせは、管理画面の枠（_sub/require_update_notice）で出す
 	<@ifexec(Auth.isadmin && (v.sys.myself ne myself || v.sys.myself2 ne myself2), begin)>
 		<p><a href="<@v.myself>?system/update">付加情報の再生成</a>が必要です。</p>
 	<$end>
@@ -41,21 +40,62 @@
 	<$end>
 <$end>
 
-	<@ifexec(v.allow_view, begin)>
-	<table class="dashboard-info">
-	<tbody>
-	<tr><th>ブログ</th><td><a href="<@v.myself>"><@v.blog.blog_name></a></td></tr>
-	<tr><th>公開記事</th><td><@v.blog.arts || 0>件</td></tr>
-	<@ifexec(v.blog.darts, begin)>
-	<tr><th>非公開記事</th><td><@v.blog.darts>件</td></tr>
-	<$end>
-	<tr><th>コメント</th><td><@v.blog.coms || 0>件</td></tr>
-	</tbody>
-	</table>
-	<$end>
 	<p>ユーザー <@Auth.id><@if(Auth.isadmin, '（システム管理者）')></p>
 </div>
 </article>
+
+<@>
+<@> 概要の1行。argv : 種類（art/page）, 公開（1/0/draft）, 見出し
+<@> 件数は記事一覧（artlist）を同じ条件で絞り込んだものと同じにする
+<$glance_arts = begin>
+	<@local(o,x,r)>
+	<$o = {}>
+	<$o.loads  = 1>
+	<$o.type   = argv#0>
+	<$o.enable = argv#1>
+	<$(x,r) = v.load_arts_list(o)>
+	<li><a href="<@v.myself>?artlist&amp;type=<@argv#0>&amp;enable=<@argv#1>"><@argv#2></a><span class="dashboard-count"><@int(r.hits)>件</span></li>
+<$end>
+<@> argv : 承認待ちか（1/0）, 見出し。件数はコメント一覧（comlist）の絞り込みと同じ
+<$glance_coms = begin>
+	<@local(o,x,r)>
+	<$o = {}>
+	<$o.loads = 1>
+	<$o.hold  = argv#0>
+	<$(x,r) = v.load_coms_list(o)>
+	<li><a href="<@v.myself>?comlist&amp;hold=<@argv#0>"><@argv#1></a><span class="dashboard-count"><@int(r.hits)>件</span></li>
+<$end>
+
+<@ifexec(!Auth.auto && v.allow_view, begin)>
+<div class="dashboard-cards">
+	<@ifexec(v.allow_edit, begin)>
+	<$trash = v.load_trash_list()>
+	<article class="system">
+	<h2>概要</h2>
+	<div class="body">
+	<ul class="dashboard-glance">
+		<@exec(glance_arts, 'art',  'draft', '記事の下書き')>
+		<@exec(glance_arts, 'art',  '1',     '公開中の記事')>
+		<@exec(glance_arts, 'art',  '0',     '非公開の記事')>
+		<@exec(glance_arts, 'page', 'draft', 'ページの下書き')>
+		<@exec(glance_arts, 'page', '1',     '公開中のページ')>
+		<@exec(glance_arts, 'page', '0',     '非公開のページ')>
+		<li><a href="<@v.myself>?trash">ゴミ箱</a><span class="dashboard-count"><@##trash+1>件</span></li>
+		<@exec(glance_coms, '1', '承認待ちのコメント')>
+		<@exec(glance_coms, '0', '承認済みのコメント')>
+	</ul>
+	</div>
+	</article>
+
+	<article class="system">
+	<h2>書く</h2>
+	<div class="body">
+	<p><a class="button-primary" href="<@v.myself>?edit">新しく書く</a></p>
+	</div>
+	</article>
+	<$end>
+</div>
+<$end>
 
 <@ifexec(Auth.isadmin && !mod_rewrite && ENV.SERVER_SOFTWARE eq 'Apache' && 0<index(myself2, '.cgi'), begin)>
 <article class="system adiary-hint">

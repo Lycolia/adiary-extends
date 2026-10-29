@@ -1220,7 +1220,7 @@ function make_video_thumbnails(folder, videos) {
 	var $msg = $('<div>').addClass('message');
 	message.append( $msg );
 	message.showDelay();
-	adiary.make_video_thumbnails(files, path, $('#remake-thumbnail-dialog').data('size'), function(i){
+	adiary.make_video_thumbnails(files, path, function(i){
 		$msg.text( $('#msg-making-video-thumbnail').text() + ' ' + (i+1) + ' / ' + files.length );
 	}).then(function(fail){
 		if (fail) {

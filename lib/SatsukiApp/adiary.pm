@@ -11,9 +11,9 @@ our $SYSTEM_NAME = 'Lyndbaum';
 our $REPOSITORY_URL = 'https://github.com/Lycolia/lyndbaum4';
 our $SYSTEM_DESCRIPTION = 'Neo-Modern High-performance CMS software';
 # データ管理上数値しか解釈できないので文字列にしてはならない
-our $VERSION    = 4.18;
+our $VERSION    = 4.19;
 our $OUTVERSION = "$VERSION";
-our $DATA_VERSION = 4.18;
+our $DATA_VERSION = 4.19;
 ################################################################################
 # ■システム内部イベント
 ################################################################################
@@ -124,8 +124,18 @@ sub main {
 	# システム情報のロード
 	my $sys = $self->load_sysdat();
 
+	# 同時ログイン数（システム設定）。無ければ設定ファイルの値のまま
+	if ($sys->{max_sessions}) {
+		$ROBJ->{Auth}->{max_sessions} = $sys->{max_sessions};
+	}
+
 	# Cookieログイン処理
 	$self->authorization();
+
+	# ログイン中の画面は、途中のキャッシュにもブラウザーにも保存させない（管理バーや管理者だけの知らせが入るため）
+	if ($ROBJ->{Auth}->{ok}) {
+		$ROBJ->{Cache_control} = 'private, no-store';
+	}
 
 	# ServerURLのセキィリティを確保
 	$self->secure_http_host();
