@@ -19,6 +19,7 @@
 !/lyndbaum.httpd.pl
 !/CHANGES.txt
 !/index.html
+!/.git-hook/
 !/README.md
 !/docs/
 

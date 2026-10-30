@@ -1,0 +1,47 @@
+#!/bin/bash
+
+print_exit() {
+  mes=$1
+  code=$2
+  detail=$3
+
+  echo "=== プッシュに失敗しました ==="
+  echo "$mes"
+  echo "$detail"
+  exit $code
+}
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+change_files=$(git status --short)
+if [ -n "$change_files" ]; then
+  print_exit "コミットされていない差分があります。" 2 "$change_files"
+fi
+
+# Perlの構文チェック
+errors=""
+while IFS= read -r -d '' f; do
+  opt=()
+  # 分割ファイル（lib/Satsuki/Base_2.pm など）は単体では読めないので、本体を先に読む
+  if [[ $f =~ ^lib/(.+)_[0-9]+\.pm$ ]] && [ -f "lib/${BASH_REMATCH[1]}.pm" ]; then
+    opt=(-M"${BASH_REMATCH[1]//\//::}")
+  fi
+  out=$(perl -Ilib -It/lib "${opt[@]}" -c "$f" 2>&1) || errors+="$out"$'\n'
+done < <(git ls-files -z -- '*.pm' '*.pl' '*.cgi' '*.fcgi' '*.t')
+
+# JavaScriptの構文チェック
+if ! command -v node > /dev/null; then
+  print_exit "nodeが見つからないため、JavaScriptの構文チェックができません。" 4
+fi
+while IFS= read -r -d '' f; do
+  out=$(node --check "$f" 2>&1) || errors+="$f"$'\n'"$out"$'\n'
+done < <(git ls-files -z -- '*.js')
+
+if [ -n "$errors" ]; then
+  print_exit "構文エラーがあります。" 4 "$errors"
+fi
+
+prove -lr t
+if [ $? != 0 ]; then
+  print_exit "自動テストに失敗しています。" 3
+fi
