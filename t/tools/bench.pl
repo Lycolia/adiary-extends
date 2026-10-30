@@ -90,7 +90,7 @@ foreach my $url (@urls) {
 		print "\n";
 	}
 }
-print "（単位はミリ秒。total と db はサーバー側、http は curl で見た全体）\n";
+print "（単位はミリ秒。totalとdbはサーバー側、httpはcurlで見た全体）\n";
 
 if ($opt{save}) {
 	my $commit = `git rev-parse --short HEAD`;
