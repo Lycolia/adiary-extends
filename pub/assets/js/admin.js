@@ -194,6 +194,35 @@ $$.init( function(){
 	}, func);
 });
 
+////////////////////////////////////////////////////////////////////////////////
+//●一覧の表は、本文に収まらないときだけ1件ずつ並べる（admin.css の .list-card）
+////////////////////////////////////////////////////////////////////////////////
+// 列の幅は名前やタグの長さで変わるので、画面の幅ではなく、表の幅と置き場所の幅を比べて決める
+$$.init( function(){
+	const tables = document.querySelectorAll('table.list-table');
+	if (!tables.length) return;
+
+	function fit() {
+		for(const table of tables) {
+			const box = table.parentElement;
+			const css = getComputedStyle(box);
+			const width = box.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight);
+			// 表のときの幅を測る（表は width:100% なので、収まるなら置き場所の幅になる）
+			table.classList.remove('list-card');
+			if (table.offsetWidth > width + 0.5) table.classList.add('list-card');
+		}
+	}
+	fit();
+	// 置き場所の幅は画面の幅で変わる（ナビの位置も画面の幅で変わる）。表の幅は、フォントを読み終えると変わる
+	let timer;
+	window.addEventListener('resize', function(){
+		cancelAnimationFrame(timer);
+		timer = requestAnimationFrame(fit);
+	});
+	window.addEventListener('load', fit);
+	if (document.fonts) document.fonts.ready.then(fit);
+});
+
 //##############################################################################
 // ■UI
 //##############################################################################

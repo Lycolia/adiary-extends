@@ -377,7 +377,8 @@ a.button-primary:hover, a.button-primary:focus {
 	background-color:	#f6f7f7;
 }
 /* 一覧の表（記事、コメント、ゴミ箱）。文字は折り返さず、タイトルなどの列（.list-wide）だけ折り返して残りの幅を使う。
-   タグの列（.list-wrap）は数が多いと長くなるので折り返す（Lyndbaumと同じ） */
+   タグの列（.list-wrap）は数が多いと長くなるので折り返す（Lyndbaumと同じ）。
+   表が本文に収まらないときは、admin.js が .list-card を付けて1件ずつ並べる表示にする（列の幅は名前やタグの長さで変わるので、幅のしきい値では決めない） */
 .body table.list-table {
 	width:			100%;
 }
@@ -412,6 +413,30 @@ table.list-table th.sort a.sorted {
 }
 table.list-table tbody tr:nth-child(even) {
 	background-color:	#f9f9f9;
+}
+/* 本文に収まらないときは、見出しの行を出さず、1件ずつまとめて並べる。タイトルなどの列は1行を使う（Lyndbaumと同じ） */
+table.list-table.list-card thead {
+	display:		none;
+}
+table.list-table.list-card tr {
+	display:		block;
+	padding:		0.4rem 0;
+	border-bottom:		1px solid var(--admin-border-light);
+}
+.body table.list-table.list-card td {
+	display:		inline-block;
+	padding:		0 0.5rem 0 0;
+	border:			none;
+}
+.body table.list-table.list-card td.list-wide {
+	display:		block;
+	width:			auto;
+	padding:		0.2rem 0;
+}
+/* チェックボックスは左に置き、タイトルなどと同じ行に並べる */
+.body table.list-table.list-card td:first-child {
+	float:			left;
+	padding-top:		0.2rem;
 }
 /* 設定画面の表（左が項目名） */
 table.blog-setting th {
@@ -1070,30 +1095,6 @@ div.popup-help {
 	}
 	#admin-main:has(> #admin-side) {
 		display:		block;
-	}
-	/* 一覧の表は、見出しの行を出さず、1件ずつまとめて並べる。タイトルなどの列は1行を使う（Lyndbaumと同じ） */
-	table.list-table thead {
-		display:		none;
-	}
-	table.list-table tr {
-		display:		block;
-		padding:		0.4rem 0;
-		border-bottom:		1px solid var(--admin-border-light);
-	}
-	.body table.list-table td {
-		display:		inline-block;
-		padding:		0 0.5rem 0 0;
-		border:			none;
-	}
-	.body table.list-table td.list-wide {
-		display:		block;
-		width:			auto;
-		padding:		0.2rem 0;
-	}
-	/* チェックボックスは左に置き、タイトルなどと同じ行に並べる */
-	.body table.list-table td:first-child {
-		float:			left;
-		padding-top:		0.2rem;
 	}
 	#admin-side {
 		position:		static;

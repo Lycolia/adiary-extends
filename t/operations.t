@@ -482,7 +482,17 @@ subtest 'ダッシュボード' => sub {
 	like($drafts, qr{ページの下書き}, '記事一覧の下書きに、ページの下書きが出る');
 	unlike($drafts, qr{editorの記事}, '記事一覧の下書きに、公開の記事は出ない');
 	my $all = body($app->get('editor', 'artlist'));
-	unlike($all, qr{記事の下書き}, '記事一覧の「すべて」には、今までどおり下書きが出ない');
+	like($all, qr{記事の下書き}, '記事一覧の「すべて」には、下書きも出る');
+	like($all, qr{ページの下書き}, '記事一覧の「すべて」には、ページの下書きも出る');
+	like($all, qr{ownerの記事}, '記事一覧の「すべて」には、公開の記事も出る');
+
+	# 公開列は、下書き・公開・非公開を文字で出す
+	my %state = $all =~ m{>([^<]+)</a></td>\s*<td class="c"><label[^>]*>[^<]*</label></td>\s*<td class="c"><label[^>]*>([^<]*)</label></td>}g;
+	is($state{'記事の下書き'}, '下書き', '下書きの公開状態は「下書き」');
+	is($state{'ページの下書き'}, '下書き', 'ページの下書きの公開状態も「下書き」');
+	is($state{'ownerの記事'}, '公開', '公開の記事の公開状態は「公開」');
+	is($state{'下書きの記事'}, '非公開', '非公開の記事の公開状態は「非公開」');	# インポートした下書きは非公開になる
+	unlike(body($app->get('editor', 'artlist&enable=0')), qr{記事の下書き}, '記事一覧の「非公開」には、下書きは出ない');
 
 	# 書くは1つ
 	my @write = $b =~ m{<a class="button-primary" href="([^"]*)">}g;
