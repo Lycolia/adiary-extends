@@ -1370,7 +1370,7 @@ sub load_jscss_events {
 
 	$name =~ tr/a-z/A-Z/;
 	my $evt = $self->{blog}->{"event:$name"};
-	my $dir = $self->{blogpub_dir};
+	my $dir = $self->{blogpub_dir} . 'plugin/';	# plugin_pub_dir（adiary_4.pm）。公開画面で毎回通るので、ここでは読み込まない
 
 	my @ary;
 	foreach(split("\n", $evt)) {

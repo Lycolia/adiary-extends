@@ -39,11 +39,13 @@
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir><@v.theme>/<@v.theme_name>.css?<@get_lastmodified("<@v.theme_dir><@v.theme>/<@v.theme_name>.css")>" id="theme-css">
 <$end>
 <@>
-<@ifexec(!v.system_theme && s.theme_custom && s.theme eq v.theme, begin)>
-<link rel="stylesheet" href="<@Basepath><@s.theme_custom>?<@get_lastmodified(s.theme_custom)>" id="theme-custom-css">
+<@> このブログ用に作ったCSS（pub/custom/）。テーマの色の調整（get_theme_custom_css）と、動的CSS（dynamic_css_url_file）
+<$file = "<@v.blogpub_dir>custom/theme.css">
+<@ifexec(!v.system_theme && s.theme_custom && s.theme eq v.theme && file_size(file), begin)>
+<link rel="stylesheet" href="<@Basepath><@file>?<@get_lastmodified(file)>" id="theme-custom-css">
 <$end>
 <@>
-<$file = "<@v.blogpub_dir>dynamic.css">
+<$file = "<@v.blogpub_dir>custom/dynamic.css">
 <@ifexec(!v.system_mode && !v.stop_all_plugins && file_size(file), begin)>
 <link rel="stylesheet" href="<@Basepath><@file>?<@get_lastmodified(file)>" id="user-css">
 <$end>

@@ -209,7 +209,7 @@ sub export {
 	if (!$option->{ga4id}) { $s{ga4id} = ''; }
 
 	$s{'p:deh_login:erase_login'} = 1;	# ログインを消す
-	$s{theme_custom}  = $s{theme_custom} ? "${static_theme_dir}custom.css" : '';
+	$s{theme_custom}  = $s{theme_custom} ? 1 : '';	# CSSは pub/custom/theme.css（書き出したHTMLでは theme/theme.css）
 	$s{rss_files}     = '';
 	$session->msg("blog_dir=$aobj->{blog_dir}");
 

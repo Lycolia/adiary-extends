@@ -36,7 +36,7 @@ my @update_versions = (
 	]},
 	{ ver => 4.18, plugin=>1, func => 'sys_update_418' },	# 非公開コメントを廃止した。コメントフォームと記事のスケルトンは、デザインの作り直しで作り直す。コメントに承認待ち（hold）を足した
 	{ ver => 4.19, func => 'sys_update_419' },	# 動画の記事用のサムネイルを、サーバーで作るようにした。前に作ったものは、アップデートの後にブラウザーで作り直す
-	{ ver => 4.21, plugin=>1, theme=>1, func => 'sys_update_421', rebuild_cond=>[	# 古いテーマをレスポンシブにした。デザインのスケルトンを、今のテーマの雛形を外して作り直す
+	{ ver => 4.21, plugin=>1, theme=>1, func => 'sys_update_421', rebuild_cond=>[	# 古いテーマをレスポンシブにした。デザインのスケルトンを、今のテーマの雛形を外して作り直す。公開フォルダを整理し、テーマの色の調整をブログの設定に移した
 		'\[(?:for-)?(?:sp|pc):'	# スマホとPCで出し分ける記法（[sp:]、[pc:]）を削除した。使っていた記事は、記法を文字のまま出す
 	]}
 );
@@ -367,34 +367,81 @@ sub sys_update_419 {
 #-------------------------------------------------------------------------------
 # ●システムアップデート for Ver4.21
 #-------------------------------------------------------------------------------
-# 消したテーマ（satsuki2-pop）のブログは、標準のテーマに戻す。
-# 3カラムの選択肢（multi-sidebar）を選んでいたブログは、3カラムのテーマ（-3col）に切り替える。
-# ブログ用のCSSは新しいテーマの名前に写し、このあとの theme=>1 で新しいテーマから作り直す
+# ・公開フォルダを整理した。pub/css.d/ → data/blog/css.d/、pub/js/ → pub/plugin/js/、
+#   pub/dynamic.css → pub/custom/dynamic.css（このあとのプラグインの入れ直しで作り直す）
+# ・テーマの色の調整を、CSSファイル（pub/css/テンプレート.テーマ.css）からブログの設定（theme_custom:テーマ）に移した。
+#   CSSは今のテーマの分だけ pub/custom/theme.css に、このあとの theme=>1 で作り直す
+# ・消したテーマ（satsuki2-pop）のブログは、標準のテーマに戻す
+# ・3カラムの選択肢（multi-sidebar）を選んでいたテーマは、3カラムのテーマ（-3col）の調整にし、
+#   今のテーマならブログのテーマも切り替える
 sub sys_update_421 {
 	my $self = shift;
 	my $ROBJ = $self->{ROBJ};
 	my $blog = $self->{blog};
 	if (!$blog) { return; }
-	my $theme = $blog->{theme};
+	my $pub  = $self->blogpub_dir();
+	$ROBJ->mkdir( $self->plugin_pub_dir() );
 
-	if ($theme =~ m|^satsuki2-pop/|) {
+	# 消したテーマ
+	if ($blog->{theme} =~ m|^satsuki2-pop/|) {
 		$self->update_blogset($blog, 'theme', $self->{default_theme});
-		$self->update_blogset($blog, 'theme_custom', '');
+	}
+
+	# テーマの色の調整を、ブログの設定に移す（読み方は前の load_theme_info と同じ）
+	my $css_dir = "${pub}css/";
+	foreach my $file (@{ -d $css_dir ? $ROBJ->search_files($css_dir, { ext => '.css' }) : [] }) {
+		my $lines = $ROBJ->fread_lines("$css_dir$file");
+		if (!grep { /\$c=/ } @$lines) {	# 色の調整でない（プラグインのCSS）
+			$self->move_file_421($css_dir, $self->plugin_pub_dir() . 'css/', $file);
+			next;
+		}
+		$ROBJ->file_delete("$css_dir$file");
+		if ($file !~ /^([\w\-]+)\.([\w\-]+)\.css$/) { next; }
+		my $theme = "$1/$2";
+		if ($theme =~ m|^satsuki2-pop/|) { next; }
+
+		my (%col, %opt);
+		foreach(@$lines) {
+			if ($_ =~ /\$(option\d*)=(.+)/) {
+				my ($k, $v) = ($1, $2);
+				$v =~ s|\s*\*/\s*$||;
+				$opt{$k} = $v;
+				next;
+			}
+			if ($_ !~ /(#[0-9A-Fa-f]+).*\$c=\s*(\w+)/) { next; }
+			$col{$2} = $1;
+		}
+		if (($theme eq 'satsuki2/satsuki2' || $theme eq 'satsuki2/bigblue') && $opt{option} eq 'multi-sidebar') {
+			delete $opt{option};
+			if ($blog->{theme} eq $theme) {
+				$self->update_blogset($blog, 'theme', "$theme-3col");
+				$ROBJ->message("Change theme '%s' to '%s'", $theme, "$theme-3col");
+			}
+			$theme .= '-3col';
+		}
+		$self->save_theme_custom_values($theme, \%col, \%opt);
+	}
+	rmdir($css_dir);
+
+	# 色の調整を使っているか（前はCSSのパスを入れていた）
+	my $use = $blog->{theme_custom} ne '' && $blog->{"theme_custom:$blog->{theme}"} ne '';
+	$self->update_blogset($blog, 'theme_custom', $use ? 1 : '');
+
+	# 動的CSSの材料は公開しない。プラグインのJSの写しは pub/plugin/ へ（入れ直しで、ここから消して写し直す）
+	$self->move_dir_files_410("${pub}css.d/", $self->dynamic_css_dir());
+	$self->move_dir_files_410("${pub}js/",    $self->plugin_pub_dir() . 'js/');
+	$ROBJ->file_delete("${pub}dynamic.css");
+	$self->update_dynamic_css();
+}
+sub move_file_421 {
+	my ($self, $src, $des, $file) = @_;
+	my $ROBJ = $self->{ROBJ};
+	$ROBJ->mkdir($des);
+	if (-e "$des$file") {
+		$ROBJ->message("Already exists '%s'", "$des$file");
 		return;
 	}
-	if ($theme ne 'satsuki2/satsuki2' && $theme ne 'satsuki2/bigblue') { return; }
-
-	my $file = $self->get_theme_custom_css($theme);
-	if (!-r $file) { return; }
-	my $lines = $ROBJ->fread_lines($file);
-	if (!grep { /\$option=multi-sidebar\b/ } @$lines) { return; }
-
-	my $new  = "$theme-3col";
-	my $copy = $self->get_theme_custom_css($new, 1);
-	$ROBJ->fwrite_lines($copy, $lines);
-	$self->update_blogset($blog, 'theme', $new);
-	$self->update_blogset($blog, 'theme_custom', $copy);
-	$ROBJ->message("Change theme '%s' to '%s'", $theme, $new);
+	rename("$src$file", "$des$file") || $ROBJ->message("Rename '%s' failed", "$src$file");
 }
 
 #-------------------------------------------------------------------------------
