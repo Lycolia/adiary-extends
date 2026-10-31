@@ -19,13 +19,7 @@ body
 }
 #hatena-body {
 	position:		relative;
-	margin:			1em 8px;
-	padding-bottom:		1px;
-}
-#hatena-body:after {
-	content:		"";
-	clear:			both;
-	display:		block;
+	margin:			1em 8px 0 8px;
 }
 #header>div:first-child,
 #footer>div:last-child,
@@ -37,21 +31,41 @@ body
 	margin-left:		auto;
 	margin-right:		auto;
 }
+/* 本文とサイドバーをGridで並べる（HTMLは本文、サイドバーの順。JavaScriptで入れ替えない）。
+   サイドバーの枠（#sidebar）を消して、サイドバーAを本文の横に、サイドバーBを下の段（フッタの上）に置く */
+#hatena-body > div {
+	display:		grid;
+	grid-template-columns:	minmax(0, 1fr) 240px;
+	grid-template-areas:	"main side-a" "side-b side-b";
+	column-gap:		20px;
+	align-items:		start;
+}
+/* 本文とサイドバーのほか（デバッグ表示など）は、幅いっぱいに出す */
+#hatena-body > div > :not(.main):not(#sidebar) {
+	grid-column:		1 / -1;
+}
 /* 記事部 */
 .main {
-	float:			left;
-	width:			calc(100% - 260px);
+	grid-area:		main;
 }
-/* 左側にメニューを配置 */
+/* 右側にメニューを配置 */
 #sidebar
 {
-	float:			right;
-	width:			240px;
-	margin:			0;
-	padding:		0;
-
 	font-size:		11pt;
 	line-height:		160%;
+}
+/* 広い画面では枠を消して、サイドバーAとBをGridに直に並べる（狭い画面では枠のまま縦に並べる） */
+@media screen and (min-width: 641px) {
+	#sidebar {
+		display:		contents;
+	}
+	/* 枠に付いていた上の余白（#sidebar の margin-top） */
+	#side-a {
+		margin-top:		0.5em;
+	}
+}
+#side-a {
+	grid-area:		side-a;
 }
 /* フッタの配置 */
 #footer
@@ -64,7 +78,8 @@ body
 	font-size:		10pt;
 	line-height:		120%;
 }
-#footer, #footer a:link, #footer a:visited {
+#footer, #footer a:link, #footer a:visited,
+#hatena-body #side-b a:link, #hatena-body #side-b a:visited {
 	color:			#fff;		/* $c=footerfont */
 }
 
@@ -77,14 +92,14 @@ body
 /*--------------------------------------------------------------------
 ■表示オプション（右サイドバー）
 --------------------------------------------------------------------*/
-/*
-$option:title=sidebar-position
+/* 狭い画面（1列）の並びを崩さないよう、広い画面のときだけ入れ替える */
+/* $option:title=sidebar-position
 $option=left-sidebar
-.main {
-	float:			right;
-}
-#sidebar {
-	float:			left;
+@media screen and (min-width: 641px) {
+	#hatena-body > div {
+		grid-template-columns:	240px minmax(0, 1fr);
+		grid-template-areas:	"side-a main" "side-b side-b";
+	}
 }
 -------------------- */
 
@@ -145,7 +160,7 @@ button:disabled
 /*******************************************************************************
 ■ヘッダ
 *******************************************************************************/
-#sp-header, #header {
+#header {
 	background-color:	#f3f3f3;		/* $c=headerbg */
 	padding:		0;
 	margin-bottom:		1em;
@@ -233,10 +248,6 @@ h1 img, h1 a img {
 /*--------------------------------------------------------------------
 ●ドロップダウンメニュー
 --------------------------------------------------------------------*/
-/* "header>div>.ddmenu" move to "header>.ddmenu" */
-#ddmenu-move-to-after-header-div {
-	min-width:		1px;
-}
 /* option=ddmenu-width-limit
 #header .ddmenu {
 	min-width:		600px;
@@ -790,32 +801,42 @@ ul.hatena-section ul {
 /*******************************************************************************
 ■side-b フッタに配置される
 *******************************************************************************/
-/* JavaScript でフッタに移動 */
-#side-b-move-to-footer {
-	min-width:		1px;
-}
-#footer #side-b {
+/* 本文の下の段に置き、フッタと同じ色の帯にして、フッタとつなげる（JavaScriptでフッタに動かさない）。
+   帯の色は border-image で左右だけ画面の端まで伸ばす（横にスクロールさせない） */
+#hatena-body #side-b {
+	grid-area:		side-b;
+	font-size:		10pt;
+	line-height:		120%;
 	color:			#fff;		/* $c=footerfont */
-	margin:			30px auto 20px auto;
+	border-image:		conic-gradient(#333 0 0) fill 0 // 0 100vmax;	/* $c=footerbg */
+	margin:			31px 0 0 0;	/* 前の #hatena-body の下の余白（1px）とフッタの上の余白（30px） */
+	padding:		50px 0 20px 0;	/* 前のフッタの上の余白（20px）とサイドバーBの上の余白（30px） */
 	text-align:		left;
 }
-#footer #side-b .hatena-module {
+#footer {
+	margin-top:		0;
+	padding-top:		0;
+}
+/* 前はフッタに動かしていたので、サイドバーの枠と背景（#sidebar div.hatena-module）は付けない */
+#hatena-body #side-b .hatena-module {
+	background:		none;
+	border:			none;
+	border-radius:		0;
+	padding:		0;
+	box-shadow:		none;
 	width:			auto;
 	margin:			0 24px 0 0;
 	float:			left;
 }
-#footer #side-b .hatena-module:last-child {
+#hatena-body #side-b .hatena-module:last-child {
 	border-right:		none;
 }
-#footer #side-b:after {
+#hatena-body #side-b:after {
 	content:		"";
 	display:		block;
 	clear:			both;
 }
-#footer>div:not(#side-b) {
-	display:		block;
-}
-#footer #side-b .hatena-moduletitle {
+#hatena-body #side-b .hatena-moduletitle {
 	color:			#fff;		/* $c=footerfont */
 	text-shadow:		 1px -1px 1px #000,
 				 1px  1px 1px #000,
@@ -823,7 +844,7 @@ ul.hatena-section ul {
 				-1px -1px 1px #000,
 				4px 2px 2px rgba(255,255,255,0.4);
 }
-#footer #side-b .hatena-modulebody {
+#hatena-body #side-b .hatena-modulebody {
 	margin:			0.5em 1em;
 }
 
@@ -1004,4 +1025,201 @@ nav.tree {
 	border-radius:		4px;
 	border:			1px solid #bbb;		/* $c=border */
 	background-color:	#eef;			/* $c=sysbg */
+}
+
+/******************************************************************************/
+/*--------------------------------------------------------------------
+■狭い画面（スマホ）
+--------------------------------------------------------------------*/
+/* 前のスマホ用のCSS（sphone.css）を移したもの。
+   本文の枠はGridにせず、前と同じく本文、サイドバーの順に縦に並べる */
+@media screen and (max-width: 640px) {
+	#hatena-body > div {
+		display:		block;
+	}
+
+	/*--------------------------------------------------------------------
+	■全体配置
+	--------------------------------------------------------------------*/
+	body {
+		width:			auto;
+	}
+	#header>div:first-child,
+	#footer>div:last-child,
+	#hatena-body,
+	#side-b {
+		width:			auto;
+		min-width:		1px;	/* for GC bugs */
+		max-width:		none;
+	}
+	#hatena-body {
+		padding:		0 4px;
+	}
+	.main {
+		margin-left:		0px;
+		margin-right:		0px;
+		padding:		0 2px;
+		width:			auto;
+		float:			none;
+	}
+	#sidebar {
+		color:			#000;
+		float:			none;
+		margin:			40px 4px 0 4px;
+		padding:		0;
+		width:			auto;
+		border:			none;
+	}
+
+	/*--------------------------------------------------------------------
+	■ヘッダ、フッタ
+	--------------------------------------------------------------------*/
+	#header {
+		margin-bottom:		1em;
+	}
+	#nav-header {
+		font-size:		9pt;
+		text-align:		right;
+		vertical-align:		top;
+	}
+	#page-title {
+		font-size:		19pt;
+		margin:			10px 0 0 0;
+		padding:		20px 6px;
+		font-weight:		bold;
+		text-shadow:
+			-1px -1px 0px #fff,
+			 1px -1px 0px #fff,
+			 1px  1px 0px #fff,
+			-1px  1px 0px #fff,
+			 3px  3px 2px #999;
+	}
+	#nav-header a {
+		text-decoration:	none;
+	}
+
+	/*--------------------------------------------------------------------
+	■サイドバー
+	--------------------------------------------------------------------*/
+	#sidebar {
+		font-size:		11pt;
+		line-height:		140%;
+	}
+	span.switch-icon {
+		margin-right:		1em;
+	}
+	#sidebar ul.hatena-section {
+		line-height:		200%;
+	}
+	#side-search input.search-box {
+		width:			180px;
+	}
+	table.calendar {
+		margin-left:		auto;
+		margin-right:		auto;
+	}
+
+	/*--------------------------------------------------------------------
+	■コメント欄
+	--------------------------------------------------------------------*/
+	#com {
+		font-size:		10pt;
+	}
+	#com form input.comment-author {
+		width:			100px;
+	}
+	#com form textarea {
+		width:			340px;
+	}
+
+	/*--------------------------------------------------------------------
+	■記事部の設定
+	--------------------------------------------------------------------*/
+	#adiary-body {
+		word-wrap:		break-word;
+	}
+	#adiary-body img,
+	#adiary-body figure {
+		max-width:		100%;
+		height:			auto;
+		float:			none;
+	}
+	#adiary-body textarea,
+	#adiary-body input,
+	#adiary-body video,
+	#adiary-body audio {
+		max-width:		100%;
+	}
+	article ul,
+	article ol {
+		padding-left:		2em;
+	}
+	article ul ul,
+	article ol ol {
+		padding-left:		1em;
+	}
+	article div.body {
+		padding-left:		12px;
+		padding-right:		12px;
+	}
+
+	/*--------------------------------------------------------------------
+	○table, blockquote, pre
+	--------------------------------------------------------------------*/
+	.body table {
+		margin-left:		1em;
+		margin-right:		1em;
+	}
+	.body blockquote table,
+	.body div.box table {
+		margin-left:		0;
+		margin-right:		0;
+	}
+	blockquote,
+	pre,
+	div.box {
+		margin:			0.5em 1.0em 0.5em 1.0em;
+		padding:		0.2em 0.5em 0.2em 0.5em;
+	}
+	pre {
+		margin-left:		0;
+		margin-right:		0;
+		overflow-x:		scroll;
+	}
+
+	/*--------------------------------------------------------------------
+	■フォントサイズとpadding初期化
+	--------------------------------------------------------------------*/
+	article {
+		padding:		6px;
+	}
+	article h2 {
+		font-size:		14pt;
+	}
+	article div.body {
+		padding:		0;
+		font-size:		11pt;
+		line-height:		140%;
+	}
+	div.body h3 {
+		font-size:		12pt;
+	}
+	div.body h4 {
+		font-size:		11pt;
+	}
+	#com {
+		padding:		6px;
+	}
+
+	/*--------------------------------------------------------------------
+	■システムモード
+	--------------------------------------------------------------------*/
+	article.system div.body {
+		padding-left:		6px;
+		padding-right:		6px;
+	}
+	article.system div.body table {
+		margin-left:		0px;
+		margin-right:		0px;
+	}
 }

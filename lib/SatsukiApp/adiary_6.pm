@@ -35,7 +35,8 @@ my @update_versions = (
 		'\(\('					# 注釈（(())）の一覧が出ない、番号が続く、同じidが重なる、を直した
 	]},
 	{ ver => 4.18, plugin=>1, func => 'sys_update_418' },	# 非公開コメントを廃止した。コメントフォームと記事のスケルトンは、デザインの作り直しで作り直す。コメントに承認待ち（hold）を足した
-	{ ver => 4.19, func => 'sys_update_419' }	# 動画の記事用のサムネイルを、サーバーで作るようにした。前に作ったものは、アップデートの後にブラウザーで作り直す
+	{ ver => 4.19, func => 'sys_update_419' },	# 動画の記事用のサムネイルを、サーバーで作るようにした。前に作ったものは、アップデートの後にブラウザーで作り直す
+	{ ver => 4.21, plugin=>1, theme=>1, func => 'sys_update_421' }	# 古いテーマをレスポンシブにした。デザインのスケルトンを、今のテーマの雛形を外して作り直す
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -359,6 +360,39 @@ sub sys_update_419 {
 		my $max = int($self->{ROBJ}->{Auth}->{max_sessions});
 		$self->update_sysdat('max_sessions', $max < 1 ? 1 : $max);
 	}
+}
+
+#-------------------------------------------------------------------------------
+# ●システムアップデート for Ver4.21
+#-------------------------------------------------------------------------------
+# 消したテーマ（satsuki2-pop）のブログは、標準のテーマに戻す。
+# 3カラムの選択肢（multi-sidebar）を選んでいたブログは、3カラムのテーマ（-3col）に切り替える。
+# ブログ用のCSSは新しいテーマの名前に写し、このあとの theme=>1 で新しいテーマから作り直す
+sub sys_update_421 {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $blog = $self->{blog};
+	if (!$blog) { return; }
+	my $theme = $blog->{theme};
+
+	if ($theme =~ m|^satsuki2-pop/|) {
+		$self->update_blogset($blog, 'theme', $self->{default_theme});
+		$self->update_blogset($blog, 'theme_custom', '');
+		return;
+	}
+	if ($theme ne 'satsuki2/satsuki2' && $theme ne 'satsuki2/bigblue') { return; }
+
+	my $file = $self->get_theme_custom_css($theme);
+	if (!-r $file) { return; }
+	my $lines = $ROBJ->fread_lines($file);
+	if (!grep { /\$option=multi-sidebar\b/ } @$lines) { return; }
+
+	my $new  = "$theme-3col";
+	my $copy = $self->get_theme_custom_css($new, 1);
+	$ROBJ->fwrite_lines($copy, $lines);
+	$self->update_blogset($blog, 'theme', $new);
+	$self->update_blogset($blog, 'theme_custom', $copy);
+	$ROBJ->message("Change theme '%s' to '%s'", $theme, $new);
 }
 
 #-------------------------------------------------------------------------------

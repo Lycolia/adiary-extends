@@ -14,7 +14,7 @@ our $SYSTEM_DESCRIPTION = 'Neo-Modern High-performance CMS software';
 our $VERSION    = 4.21;
 our $BRANCH_VERSION = '';
 our $OUTVERSION = "$VERSION"."$BRANCH_VERSION";
-our $DATA_VERSION = 4.19;
+our $DATA_VERSION = 4.21;
 ################################################################################
 # ■システム内部イベント
 ################################################################################

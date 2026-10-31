@@ -1042,9 +1042,9 @@ sub generate_design_skeleton {
 	my $ROBJ = $self->{ROBJ};
 
 	# 元にするテンプレートのスケルトンに差し替える
-	my @bak;
+	# 標準のもの（$tplなし）を作るときも、今のテーマのスケルトンを外す（外さないと、今のテーマの雛形で作ってしまう）
+	my @bak = $ROBJ->delete_skeleton($self->{theme_skeleton_level});
 	if ($tpl ne '') {
-		@bak = $ROBJ->delete_skeleton($self->{theme_skeleton_level});
 		$ROBJ->regist_skeleton($self->{theme_dir} . "${tpl}/_skel/", $self->{theme_skeleton_level});
 	}
 	my $ret = 0;
@@ -1188,11 +1188,9 @@ sub generate_design_skeleton {
 	}
 
 	# テーマのスケルトンを元に戻す
-	if ($tpl ne '') {
-		$ROBJ->delete_skeleton($self->{theme_skeleton_level});
-		foreach(@bak) {
-			$ROBJ->regist_skeleton($_->{dir}, $_->{level});
-		}
+	$ROBJ->delete_skeleton($self->{theme_skeleton_level});
+	foreach(@bak) {
+		$ROBJ->regist_skeleton($_->{dir}, $_->{level});
 	}
 	return $ret;
 }

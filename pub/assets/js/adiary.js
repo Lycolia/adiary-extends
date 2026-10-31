@@ -207,29 +207,6 @@ adiary.get_value_from_css = function(id, attr) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-//●sidebarのHTML位置変更
-////////////////////////////////////////////////////////////////////////////////
-css_init(function(){
-	const flag = this.get_value_from_css('sidebar-move-to-before-main');
-	if (this.SP || !flag) return;
-
-	// 入れ替え
-	const sidebar = document.getElementById('sidebar');
-	const main    = document.querySelector('div.main:first-child');
-	if (sidebar && main) main.parentNode.insertBefore(sidebar, main);
-});
-
-css_init(function(){
-	const flag = this.get_value_from_css('side-b-move-to-footer');
-	if (this.SP || !flag) return;
-
-	// 入れ替え
-	const footer = document.getElementById('footer');
-	const side_b = document.getElementById('side-b');
-	if (footer && side_b) footer.prepend(side_b);
-});
-
-////////////////////////////////////////////////////////////////////////////////
 //●viewport の上書き
 ////////////////////////////////////////////////////////////////////////////////
 css_init(function(){

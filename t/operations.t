@@ -587,7 +587,7 @@ subtest '同時ログイン数' => sub {
 	close($fh);
 	ok(AppTest::is_reload($app->post('admin', 'system/update', { action => 'system/update' })), 'アップデート処理を行える');
 	like(read_file($sys), qr/^max_sessions=1$/m, 'アップデート処理で、同時ログイン数がシステム設定に入る');
-	like(read_file($sys), qr/^VERSION=4\.19$/m, 'バージョンが4.19になる');
+	like(read_file($sys), qr/^VERSION=4\.21$/m, 'バージョンが今のデータのバージョン（4.21）になる');
 };
 
 subtest 'アップデートが必要なときの知らせ' => sub {
