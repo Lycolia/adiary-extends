@@ -4,10 +4,15 @@ Options +FollowSymLinks
 # 使用メモリ量の制限
 # RLimitMem 268435456
 
+RewriteEngine	On
+
+# 非公開のフォルダ。公開するのはpub/だけ
+# ※mod_rewriteが使えないサーバでは拒否されません。サーバの設定で拒否してください。
+RewriteRule	^(?:__cache|data|docs|info|lib|plugin|skel|skel\.local|t)(?:/|$)	-	[F]
+
 # mod_rewrite設定。可能な限り使用してください。
 # ※一部の細工されたレンタルサーバでは mod_rewrite が正しく動かないことがあります。
 
-# RewriteEngine	On
 # RewriteCond	%{REQUEST_FILENAME}	!-f
 # RewriteRule	^(.*)$			lyndbaum.cgi/$1	[L]
 

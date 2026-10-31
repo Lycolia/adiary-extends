@@ -385,10 +385,10 @@ if ($MIME_FILE && -e $MIME_FILE) {
 }
 
 #-------------------------------------------------------------------------------
-# search deny directories
+# deny directories
 #-------------------------------------------------------------------------------
 {
-	my @dirs = &search_dir_file('.htaccess');
+	my @dirs = qw(__cache data docs info lib plugin skel skel.local t);
 	if (-r '.git') { push(@dirs, '.git'); }
 
 	print "\tDeny dirs: " . join('/, ', @dirs) . "/\n";
@@ -1042,25 +1042,6 @@ sub rfc_date {
 
 	return sprintf("$wd, %02d $mn %04d %02d:%02d:%02d GMT"
 		, $mday, $year+1900, $hour, $min, $sec);
-}
-
-#-------------------------------------------------------------------------------
-# deny directories
-#-------------------------------------------------------------------------------
-sub search_dir_file {
-	my $file = shift || '.htaccess';
-	opendir(my $fh, './') || return [];
-
-	my @ary;
-	foreach(readdir($fh)) {
-		if ($_ eq '.' || $_ eq '..' )  { next; }
-		if (!-d $_) { next; }
-		if (-e "$_/$file") {
-			push(@ary, $_);
-		}
-	}
-	closedir($fh);
-	return @ary;
 }
 
 #-------------------------------------------------------------------------------
