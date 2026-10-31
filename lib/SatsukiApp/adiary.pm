@@ -61,23 +61,12 @@ sub new {
 	# 現在の日時設定（日付変更時間対策）
 	$self->{now} = $ROBJ->{Now};
 
-	# スマホ判別
-	$self->{sphone} = $self->sphone_checker();
-
 	# Cache環境向け Timer のロード
 	if ($ROBJ->{CGI_cache} && $ENV{SatsukiTimer} ne '0' && !$Satsuki::Timer::VERSION) {
 		require Satsuki::Timer;
 	}
 
 	return $self;
-}
-
-#-------------------------------------------------------------------------------
-# ●スマホ判別
-#-------------------------------------------------------------------------------
-sub sphone_checker {
-	my $ua = $ENV{HTTP_USER_AGENT};
-	return 0<index($ua,'Android') || 0<index($ua,'iPhone') || 0<index($ua,'iPad');
 }
 
 #-------------------------------------------------------------------------------
@@ -92,7 +81,6 @@ blog_cache_unit  => 100,	# ブログ記事キャッシュ保存時の分割単�
 theme_skeleton_level => 10,
 user_skeleton_level  => 20,
 theme_design_skeleton_level => 21,	# テンプレート別に生成したデザイン
-sphone_skeleton_level => 100,
 default_tag_priority => 100000,
 default_wiki_priority=> 100000,
 top_skeleton	=> '_top',
@@ -154,10 +142,6 @@ sub main {
 
 	# Query/Form処理  ※テーマ選択より後に処理
 	$self->read_query_form();
-
-	# スマホ向け処理（レスポンシブ対応テーマでは行わない）
-	if ($self->{responsive}) { $self->{sphone} = 0; }
-	if ($self->{sphone}) { $self->init_for_sphone(); }
 
 	# 表示スケルトン選択
 	$self->select_skeleton( $ROBJ->{Query}->{_} || $self->{query0} );
@@ -287,18 +271,14 @@ sub read_query_form {
 	delete $q->{''};
 
 	# 特殊Queryの処理
-	foreach(qw(_sphone _theme)) {
+	foreach(qw(_theme)) {
 		if (!$q->{$_}) { next; }
 		# テーマ指定は、デザイン編集のテーマのプレビュー用。ブログの管理者のみ
-		if ($_ eq '_theme' && !$self->{blog_admin}) { delete $q->{$_}; next; }
+		if (!$self->{blog_admin}) { delete $q->{$_}; next; }
 		my $v = $q->{$_};
 		$v =~ s|[^\w\-/]||g;
 
-		if ($_ eq '_sphone') {		# スマホ表示
-			$self->{sphone}=$v;
-		} elsif ($_ eq '_theme') {	# テーマ指定
-			$self->load_theme( $v );
-		}
+		$self->load_theme( $v );
 		$ROBJ->{no_robots}=1;
 		$self->{sp_query} .= "&$_=$v";
 		delete $q->{$_};
@@ -311,35 +291,6 @@ sub read_query_form {
 		my $q0 = $self->{query0} = index($1,'=')<0 ? $1 : '';	# 検索Queryをスケルトン指定と誤解しないため
 		if ($q0 ne '') { delete $q->{$q0}; }
 	}
-}
-
-#-------------------------------------------------------------------------------
-# ●スマホ向け処理
-#-------------------------------------------------------------------------------
-sub init_for_sphone {
-	my $self = shift;
-	my $ROBJ = $self->{ROBJ};
-
-	my $dir = $self->{theme_dir} . '_sphone/_skel/';
-	$ROBJ->regist_skeleton($dir, $self->{sphone_skeleton_level});
-
-	# スマホ用初期化ルーチンを呼ぶ
-	$ROBJ->call( '_init_sphone' );
-}
-
-#-------------------------------------------------------------------------------
-# ●スマホ向け処理をやめる
-#-------------------------------------------------------------------------------
-sub stop_sphone {
-	my $self = shift;
-	if (!$self->{sphone}) { return; }
-	my $ROBJ = $self->{ROBJ};
-
-	$ROBJ->delete_skeleton($self->{sphone_skeleton_level});
-	# _init_sphone で読み込んだテーマのスマホ用CSS
-	$self->{cssfiles} = [ grep { $_ !~ m|/sphone\.css$| } @{ $self->{cssfiles} || [] } ];
-
-	$self->{sphone} = 0;
 }
 
 #-------------------------------------------------------------------------------
@@ -596,15 +547,11 @@ sub system_mode {
 	$ROBJ->delete_skeleton($self->{theme_skeleton_level});
 	$ROBJ->delete_skeleton($self->{theme_design_skeleton_level});
 	$self->{system_theme} = 1;
-	# 公開画面のフレームを使う画面（デザイン編集など）のviewportとbodyのクラスは、レスポンシブでないものにする（_frame）
-	$self->{responsive}   = 0;
 
 	# 外フレームも管理画面用にする（フレームを使わない出力はそのまま）
 	if ($self->{frame_skeleton}) {
 		$self->{frame_skeleton} = $self->{admin_frame_skeleton};
 	}
-	# 管理画面は狭い画面にもCSSで合わせるので、スマホ用の処理（_sphone）は使わない
-	$self->stop_sphone();
 }
 
 #-------------------------------------------------------------------------------
@@ -1705,16 +1652,6 @@ sub load_theme {
 	$self->{theme}      = $theme;
 	$self->{template}   = $1;
 	$self->{theme_name} = $name;
-
-	# レスポンシブ対応テーマか？（README.txtのヘッダで判定）
-	$self->{responsive} = 0;
-	my $readme = "$dir$name/README.txt";
-	if (-r $readme) {
-		foreach(@{ $ROBJ->fread_lines_cached($readme) }) {
-			if ($_ !~ /^([\w\-]+):\s*(.*?)\s*$/) { last; }
-			if ($1 eq 'Responsive') { $self->{responsive} = ($2 eq 'yes') ? 1 : 0; last; }
-		}
-	}
 
 	# スケルトンテンプレートの登録
 	$ROBJ->delete_skeleton($self->{theme_skeleton_level});

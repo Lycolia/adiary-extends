@@ -4,7 +4,6 @@ Author: nabe@abk
 Access: https://twitter.com/nabe_abk
 Original: nihonyamori, http://k52.org/adiary/
 License: GPL
-Responsive: yes
 System-mode: yes
 
 ChangeLog

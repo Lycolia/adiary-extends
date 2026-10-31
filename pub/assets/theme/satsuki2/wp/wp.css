@@ -284,11 +284,10 @@ h1 img, h1 a img {
 	color:			#fff;		/* $c=ddfont */
 }
 /* 矢印の色 */
-.ddmenu li ul li ul:before,
-.ddmenu.sp li ul:before {
+.ddmenu li ul li ul:before {
 	border-left-color:	#fff;		/* $c=ddarrow = ddfont */
 }
-.ddmenu:not(.sp) li:last-child:not(:first-child) ul li ul:before {
+.ddmenu li:last-child:not(:first-child) ul li ul:before {
 	border-left-color:	transparent;
 	border-right-color:	#fff;		/* $c=ddarrow */
 }

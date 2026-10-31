@@ -3,7 +3,6 @@ Template: satsuki2
 Author: nabe@abk
 Access: https://twitter.com/nabe_abk
 License: GPL
-Responsive: yes
 System-mode: yes
 
 ※余計な記述が多いので、オリジナルテーマの下敷きにするのはお勧めしません。

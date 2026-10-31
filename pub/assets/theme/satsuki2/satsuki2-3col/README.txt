@@ -3,7 +3,6 @@ Template: satsuki2
 Author: nabe@abk
 Access: https://twitter.com/nabe_abk
 License: GPL
-Responsive: yes
 
 さつき2テーマの3カラム版です。
 ・広い画面（920px以上）では「サイドバーA｜本文｜サイドバーB」の3カラム、

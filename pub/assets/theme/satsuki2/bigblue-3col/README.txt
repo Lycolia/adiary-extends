@@ -4,7 +4,6 @@ Author: nabe@abk
 Access: https://twitter.com/nabe_abk
 Original Author: かえで
 License: GPL
-Responsive: yes
 
 BigBlueテーマの3カラム版です。
 ・「サイドバーA｜本文｜サイドバーB」の3カラムで、640px以下では1列で表示します。

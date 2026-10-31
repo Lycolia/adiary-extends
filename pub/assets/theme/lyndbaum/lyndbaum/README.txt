@@ -3,8 +3,6 @@ Template: lyndbaum
 Author: Lycolia
 Access: https://github.com/Lycolia/lyndbaum4
 License: AGPLv3
-Smartphone: yes
-Responsive: yes
 
 ・lyndbaumの公開画面に合わせた、レスポンシブ対応のテーマです。
 ・広い画面では「サイドバーA｜本文｜サイドバーB」の3カラム、

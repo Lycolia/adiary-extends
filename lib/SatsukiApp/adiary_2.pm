@@ -2243,7 +2243,6 @@ sub special_system_mode {
 	$self->{special_system_mode} = 1;
 
 	# デザイン編集など。外フレームは公開画面のものを使う（テーマのCSSの代わりに design.css を読む）
-	# スマホ用の処理（_sphone）は、管理画面と同じく使わない
 	if ($self->{frame_skeleton}) {
 		$self->{frame_skeleton} = '_frame';
 	}

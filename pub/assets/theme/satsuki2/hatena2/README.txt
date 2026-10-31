@@ -3,7 +3,6 @@ Template: satsuki2
 Author: nabe@abk
 Access: https://twitter.com/nabe_abk
 License: GPL
-Responsive: yes
 System-mode: yes
 
 ブログの説明をヘッダに置くと自動的に配置します。

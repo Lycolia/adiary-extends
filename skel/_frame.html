@@ -28,8 +28,8 @@
 <$end>
 <@>
 <@> テーマとユーザーCSSは最後に読み込む
-<@if(v.sphone || v.responsive,	#'<meta name="viewport" id="viewport" content="width=device-width">\n')>
-<@if(299 < v.sphone,	#'<style type="text/css"><!-- body { max-width: <@v.sphone>px; }</style>\n')>
+<@> テーマはどれもレスポンシブ。デザイン編集などの管理画面（design.css）は、PCの幅のまま表示する
+<@if(!v.system_mode,	#'<meta name="viewport" id="viewport" content="width=device-width">\n')>
 <@> 読み込むファイルには更新日時を付ける（長くキャッシュさせても、更新したら読み直させるため。docs/config-example/nginx.conf）
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir>base.css?<@get_lastmodified(v.theme_dir . 'base.css')>">
 <@> 公開画面のフレームを使う管理画面（デザイン編集など）は、テーマに頼らず、テーマのCSSの代わりに design.css を読む
@@ -113,7 +113,7 @@
 </script>
 
 </head>
-<body id="body" class="<@if(v.blog_admin, 'blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.system_mode, ' system')><@if(v.sphone,' sp')><@if(v.responsive,' responsive')><@if(nsfw_site, ' nsfw nsfw-site')>">
+<body id="body" class="<@if(v.blog_admin, 'blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.system_mode, ' system')><@if(nsfw_site, ' nsfw nsfw-site')>">
 <@>
 <@ifexec(v.special_system_mode, begin.sp_sysmode, begin.sp_sysmode)>
 <@inframe>

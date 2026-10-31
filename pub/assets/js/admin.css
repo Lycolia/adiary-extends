@@ -97,9 +97,6 @@ body.admin *::after {
 		--admin-bar-height:	2.875rem;
 	}
 }
-body.admin.sp:not(.admin-popup) {
-	--admin-bar-height:	2.875rem;
-}
 #admin-bar a, #admin-bar a:link, #admin-bar a:visited {
 	color:			var(--admin-nav-fg);
 	text-decoration:	none;

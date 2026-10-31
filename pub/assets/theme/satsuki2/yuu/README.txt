@@ -4,7 +4,6 @@ Author: nabe@abk
 Access: https://twitter.com/nabe_abk
 Original Author: GLANSHE
 License: GPL
-Responsive: yes
 System-mode: yes
 
 ・ヘッダに背景画像をはめ込むことを推奨します。

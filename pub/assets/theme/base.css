@@ -22,17 +22,13 @@ html {
 .noselect {
 	user-select:	none;
 }
-.sp .sp-noselect {
-	user-select:	none;
-}
 /* 新着表示マーク */
 #nav-header a.newcom:after {
 	content:		'!';
 }
 
 /* 不可視ログインリンク */
-#nav-header a.erase-login,
-#sp-nav-header a.erase-login {
+#nav-header a.erase-login {
 	display:		inline-block;
 	width:			64px;
 }
@@ -53,17 +49,14 @@ header {
 }
 
 /* ヘッダ/フッタ中のリンクは下線を引かない */
-#header a, #sp-header a, #footer a {
+#header a, #footer a {
 	text-decoration:	none;
 }
 
 /* 「ようこそ」のリンクで文字色を変えない */
 #nav-header a.welcome-prefix,
 #nav-header a.welcome-prefix:link,
-#nav-header a.welcome-prefix:visited,
-#sp-nav-header a.welcome-prefix,
-#sp-nav-header a.welcome-prefix:link,
-#sp-nav-header a.welcome-prefix:visited {
+#nav-header a.welcome-prefix:visited {
 	color:			inherit;
 	font-weight:		inherit;
 }
@@ -247,19 +240,15 @@ blockquote p:last-child {
 	margin-bottom:	0;
 }
 
-/* スマホ用出力。PC用出力 */
-.sp .for-pc {
+/* スマホ用出力。PC用出力（[sp:]、[pc:]の記法）。狭い画面かどうかで出し分ける */
+.for-sp {
 	display:	none;
 }
-body:not(.sp) .for-sp {
-	display:	none;
-}
-/* レスポンシブ対応テーマ */
 @media screen and (max-width: 640px) {
-	.responsive .for-pc {
+	.for-pc {
 		display:	none;
 	}
-	body.responsive .for-sp {
+	.for-sp {
 		display:	revert;
 	}
 }
@@ -440,7 +429,7 @@ textarea {
 .help:after {
 	content:	']';
 }
-body:not(.sp) .btn-help:after {
+.btn-help:after {
 	margin-left:	2px;
 	content:	'[?]';
 }
@@ -507,50 +496,28 @@ div.popup-help, #popup-com {
 .w90p { width:  90%; }
 .w80p { width:  80%; }
 
-/* スマホ */
-.sp .w120 { width: 100px; }
-.sp .w160 { width: 120px; }
-.sp .w200 { width: 140px; }
-.sp .w240 { width: 160px; }
-.sp .w280 { width: 180px; }
-.sp .w300 { width: 200px; }
-.sp .w320,
-.sp .w360,
-.sp .w400,
-.sp .w480,
-.sp .w500,
-.sp .w512,
-.sp .w520,
-.sp .w560,
-.sp .w600,
-.sp .w640 {
-	width:	100%;
-	box-sizing: border-box;
-}
-.sp input[type="date"].w120 { width: 120px; }
-
-/* スマホ（レスポンシブ対応テーマ） */
+/* 狭い画面（スマホ） */
 @media screen and (max-width: 640px) {
-	.responsive .w120 { width: 100px; }
-	.responsive .w160 { width: 120px; }
-	.responsive .w200 { width: 140px; }
-	.responsive .w240 { width: 160px; }
-	.responsive .w280 { width: 180px; }
-	.responsive .w300 { width: 200px; }
-	.responsive .w320,
-	.responsive .w360,
-	.responsive .w400,
-	.responsive .w480,
-	.responsive .w500,
-	.responsive .w512,
-	.responsive .w520,
-	.responsive .w560,
-	.responsive .w600,
-	.responsive .w640 {
+	.w120 { width: 100px; }
+	.w160 { width: 120px; }
+	.w200 { width: 140px; }
+	.w240 { width: 160px; }
+	.w280 { width: 180px; }
+	.w300 { width: 200px; }
+	.w320,
+	.w360,
+	.w400,
+	.w480,
+	.w500,
+	.w512,
+	.w520,
+	.w560,
+	.w600,
+	.w640 {
 		width:	100%;
 		box-sizing: border-box;
 	}
-	.responsive input[type="date"].w120 { width: 120px; }
+	input[type="date"].w120 { width: 120px; }
 }
 
 /*--------------------------------------------------------------------
@@ -688,7 +655,7 @@ html:has(.admin-bar) {
 	font-size:		0.75rem;
 }
 
-/* スマホの表示（狭い画面と、スマホ用のテーマ）では、WordPressと同じく、バーを太くし（32px → 46px）、
+/* スマホの表示（狭い画面）では、WordPressと同じく、バーを太くし（32px → 46px）、
    どの項目もアイコンだけにして、押せる範囲（リンク）をバーの高さいっぱいに広げる。
    幅は、adiary.js がスマホとして扱う幅（640px）に合わせる */
 @media (max-width: 40rem) {
@@ -723,36 +690,6 @@ html:has(.admin-bar) {
 		width:			1.6em;
 		height:			1.6em;
 	}
-}
-html:has(body.sp .admin-bar) {
-	--admin-bar-h:		2.875rem;
-}
-.sp .admin-bar {
-	gap:			0;
-	padding:		0 0.25rem;
-}
-.sp .admin-bar .admin-bar-label,
-.sp .admin-bar .welcome > span {
-	display:		none;
-}
-.sp .admin-bar > a {
-	align-self:		stretch;
-	display:		inline-flex;
-	align-items:		center;
-	padding:		0 0.6rem;
-}
-.sp .admin-bar .admin-bar-new,
-.sp .admin-bar .admin-bar-new:link,
-.sp .admin-bar .admin-bar-new:visited,
-.sp .admin-bar .admin-bar-update,
-.sp .admin-bar .admin-bar-update:link,
-.sp .admin-bar .admin-bar-update:visited {
-	align-self:		center;
-}
-.sp .admin-bar .admin-bar-icon {
-	margin-right:		0;
-	width:			1.6em;
-	height:			1.6em;
 }
 
 /*--------------------------------------------------------------------
@@ -1321,30 +1258,30 @@ span.tag span.ui-icon-close,
 .ddmenu>ul li a {
 	height:		100%;
 }
-.ddmenu:not(.sp)>ul>li {
+.ddmenu>ul>li {
 	float:		left;
 }
-.ddmenu:not(.sp)>ul li {
+.ddmenu>ul li {
 	position:	relative;
 }
-.ddmenu:not(.sp)>ul ul {
+.ddmenu>ul ul {
 	position:	absolute;
 }
 /* 2階層目 */
-.ddmenu:not(.sp)>ul ul {
+.ddmenu>ul ul {
 	left:		0;
 }
 /* 3,4階層目 */
-.ddmenu:not(.sp)>ul ul ul {
+.ddmenu>ul ul ul {
 	left:		100%;
 }
 /* 5階層目以降は表示しない */
-.ddmenu:not(.sp)>ul ul ul ul ul {
+.ddmenu>ul ul ul ul ul {
 	display:	none;
 }
 
 /* on/off and animation */
-.ddmenu:not(.sp)>ul li:hover>ul>li {
+.ddmenu>ul li:hover>ul>li {
 	overflow:	visible;
 }
 .ddmenu>ul li ul li {
@@ -1355,20 +1292,18 @@ span.tag span.ui-icon-close,
 	height:		0;
 	transition:	0.4s;
 }
-.ddmenu   >ul li:hover>ul>li>a,
-.ddmenu.sp>ul li      >ul>li>a {
+.ddmenu>ul li:hover>ul>li>a {
 	height:		100%;
 }
 /* view arrow */
-.ddmenu li ul li ul:before,
-.ddmenu.sp    li ul:before {
+.ddmenu li ul li ul:before {
 	transition:	0.4s;
 	position:	absolute;
 	content:	"";
 	left:		-12px;
 	border:		5px solid transparent;
 }
-.ddmenu:not(.sp) li:not(:hover)>ul>li>ul:before {
+.ddmenu li:not(:hover)>ul>li>ul:before {
 	border-color:	transparent;
 }
 
@@ -1388,12 +1323,10 @@ span.tag span.ui-icon-close,
 .ddmenu>ul>li:last-child>a {
 	border-right-width:	1px;
 }
-.ddmenu   >ul li:hover>ul>li a,
-.ddmenu.sp>ul li      >ul>li a {
+.ddmenu>ul li:hover>ul>li a {
 	border-top-width:	1px;
 }
-.ddmenu   >ul li:hover>ul,
-.ddmenu.sp>ul li      >ul {
+.ddmenu>ul li:hover>ul {
 	border-bottom-width:	1px;
 }
 
@@ -1401,18 +1334,18 @@ span.tag span.ui-icon-close,
 /*------------------------------------------------
  *  dropdown-menu size setting
  *------------------------------------------------*/
-.ddmenu:not(.sp)>ul ul ul {
+.ddmenu>ul ul ul {
 	top:		0px;
 }
 /* 最後の要素だけ左にサブメニューを開く。 */
-.ddmenu:not(.sp)>ul>li:last-child:not(:first-child)>ul {
+.ddmenu>ul>li:last-child:not(:first-child)>ul {
 	left:		auto;
 	right:		0px;
 }
-.ddmenu:not(.sp)>ul>li:last-child:not(:first-child)>ul ul {
+.ddmenu>ul>li:last-child:not(:first-child)>ul ul {
 	left:		-100%;
 }
-.ddmenu:not(.sp)>ul>li:last-child:not(:first-child) ul li ul:before {
+.ddmenu>ul>li:last-child:not(:first-child) ul li ul:before {
 	left:		100%;
 }
 
@@ -1438,15 +1371,15 @@ span.tag span.ui-icon-close,
 	top:		10px;	/* = (Y-10)/2 */
 }
 /* 項目の文字位置 */
-.ddmenu:not(.sp) li {
+.ddmenu li {
 	text-align:	center;
 }
 /* 項目の幅の設定 */
-.ddmenu:not(.sp)>ul>li {
+.ddmenu>ul>li {
 	width:		110px;
 }
-.ddmenu:not(.sp)>ul>li>ul,
-.ddmenu:not(.sp)>ul>li>ul li {
+.ddmenu>ul>li>ul,
+.ddmenu>ul>li>ul li {
 	width:		200px;
 }
 /* 左右padding */
@@ -1481,11 +1414,10 @@ span.tag span.ui-icon-close,
 }
 */
 /* 矢印の色 */
-.ddmenu li ul li ul:before,
-.ddmenu.sp li ul:before {
+.ddmenu li ul li ul:before {
 	border-left-color:	#338;
 }
-.ddmenu:not(.sp) li:last-child:not(:first-child) ul li ul:before {
+.ddmenu li:last-child:not(:first-child) ul li ul:before {
 	border-left-color:	transparent;
 	border-right-color:	#338;
 }
@@ -1495,196 +1427,8 @@ span.tag span.ui-icon-close,
 }
 
 /* 影をつける */
-.ddmenu>ul li:hover ul,
-.ddmenu.sp>ul>li>ul {
+.ddmenu>ul li:hover ul {
 	box-shadow:		8px 8px 8px rgba(0,0,0, 0.3);
-}
-
-/*####################################################################
-●スマホ全般
-####################################################################*/
-/* 短縮表記 */
-.sp .sp-hidden {
-	display:		none;
-}
-
-/* ボタン */
-.sp article:not(.search) button,
-.sp #edit-helper button {
-	margin-top:		6px;
-	margin-bottom:		6px;
-}
-
-/* フォーム要素 */
-.sp .main input,
-.sp .main textarea {
-	max-width:		100%;
-	box-sizing:		border-box;
-}
-.sp .main table.blog-setting input,
-.sp .main table.blog-setting textarea {
-	max-width:		60%;
-}
-
-/*--------------------------------------------------------------------
-●スマホ用検索ボックス
---------------------------------------------------------------------*/
-#sp-head-search {
-	position:		relative;
-	z-index:		1000;
-	float:			right;
-	line-height:		1;
-
-	height:			28px;
-	padding:		1px 2px 1px 0px;
-}
-#sp-head-search form {
-	height:			22px;
-	margin:			0;
-	padding:		3px 5px;
-	border-radius:		4px;
-}
-#sp-header:after {
-	content:		"";
-	display:		block;
-	clear:			both;
-}
-#sp-head-search input {
-	font-size:		14px;
-	height:			22px;
-	box-sizing:		border-box;
-}
-/* 検索ボタン */
-#sp-head-search .search-btn {
-	width:			22px;
-	height:			22px;
-	padding:		0;
-	margin:			0 0 0 2px;
-}
-
-#sp-head-search .search-box {
-	width:			80px;
-}
-@media screen and (min-width: 340px) {
-	#sp-head-search .search-box {
-		width:		100px;
-	}
-}
-
-/*--------------------------------------------------------------------
-●スマホ用ドロップダウンメニュー
---------------------------------------------------------------------*/
-.ddmenu.sp {
-	position:	absolute;
-	bottom:		0;
-	margin-bottom:	0;
-}
-/* PC用の設定解除 */
-.ddmenu.sp>ul {
-	margin-right:	0;
-}
-
-.ddmenu.sp>ul>li {
-	border-left:	none;
-	border-right:	none;
-}
-/* on/offギミック */
-.ddmenu.sp>ul li {
-	overflow:	hidden;
-}
-.ddmenu.sp>ul li.open {
-	overflow:	visible;
-}
-/* ul階層表示 */
-.ddmenu.sp ul a {
-	padding-left:	15px;
-}
-.ddmenu.sp ul ul a {
-	padding-left:	30px;
-}
-.ddmenu.sp ul ul ul a {
-	padding-left:	45px;
-}
-.ddmenu.sp ul ul ul ul a {
-	padding-left:	60px;
-}
-.ddmenu.sp ul ul ul ul ul a {
-	padding-left:	75px;
-}
-.ddmenu.sp ul ul ul ul ul ul a {
-	padding-left:	90px;
-}
-
-
-/* 矢印 */
-.ddmenu.sp li {
-	position:	relative;
-}
-.ddmenu.sp ul ul:before {
-	left:		5px;
-}
-.ddmenu.sp ul ul ul:before {
-	left:		20px;
-}
-.ddmenu.sp ul ul ul ul:before {
-	left:		35px;
-}
-.ddmenu.sp ul ul ul ul ul:before {
-	left:		50px;
-}
-.ddmenu.sp ul ul ul ul ul ul:before {
-	left:		65px;
-}
-.ddmenu.sp ul ul ul ul ul ul ul:before {
-	left:		80px;
-}
-
-/* border調整 */
-.ddmenu.sp>ul li {
-	border-width:		0;
-	border-bottom-width:	1px;
-}
-.ddmenu.sp>ul>li:not(.open) {	/* top要素 */
-	border-bottom-width:	0;
-}
-.ddmenu.sp>ul>li ul>li:first-child {
-	border-top-width:	1px;
-}
-.ddmenu.sp li>ul>li:last-child {
-	margin-bottom:		-1px;
-}
-
-/* 表示サイズ（横幅） */
-.ddmenu.sp>ul>li>ul {
-	width:		150%;
-	max-width:	360px;
-}
-.ddmenu.sp>ul>li {
-	width:		60%;
-	max-width:	360px;
-}
-
-/* 高さの設定 */
-.ddmenu.sp,
-.ddmenu.sp>ul>li,
-.ddmenu.sp>ul>li a,
-.ddmenu.sp>ul li.open>ul>li {
-	height:		30px;	/* Y */
-	line-height:	30px;
-}
-.ddmenu.sp>ul li:not(.open)>ul>li {
-	height:		0px;
-}
-.ddmenu.sp li ul:before {
-	top:		10px;	/* = (Y-10)/2 */
-}
-.ddmenu.sp>ul>li>ul li.open {
-	height:		auto;
-}
-
-/* 影を多重に重ねないように */
-.ddmenu.sp>ul>li>ul>li ul {
-	box-shadow:	none;
 }
 
 /*--------------------------------------------------------------------

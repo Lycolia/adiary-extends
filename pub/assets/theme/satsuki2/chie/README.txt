@@ -4,7 +4,6 @@ Author: かえで
 Access: https://twitter.com/__Kaede
 License: GPL
 Charset: UTF-8
-Responsive: yes
 System-mode: yes
 
 ChangeLog

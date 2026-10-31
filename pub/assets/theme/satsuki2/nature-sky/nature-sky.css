@@ -168,11 +168,10 @@ header .ddmenu>ul>li li {
 	color:			#fff;		/* $c=fixddfont */
 }
 /* 矢印の色 */
-.ddmenu li ul li ul:before,
-.ddmenu.sp li ul:before {
+.ddmenu li ul li ul:before {
 	border-left-color:	#ccc;		/* $c=fixddarrow */
 }
-.ddmenu:not(.sp) li:last-child:not(:first-child) ul li ul:before {
+.ddmenu li:last-child:not(:first-child) ul li ul:before {
 	border-left-color:	transparent;
 	border-right-color:	#ccc;		/* $c=fixddarrow */
 }

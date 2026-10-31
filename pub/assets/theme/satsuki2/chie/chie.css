@@ -1061,12 +1061,12 @@ div[data-module-name="dem_searchbox,1"], #head-search {
 div[data-module-name="dem_searchbox,1"] {
 }
 
-#head-search span.title , 
+#head-search span.title, 
 div[data-module-name="dem_searchbox,1"] span.title {
     display:                none;
 }
 
-#head-search .search-box , 
+#head-search .search-box, 
 div[data-module-name="dem_searchbox,1"] .search-box {
     width:                  160px;
 }
@@ -1102,20 +1102,19 @@ div[data-module-name="dem_searchbox,1"] .search-box {
 }
 
 /* 項目の幅の設定 */
-.ddmenu:not(.sp)>ul>li {
+.ddmenu>ul>li {
 	width:		160px;	/* １段目の幅 = X1 */
 }
-.ddmenu:not(.sp)>ul>li>ul,
-.ddmenu:not(.sp)>ul>li>ul li {
+.ddmenu>ul>li>ul,
+.ddmenu>ul>li>ul li {
 	width:		240px;	/* ２段目の幅 = X2 */
 }
 
 /* 矢印の色 */
-.ddmenu li ul li ul:before,
-.ddmenu.sp li ul:before {
+.ddmenu li ul li ul:before {
 	border-left-color:	#eee;
 }
-.ddmenu:not(.sp) li:last-child:not(:first-child) ul li ul:before {
+.ddmenu li:last-child:not(:first-child) ul li ul:before {
 	border-left-color:	transparent;
 	border-right-color:	#eee;
 }

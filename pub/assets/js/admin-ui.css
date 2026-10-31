@@ -167,13 +167,6 @@ article.edit span.tag {
 #conflict-dialog p .rev-add {
 	background-color:	#dfd;
 }
-.sp #revision-dialog .rev-wrap {
-	flex-direction:		column;
-}
-.sp .ui-dialog ul#revision-list {
-	width:			auto;
-	max-height:		30vh;
-}
 
 /*--------------------------------------------------------------------
 ●画像アルバム
@@ -500,9 +493,6 @@ nav.admin-tabs ul.tabs-dir li > span {
 ●スマホ
 --------------------------------------------------------------------*/
 /* システムモードでは sidebar 非表示 */
-.system.sp #sidebar {
-	display:		none;
-}
 /* 画像アルバム */
 .ui-dialog #album-folder-tree ul {
 	margin:			0;

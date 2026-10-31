@@ -453,8 +453,7 @@ sub regist_cache_checker {
 		if ($ENV{REQUEST_METHOD} ne 'GET' && $ENV{REQUEST_METHOD} ne 'HEAD') { return; }
 		if (index($ENV{HTTP_COOKIE}, 'session=') >= 0) { return; }
 
-		my $sphone = &{ \&sphone_checker }();
-		my $key    = $sphone . $ENV{REQUEST_URI};
+		my $key    = $ENV{REQUEST_URI};
 		my $query  = $ENV{QUERY_STRING};
 		if (!$search_cache && $query ne '') { return; }
 		if ($query !~ /^q=/ && $query =~ /^\w+/) { return; }

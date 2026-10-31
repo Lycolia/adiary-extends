@@ -4,7 +4,6 @@ Author: nabe@abk
 Access: https://twitter.com/nabe_abk
 Original Author: かえで
 License: GPL
-Responsive: yes
 System-mode: yes
 
 ・デザイン編集よりヘッダに検索ボックスを配置してください。

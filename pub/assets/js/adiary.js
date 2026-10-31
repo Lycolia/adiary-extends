@@ -143,10 +143,8 @@ init(function(){
 		history.pushState("", document.title, location.pathname + location.search);
 	}
 
-	// Smartphone mode
-	const body = document.body.classList;
-	if (body.contains('sp')
-	 || body.contains('responsive') && window.matchMedia('(max-width: 640px)').matches) {
+	// Smartphone mode（狭い画面。テーマのCSSの @media と同じ幅）
+	if (window.matchMedia('(max-width: 640px)').matches) {
 		this.SP = true;
 	}
 
@@ -338,37 +336,6 @@ init(function(){
 
 		evt.preventDefault();
 		insert_to_textarea(ta, "\t");
-	});
-});
-
-////////////////////////////////////////////////////////////////////////////////
-//【スマホ】ドロップダウンメニューでの hover の代わり
-////////////////////////////////////////////////////////////////////////////////
-// 押すと開閉する。すばやく2回押したら（ダブルクリック、ダブルタップ）、リンクを開く
-init(function(){
-	const DoubleTapTime = 400;	// msec
-	document.addEventListener('click', function(evt) {
-		const a  = evt.target.closest('.js-alt-hover li > a');
-		if (!a) return;
-		const li = a.parentNode;
-		if (!li.querySelector(':scope > ul')) return;
-
-		const now  = Date.now();
-		const last = li._alt_hover_tm;
-		li._alt_hover_tm = now;
-		if (last && now - last < DoubleTapTime) {
-			location.href = a.getAttribute('href');
-			return;
-		}
-
-		if (li.classList.contains('open')) {
-			li.classList.remove('open');
-			li.querySelectorAll('.open').forEach(function(x){ x.classList.remove('open') });
-		} else {
-			li.classList.add('open');
-		}
-		// リンクをキャンセル
-		evt.preventDefault();
 	});
 });
 

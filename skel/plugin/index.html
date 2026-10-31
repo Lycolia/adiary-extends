@@ -29,11 +29,11 @@
 	<$pd = v.load_plugins_dat()>
 	<@forexec(t, v.load_plugins_info(), begin)>
 	<tr>
-		<td<@if(!v.sphone,' class="nowrap"')>><span class="plg-title"><@t.title></span></td>
+		<td class="nowrap"><span class="plg-title"><@t.title></span></td>
 		
 		<@ifexec(t.adiary_version <= v.VERSION, begin, begin)>
 		<td class="nowrap small">
-			<label><input type="radio" name="<@t.name>" value="1"<@if( pd.(t.name),' checked')><@if(t.missing, ' disabled')>>ON</label><@if(v.sphone,'<br><br>')>
+			<label><input type="radio" name="<@t.name>" value="1"<@if( pd.(t.name),' checked')><@if(t.missing, ' disabled')>>ON</label>
 			<label><input type="radio" name="<@t.name>" value="0"<@if(!pd.(t.name),' checked')>>OFF</label>
 		</td>
 		<$else>

@@ -4,7 +4,6 @@ Author: nabe@abk
 Access: https://twitter.com/nabe_abk
 Original Author: GLANSHE
 License: GPL
-Responsive: yes
 System-mode: yes
 
 ヘッダ部に画像を貼り付けてご利用ください。
