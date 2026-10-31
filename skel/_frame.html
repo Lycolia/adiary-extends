@@ -32,7 +32,12 @@
 <@if(299 < v.sphone,	#'<style type="text/css"><!-- body { max-width: <@v.sphone>px; }</style>\n')>
 <@> 読み込むファイルには更新日時を付ける（長くキャッシュさせても、更新したら読み直させるため。docs/config-example/nginx.conf）
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir>base.css?<@get_lastmodified(v.theme_dir . 'base.css')>">
+<@> 公開画面のフレームを使う管理画面（デザイン編集など）は、テーマに頼らず、テーマのCSSの代わりに design.css を読む
+<@ifexec(v.system_mode, begin, begin)>
+<link rel="stylesheet" href="<@Basepath><@v.script_dir>design.css?<@get_lastmodified(v.script_dir . 'design.css')>">
+<$else>
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir><@v.theme>/<@v.theme_name>.css?<@get_lastmodified("<@v.theme_dir><@v.theme>/<@v.theme_name>.css")>" id="theme-css">
+<$end>
 <@>
 <@ifexec(!v.system_theme && s.theme_custom && s.theme eq v.theme, begin)>
 <link rel="stylesheet" href="<@Basepath><@s.theme_custom>?<@get_lastmodified(s.theme_custom)>" id="theme-custom-css">
@@ -80,7 +85,7 @@
 <script defer src="<@t>"></script>
 <$end>
 <$file = "<@v.theme_dir><@v.theme>/<@v.theme_name>.js">
-<@if(!js_stop && file_size(file), #'<script defer src="<@Basepath><@file>?<@get_lastmodified(file)>" id="theme-js"></script>\n')>
+<@if(!js_stop && !v.system_mode && file_size(file), #'<script defer src="<@Basepath><@file>?<@get_lastmodified(file)>" id="theme-js"></script>\n')>
 	<title><@v.subtitle><@if(v.subtitle ne '',' - ')><@v.title></title>
 <@v.extra_header>
 <@if(!v.system_mode, s.html_header_txt)>

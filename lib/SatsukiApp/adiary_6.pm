@@ -515,7 +515,7 @@ sub sys_update_411 {
 	# fb_admins、fb_app_id、asid：使われていなかった設定（4.09）
 	# spmenu、spmenu_info_all：スマホ用のメニュー（4.09）
 	# album_blogs：ブログを選ぶアルバム（4.10）、rst：reStructuredTextで入力する設定（4.10）
-	# sysmode_notheme：システムモードでテーマを使わない警告（管理画面は常に標準テーマ）
+	# sysmode_notheme：システムモードでテーマを使わない警告（管理画面はテーマを使わなくなった）
 	foreach(qw(tw_ping gaid fb_admins fb_app_id asid spmenu spmenu_info_all album_blogs rst sysmode_notheme)) {
 		if (!exists($blog->{$_})) { next; }
 		$self->update_blogset($blog, $_, undef);

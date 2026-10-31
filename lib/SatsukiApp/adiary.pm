@@ -156,10 +156,7 @@ sub main {
 	$self->read_query_form();
 
 	# スマホ向け処理（レスポンシブ対応テーマでは行わない）
-	if ($self->{responsive}) {
-		$self->{sphone_ua} = $self->{sphone};
-		$self->{sphone}    = 0;
-	}
+	if ($self->{responsive}) { $self->{sphone} = 0; }
 	if ($self->{sphone}) { $self->init_for_sphone(); }
 
 	# 表示スケルトン選択
@@ -331,18 +328,6 @@ sub init_for_sphone {
 }
 
 #-------------------------------------------------------------------------------
-# ●テーマ変更後のスマホ向け処理
-#-------------------------------------------------------------------------------
-# レスポンシブ対応テーマから非対応テーマに切り替わったとき用
-sub check_sphone_after_theme_change {
-	my $self = shift;
-	if ($self->{responsive} || $self->{sphone} || !$self->{sphone_ua}) { return; }
-
-	$self->{sphone} = $self->{sphone_ua};
-	$self->init_for_sphone();
-}
-
-#-------------------------------------------------------------------------------
 # ●スマホ向け処理をやめる
 #-------------------------------------------------------------------------------
 sub stop_sphone {
@@ -354,8 +339,7 @@ sub stop_sphone {
 	# _init_sphone で読み込んだテーマのスマホ用CSS
 	$self->{cssfiles} = [ grep { $_ !~ m|/sphone\.css$| } @{ $self->{cssfiles} || [] } ];
 
-	$self->{sphone_ua} = $self->{sphone};
-	$self->{sphone}    = 0;
+	$self->{sphone} = 0;
 }
 
 #-------------------------------------------------------------------------------
@@ -608,18 +592,19 @@ sub system_mode {
 	$ROBJ->{no_robots}      = 1;
 	if ($title ne '') { $self->{title} = $title; }
 
-	# テーマは公開画面専用。管理画面は常に標準テーマを使う
-	$self->load_theme( $self->{default_theme} );
+	# テーマは公開画面専用。管理画面ではテーマの雛形を外し、テーマのCSSも読まない（_frame_admin、デザインの画面は design.css）
+	$ROBJ->delete_skeleton($self->{theme_skeleton_level});
+	$ROBJ->delete_skeleton($self->{theme_design_skeleton_level});
 	$self->{system_theme} = 1;
+	# 公開画面のフレームを使う画面（デザイン編集など）のviewportとbodyのクラスは、レスポンシブでないものにする（_frame）
+	$self->{responsive}   = 0;
 
 	# 外フレームも管理画面用にする（フレームを使わない出力はそのまま）
-	# 管理画面は狭い画面にもCSSで合わせるので、スマホ用の処理（_sphone）は使わない
 	if ($self->{frame_skeleton}) {
 		$self->{frame_skeleton} = $self->{admin_frame_skeleton};
-		$self->stop_sphone();
-	} else {
-		$self->check_sphone_after_theme_change();
 	}
+	# 管理画面は狭い画面にもCSSで合わせるので、スマホ用の処理（_sphone）は使わない
+	$self->stop_sphone();
 }
 
 #-------------------------------------------------------------------------------
