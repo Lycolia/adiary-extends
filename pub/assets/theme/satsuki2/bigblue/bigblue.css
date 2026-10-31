@@ -1142,3 +1142,11 @@ nav.tree {
 		margin-right:		0px;
 	}
 }
+
+/* ログインのタブは右上の角に貼り付いているので、狭い画面では引き出しのボタン（base.css）の分だけ左に寄せる */
+@media screen and (max-width: 640px) {
+	.has-drawer #nav-header {
+		right:			3rem;
+		padding-right:		6px;
+	}
+}

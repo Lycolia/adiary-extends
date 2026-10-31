@@ -680,6 +680,93 @@ html:has(.admin-bar) {
 }
 
 /*--------------------------------------------------------------------
+●サイドバーの引き出し（adiary.js、docs/仕様/引き出し.md）
+--------------------------------------------------------------------*/
+/* ボタンは、テーマのCSSが引き出しにする幅でだけ出す */
+.sidebar-toggle {
+	display:		none;
+}
+.drawer-backdrop {
+	position:		fixed;
+	inset:			0;
+	z-index:		200;
+	background:		rgb(0 0 0 / .4);
+}
+.drawer-open, .drawer-open body {
+	overflow:		hidden;
+}
+/* スクロールを止めてもスクロールバーの幅を残し、本文が横にずれないようにする */
+.drawer-open.drawer-keep-gutter {
+	scrollbar-gutter:	stable;
+}
+
+/* 標準の雛形のサイドバー（#sidebar）は、狭い画面で右から出る引き出しにする。
+   ボタンは _frame.html。色はテーマが --drawer-bg、--drawer-fg を決めなければ、adiary.js が本文の地の色とサイドバーの文字の色に合わせる */
+@media screen and (max-width: 640px) {
+	.has-drawer body:has(#sidebar) .sidebar-toggle-menu {
+		display:		inline-flex;
+		position:		fixed;
+		top:			calc(var(--admin-bar-h, 0px) + .5rem);
+		right:			.5rem;
+		z-index:		190;
+		margin:			0;
+		padding:		.35rem;
+		line-height:		0;
+		color:			var(--drawer-fg, #000);
+		background:		var(--drawer-bg, #fff);
+		border:			1px solid currentColor;
+		border-radius:		0;
+		box-shadow:		0 1px 4px rgb(0 0 0 / .15);
+		cursor:			pointer;
+	}
+	.sidebar-toggle-menu svg {
+		fill:			none;
+		stroke:			currentColor;
+		stroke-width:		2;
+		stroke-linecap:		round;
+	}
+	/* ログインのリンクとタイトルがボタンの下に入らないよう、右を空ける（タイトルの下線などは幅いっぱいのまま） */
+	.has-drawer body:has(#sidebar) #nav-header,
+	.has-drawer body:has(#sidebar) #header h1 {
+		padding-right:		3rem;
+	}
+	.has-drawer #sidebar {
+		--drawer:		1;
+		position:		fixed;
+		top:			var(--admin-bar-h, 0px);
+		bottom:			0;
+		right:			0;
+		z-index:		210;
+		box-sizing:		border-box;
+		width:			min(20rem, 85vw);
+		margin:			0;
+		padding:		1rem .5rem;
+		overflow-y:		auto;
+		overscroll-behavior:	contain;
+		background:		var(--drawer-bg, #fff);
+		box-shadow:		-2px 0 6px rgb(0 0 0 / .2);
+		transform:		translateX(100%);
+		visibility:		hidden;
+	}
+	/* 動きはボタンで開け閉めするときだけ。adiary.js が、読み込んだ直後と幅を変えているあいだは drawer-animate を外す */
+	.drawer-animate #sidebar {
+		transition:		transform .2s ease, visibility .2s;
+	}
+	.has-drawer #sidebar.is-open {
+		transform:		none;
+		visibility:		visible;
+	}
+	#sidebar:focus {
+		outline:		none;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.drawer-animate #sidebar {
+		transition:		none;
+	}
+}
+
+/*--------------------------------------------------------------------
 ●脚注と注釈のポップアップ（adiary.js）
 --------------------------------------------------------------------*/
 /* テーマの色によらず読めるように、地と文字の色をここで決める。管理バー（z-index: 300）より下に出す */

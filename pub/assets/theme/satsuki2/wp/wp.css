@@ -1222,3 +1222,55 @@ nav.tree {
 		margin-right:		0px;
 	}
 }
+
+/* 狭い画面では、サイドバーAだけを引き出しにし、サイドバーBはフッタの上の帯のまま残す。
+   引き出しの共通の規則（base.css の #sidebar）を外し、同じ規則を #side-a に付ける。
+   ボタンは #sidebar を開くので、--drawer-target で開く要素を #side-a にする（adiary.js、docs/仕様/引き出し.md） */
+@media screen and (max-width: 640px) {
+	.has-drawer #sidebar {
+		--drawer:		0;
+		--drawer-target:	side-a;
+		position:		static;
+		width:			auto;
+		margin:			0;
+		padding:		0;
+		overflow:		visible;
+		background:		none;
+		box-shadow:		none;
+		transform:		none;
+		visibility:		visible;
+	}
+	.has-drawer #side-a {
+		--drawer:		1;
+		position:		fixed;
+		top:			var(--admin-bar-h, 0px);
+		bottom:			0;
+		right:			0;
+		z-index:		210;
+		box-sizing:		border-box;
+		width:			min(20rem, 85vw);
+		margin:			0;
+		padding:		1rem .5rem;
+		overflow-y:		auto;
+		overscroll-behavior:	contain;
+		background:		var(--drawer-bg, #fff);
+		box-shadow:		-2px 0 6px rgb(0 0 0 / .2);
+		transform:		translateX(100%);
+		visibility:		hidden;
+	}
+	.drawer-animate #side-a {
+		transition:		transform .2s ease, visibility .2s;
+	}
+	.has-drawer #side-a.is-open {
+		transform:		none;
+		visibility:		visible;
+	}
+	#side-a:focus {
+		outline:		none;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.drawer-animate #side-a {
+		transition:		none;
+	}
+}

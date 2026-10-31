@@ -22,6 +22,11 @@
 <meta name="rating" content="adult">
 <script>try { if (localStorage.getItem('adiary-nsfw-ok') || sessionStorage.getItem('adiary-nsfw-ok')) document.documentElement.classList.add('nsfw-ok'); } catch(e) {}</script>
 <$end>
+<@> JavaScriptが使えるときは、サイドバーを引き出しにする（adiary.js、docs/仕様/引き出し.md）。
+<@> 表示した後にサイドバーが本文の下から消えて、ずれないように、本文を描く前にここで付ける
+<@ifexec(!v.system_mode, begin)>
+<script>document.documentElement.classList.add('has-drawer');</script>
+<$end>
 <@>-----------------------------------------------------------------------------
 <@forexec(t, v.load_jscss('csslib'), begin)>
 <link rel="stylesheet" href="<@t>">
@@ -130,6 +135,13 @@
 <@> header
 <@>-----------------------------------------------------------------------------
 <@call('_header')>
+<@> 狭い画面で、サイドバー（#sidebar）を引き出しにして開くボタン。出すかどうかは base.css が決める。
+<@> テーマの雛形が自分のボタンを持つとき（lyndbaum）は、#sidebar が無いので出さない
+<@ifexec(!v.system_mode, begin)>
+<button type="button" class="sidebar-toggle sidebar-toggle-menu" aria-controls="sidebar" aria-expanded="false" aria-label="サイドバー">
+	<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+</button>
+<$end>
 
 <@>-----------------------------------------------------------------------------
 <@> main

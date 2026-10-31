@@ -373,6 +373,101 @@ init(function(){
 // ■スケルトン用ルーチン
 //##############################################################################
 ////////////////////////////////////////////////////////////////////////////////
+//●サイドバーの引き出し（docs/仕様/引き出し.md）
+////////////////////////////////////////////////////////////////////////////////
+// ボタン（.sidebar-toggle、aria-controls=引き出しのid）で、引き出しを開け閉めする。
+// どの幅で、どの要素を引き出しにするかはテーマのCSSが決め、引き出しになっている間は --drawer: 1 を付ける。
+// html の has-drawer は、_frame.html の <head> で付ける（表示した後にサイドバーが消えて、ずれないように）
+init(function(){
+	const buttons = document.querySelectorAll('.sidebar-toggle');
+	if (!buttons.length) return;
+	const root = document.documentElement;
+	const css  = function(el, name) { return getComputedStyle(el).getPropertyValue(name).trim(); };
+
+	// テーマが --drawer-target を付けたときは、その要素を開く（引き出しにするのを、サイドバーの一部にするテーマ）
+	function drawerOf(button) {
+		const el = document.getElementById(button.getAttribute('aria-controls'));
+		const target = el && css(el, '--drawer-target');
+		return (target && document.getElementById(target)) || el;
+	}
+
+	// 引き出しとボタンの色をテーマが決めていなければ、本文の地の色とサイドバーの文字の色に合わせる（色の調整にも合う）
+	if (css(root, '--drawer-bg') === '') {
+		const first = Array.from(buttons).map(drawerOf).find(function(x){ return x });
+		let bg = '';
+		for (let el = first && first.parentElement; el && !bg; el = el.parentElement) {
+			const c = getComputedStyle(el).backgroundColor;
+			if (c && c !== 'transparent' && !/^rgba\(.*,\s*0\)$/.test(c)) bg = c;
+		}
+		if (bg)    root.style.setProperty('--drawer-bg', bg);
+		if (first) root.style.setProperty('--drawer-fg', getComputedStyle(first).color);
+	}
+
+	const backdrop = document.createElement('div');
+	backdrop.className = 'drawer-backdrop';
+	backdrop.hidden = true;
+	document.body.appendChild(backdrop);
+	let current = null;	// 開いているボタン
+	let current_drawer = null;
+
+	function close(restoreFocus) {
+		if (!current) return;
+		const button = current;
+		current_drawer.classList.remove('is-open');
+		current = current_drawer = null;
+		button.setAttribute('aria-expanded', 'false');
+		root.classList.remove('drawer-open', 'drawer-keep-gutter');
+		backdrop.hidden = true;
+		if (restoreFocus) button.focus();
+	}
+	function open(button) {
+		close(false);
+		const drawer = drawerOf(button);
+		if (!drawer) return;
+		current = button;
+		current_drawer = drawer;
+		drawer.tabIndex = -1;	// 開いたときに、引き出しへフォーカスを移す
+		drawer.classList.add('is-open');
+		button.setAttribute('aria-expanded', 'true');
+		// スクロールバーがあったときは、その幅を残す（base.css の drawer-keep-gutter）
+		root.classList.toggle('drawer-keep-gutter', window.innerWidth > root.clientWidth);
+		root.classList.add('drawer-open');
+		backdrop.hidden = false;
+		drawer.focus({ preventScroll: true });
+	}
+
+	buttons.forEach(function(button) {
+		if (!document.getElementById(button.getAttribute('aria-controls'))) return;
+		button.addEventListener('click', function() {
+			if (current === button) close(true);
+			else open(button);
+		});
+	});
+
+	// 動きを付けるのは、閉じた位置が決まってから（読み込んだ直後や、幅を変えて引き出しになったときに、閉じる動きを出さない）
+	function enableAnimation() {
+		void document.body.offsetWidth;
+		root.classList.add('drawer-animate');
+	}
+	enableAnimation();
+	let resizeTimer = null;
+	window.addEventListener('resize', function() {
+		root.classList.remove('drawer-animate');
+		clearTimeout(resizeTimer);
+		resizeTimer = setTimeout(enableAnimation, 200);
+		// 幅が変わって引き出しでなくなったら（横に並ぶサイドバーに戻ったら）閉じる
+		if (current_drawer && css(current_drawer, '--drawer') !== '1') close(false);
+	});
+
+	backdrop.addEventListener('click', function() { close(true); });
+	document.addEventListener('keydown', function(evt) {
+		if (evt.key === 'Escape' && current) close(true);
+	});
+	// 引き出しのリンクで移ってから戻ったとき（bfcache）に、開いたままにしない
+	window.addEventListener('pageshow', function(evt) { if (evt.persisted) close(false); });
+});
+
+////////////////////////////////////////////////////////////////////////////////
 //●コメント欄の加工
 ////////////////////////////////////////////////////////////////////////////////
 init(function(){
