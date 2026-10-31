@@ -1141,7 +1141,7 @@ sub save_blogset {
 # 推測できない名前のフォルダ（pub/private.乱数/）へ移す。外したら pub/ へ戻す。
 # 移したら、記事の中の画像のURLが変わるので、全記事を再構築する。
 #
-my @Blogpub_files = qw(attachments css css.d js static dynamic.css usercss.css
+my @Blogpub_files = qw(attachments plugin custom static
 	images.json contents.json taglist.json sitemap.xml);
 
 sub save_private_mode {

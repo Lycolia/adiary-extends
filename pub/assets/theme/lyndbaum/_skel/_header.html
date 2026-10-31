@@ -7,9 +7,9 @@
 <@>$PASTE=<$ifcontinue(v.system_mode)>
 
 <!--ヘッダ部=================================================================-->
-<@> サイドバーを引き出しにして開くボタン（lyndbaum/sidebar.jsが見せる。JavaScriptが無いときは出さない）
+<@> サイドバーを引き出しにして開くボタン（開け閉めは adiary.js、docs/仕様/引き出し.md。出すかどうかは lyndbaum.css。JavaScriptが無いときは出さない）
 <@> スクロールしても使えるよう、ヘッダーの外に置き、画面の上の左右の角に貼り付ける（lyndbaum.css）
-<button type="button" class="sidebar-toggle sidebar-toggle-left" aria-controls="sidebar-left" aria-expanded="false" aria-label="サイドバーA" hidden>
+<button type="button" class="sidebar-toggle sidebar-toggle-left" aria-controls="sidebar-left" aria-expanded="false" aria-label="サイドバーA">
 	<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5 20 20"/></svg>
 </button>
 <header id="header" class="site-header">
@@ -22,7 +22,6 @@
 <@>$FOOTER$--------------------------------------------------------------------
 </div>
 </header>
-<button type="button" class="sidebar-toggle sidebar-toggle-right" aria-controls="sidebar-right" aria-expanded="false" aria-label="サイドバーB" hidden>
+<button type="button" class="sidebar-toggle sidebar-toggle-right" aria-controls="sidebar-right" aria-expanded="false" aria-label="サイドバーB">
 	<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
 </button>
-<script src="<@Basepath><@v.theme_dir>lyndbaum/lyndbaum/sidebar.js?<@get_lastmodified(v.theme_dir . 'lyndbaum/lyndbaum/sidebar.js')>" defer></script>

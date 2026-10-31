@@ -43,13 +43,10 @@
 #--------------------------------------
 # private directory
 #--------------------------------------
-!/__cache/.htaccess
 !/__cache/index.html
 
-!/data/.htaccess
 !/data/index.html
 
-!/skel.local/.htaccess
 !/skel.local/README.txt
 
 #--------------------------------------

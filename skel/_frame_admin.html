@@ -52,7 +52,7 @@
 <@v.extra_header>
 </head>
 <@>-----------------------------------------------------------------------------
-<body id="body" class="admin system responsive<@if(v.blog_admin, ' blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.sphone,' sp')><@if(v.special_body_class, " <@v.special_body_class>")><@if(Auth.ok && !popup, ' admin-logged-in')><@if(popup, ' admin-popup')>">
+<body id="body" class="admin system<@if(v.blog_admin, ' blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.special_body_class, " <@v.special_body_class>")><@if(Auth.ok && !popup, ' admin-logged-in')><@if(popup, ' admin-popup')>">
 <div id="adiary-body">
 
 <@>-----------------------------------------------------------------------------

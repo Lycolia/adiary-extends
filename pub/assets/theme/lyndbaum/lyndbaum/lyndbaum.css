@@ -3,7 +3,7 @@
   lyndbaum - lyndbaum に合わせた、公開画面用のレスポンシブテーマ
 *******************************************************************************/
 /* マークアップは theme/lyndbaum/_skel/ のスケルトンで組む（デザインの保存時に生成される）
-   管理画面は標準テーマで表示するので、ここでは公開画面だけを扱う */
+   管理画面はテーマを使わないので、ここでは公開画面だけを扱う */
 :root {
 	--text: #222;
 	--muted: #666;
@@ -109,13 +109,13 @@ div.messages div.warn, div.messages div.message { color: var(--strong); }
 }
 
 /* サイドバーを引き出しにする。1カラム（48rem 未満）では左右、2カラム（72rem 未満）では左だけ
-   sidebar.js が has-drawer を付けたときだけ。付かなければ上の並び */
-.sidebar-toggle { display: none; }
+   開け閉めは adiary.js（docs/仕様/引き出し.md）。JavaScriptが使えるとき、_frame.html が has-drawer を付ける。付かなければ上の並び。
+   暗幕とスクロールの停止は base.css。引き出しになっている間は --drawer: 1 を付ける */
 /* ボタンはヘッダーの外にあり、画面の上の左右の角に貼り付ける（ログイン中は管理バーの下）。
    ヘッダーの中身がボタンの下に入らないよう、ボタンのある側を空ける */
 @media (max-width: 71.99rem) {
 	.has-drawer .site-header { padding-left: 3.25rem; }
-	.sidebar-toggle-left:not([hidden]) { display: inline-flex; }
+	.has-drawer .sidebar-toggle-left { display: inline-flex; }
 	.sidebar-toggle {
 		position: fixed; top: calc(var(--admin-bar-h, 0px) + .5rem); z-index: 190;
 		padding: .35rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 0; cursor: pointer;
@@ -127,19 +127,16 @@ div.messages div.warn, div.messages div.message { color: var(--strong); }
 	.sidebar-toggle svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 	.sidebar-toggle[aria-expanded="true"] { color: var(--link); border-color: var(--link); }
 	.has-drawer .sidebar-left {
+		--drawer: 1;
 		position: fixed; top: var(--admin-bar-h, 0px); bottom: 0; left: 0; z-index: 210; width: min(20rem, 85vw);
 		overflow-y: auto; overscroll-behavior: contain; padding: 1rem;
 		background: var(--page-bg); border-right: 1px solid var(--border);
 		transform: translateX(-100%); visibility: hidden;
 	}
-	/* 動きはボタンで開け閉めするときだけ。sidebar.js が、読み込んだ直後と幅を変えているあいだは drawer-animate を外す */
+	/* 動きはボタンで開け閉めするときだけ。adiary.js が、読み込んだ直後と幅を変えているあいだは drawer-animate を外す */
 	.drawer-animate .site-sidebar { transition: transform .2s ease, visibility .2s; }
 	.has-drawer .site-sidebar.is-open { transform: none; visibility: visible; }
 	.site-sidebar:focus { outline: none; }
-	.drawer-backdrop { position: fixed; inset: 0; z-index: 200; background: rgb(0 0 0 / .4); }
-	.drawer-open, .drawer-open body { overflow: hidden; }
-	/* スクロールを止めてもスクロールバーの幅を残し、本文が横にずれないようにする */
-	.drawer-open.drawer-keep-gutter { scrollbar-gutter: stable; }
 }
 @media (min-width: 48rem) and (max-width: 71.99rem) {
 	/* 2カラム：A は引き出しなので、本文の右には B だけを置く */
@@ -147,8 +144,9 @@ div.messages div.warn, div.messages div.message { color: var(--strong); }
 }
 @media (max-width: 47.99rem) {
 	.has-drawer .site-header { padding-right: 3.25rem; }
-	.sidebar-toggle-right:not([hidden]) { display: inline-flex; }
+	.has-drawer .sidebar-toggle-right { display: inline-flex; }
 	.has-drawer .sidebar-right {
+		--drawer: 1;
 		position: fixed; top: var(--admin-bar-h, 0px); bottom: 0; right: 0; z-index: 210; width: min(20rem, 85vw);
 		overflow-y: auto; overscroll-behavior: contain; padding: 1rem;
 		background: var(--page-bg); border-left: 1px solid var(--border);

@@ -23,18 +23,18 @@
 <@>
 /* 項目の幅の設定 */
 <@ifexec(ps.width1 ne '', begin)>
-<@id>:not(.sp)>ul>li {
+<@id>>ul>li {
 	width:		<@x1=ps.width1>px;	/* １段目の幅 = X1 */
 }
 <$end>
 <@ifexec(ps.width1_free, begin)>
-<@id>:not(.sp)>ul>li {
+<@id>>ul>li {
 	width:		auto;
 }
 <$end>
 <@ifexec(ps.width2 ne '', begin)>
-<@id>:not(.sp)>ul>li>ul,
-<@id>:not(.sp)>ul>li>ul li {
+<@id>>ul>li>ul,
+<@id>>ul>li>ul li {
 	width:		<@x2=ps.width2>px;	/* ２段目の幅 = X2 */
 }
 <$end>

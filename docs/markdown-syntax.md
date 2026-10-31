@@ -97,7 +97,7 @@ Markdownの記事では、画像（`[image:...]`）は段落の中に出力さ�
 
 - キャプションは、画像の後の2つ目以降の引数に`#`を付けて書く（`[image:S:フォルダ/:ファイル名:代替テキスト:#キャプション]`）。このときは`<figure>`と`<figcaption>`で囲む。
 - さつき記法など、Markdown以外の記事は今までどおり常に`<figure>`で囲む。
-- テーマのminato / chie（画像リンクの装飾）とsumomo（画像の高さ揃えのJS）は`<figure>`を前提にしているため、Markdownの記事ではこれらの効果が無くなる。lycoテーマは`a[class^="tag-image"]`に余白を指定して対応済み。
+- テーマのchie（画像リンクの装飾）は`<figure>`を前提にしているため、Markdownの記事ではこの効果が無くなる。Lyndbaumテーマは`a[class^="tag-image"]`に余白を指定して対応済み。
 
 #### Markdownパーサーで処理するもの
 

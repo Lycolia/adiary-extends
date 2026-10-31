@@ -14,34 +14,6 @@ package SatsukiApp::adiary;
 # ■ワンライナーなサブルーチン等
 ################################################################################
 my @update_versions = (
-	{ ver => 2.93, plugin=>1, rebuild=>1, func=>'sys_update_293' },
-	{ ver => 2.94, func=>'sys_update_294' },
-	{ ver => 2.95, plugin=>1 },
-	{ ver => 2.96, plugin=>1, theme=>1, func=>'sys_update_296' },
-	{ ver => 2.97, plugin=>1, theme=>1, rebuild=>1, func=>'sys_update_297' },
-	{ ver => 2.98, plugin=>1, theme=>1 },
-	{ ver => 3.00, plugin=>1 },
-	{ ver => 3.01, plugin=>1 },
-	{ ver => 3.04, plugin=>1 },
-	{ ver => 3.05, plugin=>1 },
-	{ ver => 3.09, plugin=>1 },
-	{ ver => 3.10, plugin=>1, theme=>1, func => 'sys_update_310', system=>1 },
-	{ ver => 3.11, plugin=>1 },
-	{ ver => 3.14, plugin=>1 },
-	{ ver => 3.15, plugin=>1, func => 'sys_update_315', system=>1 },
-	{ ver => 3.20, plugin=>1 },
-	{ ver => 3.21, plugin=>1, theme=>1, rebuild_cond=>[
-		'\[&https?://github\.com',
-		'\[&https?://gist\.github\.com'
-	]},
-	{ ver => 3.22, plugin=>1 },
-	{ ver => 3.23, plugin=>1 },
-	{ ver => 3.24, plugin=>1 },
-	{ ver => 3.30, plugin=>1, theme=>1 },
-	{ ver => 3.31, plugin=>1, theme=>1 },
-	{ ver => 3.32, plugin=>1 },
-	{ ver => 3.34, plugin=>1 },
-	{ ver => 3.40, plugin=>1 },
 	{ ver => 3.50, plugin=>1, func => 'sys_update_350', system=>1 },
 	{ ver => 3.52, func => 'sys_update_352' },
 	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' },
@@ -63,7 +35,10 @@ my @update_versions = (
 		'\(\('					# 注釈（(())）の一覧が出ない、番号が続く、同じidが重なる、を直した
 	]},
 	{ ver => 4.18, plugin=>1, func => 'sys_update_418' },	# 非公開コメントを廃止した。コメントフォームと記事のスケルトンは、デザインの作り直しで作り直す。コメントに承認待ち（hold）を足した
-	{ ver => 4.19, func => 'sys_update_419' }	# 動画の記事用のサムネイルを、サーバーで作るようにした。前に作ったものは、アップデートの後にブラウザーで作り直す
+	{ ver => 4.19, func => 'sys_update_419' },	# 動画の記事用のサムネイルを、サーバーで作るようにした。前に作ったものは、アップデートの後にブラウザーで作り直す
+	{ ver => 4.21, plugin=>1, theme=>1, func => 'sys_update_421', rebuild_cond=>[	# 古いテーマをレスポンシブにした。デザインのスケルトンを、今のテーマの雛形を外して作り直す。公開フォルダを整理し、テーマの色の調整をブログの設定に移した
+		'\[(?:for-)?(?:sp|pc):'	# スマホとPCで出し分ける記法（[sp:]、[pc:]）を削除した。使っていた記事は、記法を文字のまま出す
+	]}
 );
 #-------------------------------------------------------------------------------
 # ●システムアップデート
@@ -149,99 +124,6 @@ sub system_update {
 
 	$self->update_sysdat('VERSION', $cur);
 	return 0;
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver2.93
-#-------------------------------------------------------------------------------
-sub sys_update_293 {
-	my $self = shift;
-	my $blog = $self->{blog};
-	$self->update_blogset($blog, 'http_rel');
-	$self->update_blogset($blog, 'image_rel');
-	$self->update_blogset($blog, 'image_data', 'lightbox=%k');
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver2.94
-#-------------------------------------------------------------------------------
-sub sys_update_294 {
-	my $self = shift;
-	my $ROBJ = $self->{ROBJ};
-	my $file = $self->{blogpub_dir} . 'usercss.css';
-	if (-r $file) {
-		my $lines = $ROBJ->fread_lines( $file );
-		my $css = join('', @$lines);
-		$self->save_usercss( $css );
-		unlink( $file );
-	}
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver2.96
-#-------------------------------------------------------------------------------
-sub sys_update_296 {
-	my $self = shift;
-	my $blog = $self->{blog};
-	$self->update_blogset($blog, 'bgfile_fit');
-	$self->update_blogset($blog, 'bgfile_w');
-	$self->update_blogset($blog, 'bgfile_h');
-	$self->update_blogset($blog, 'bgfile');
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver2.97 (RC1)
-#-------------------------------------------------------------------------------
-sub sys_update_297 {
-	my $self = shift;
-	my $DB   = $self->{DB};
-	my $ROBJ = $self->{ROBJ};
-	my $blog = $self->{blog};
-	my $desc = $blog->{description_txt};
-	$ROBJ->tag_delete($desc);
-	$self->update_blogset($blog, 'description_notag', $desc);
-
-	# DB変更（古いログのテーブル「ブログID_log」は、migrate_410で消す）
-	my $r=0;
-	$r += 10*$DB->add_column("art", {name=>'main_image',  type=>'text'});
-	$r += 10*$DB->add_column("art", {name=>'description', type=>'text'});
-
-	if ($r) { $ROBJ->message("Blog database error(%s)", $r); }
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver3.10
-#-------------------------------------------------------------------------------
-sub sys_update_310 {
-	my $self  = shift;
-	my $ROBJ = $self->{ROBJ};
-	if ($ROBJ->{FastCGI}) {
-		my $soft = ($ENV{SERVER_SOFTWARE} =~ /Apache/i) ? 'Apache' : 'FastCGI';
-		$ROBJ->warn("Restart of %s is required!", $soft);
-	}
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver3.15
-#-------------------------------------------------------------------------------
-sub sys_update_315 {
-	my $self  = shift;
-	my $pings = $self->{sys}->{ping_servers_txt};
-	$pings =~ s!(^|\n)(http://blogsearch\.google\.(?:co\.jp|com)/ping/RPC2)!$1# $2!;
-	$self->update_sysdat('ping_servers_txt', $pings);
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver3.30
-#-------------------------------------------------------------------------------
-sub sys_update_330 {
-	my $self = shift;
-	my $blog = $self->{blog};
-	foreach(qw(http_target http_class http_data image_target image_class image_data section_anchor subsection_anchor)) {
-		$self->update_blogset($blog, $_, undef);
-	}
-	$self->update_sysdat('edit_lock_interval', $self->{sys}->{edit_lock_time});
-	$self->update_sysdat('edit_lock_time', undef);
 }
 
 #-------------------------------------------------------------------------------
@@ -483,6 +365,86 @@ sub sys_update_419 {
 }
 
 #-------------------------------------------------------------------------------
+# ●システムアップデート for Ver4.21
+#-------------------------------------------------------------------------------
+# ・公開フォルダを整理した。pub/css.d/ → data/blog/css.d/、pub/js/ → pub/plugin/js/、
+#   pub/dynamic.css → pub/custom/dynamic.css（このあとのプラグインの入れ直しで作り直す）
+# ・テーマの色の調整を、CSSファイル（pub/css/テンプレート.テーマ.css）からブログの設定（theme_custom:テーマ）に移した。
+#   CSSは今のテーマの分だけ pub/custom/theme.css に、このあとの theme=>1 で作り直す
+# ・消したテーマ（satsuki2-pop）のブログは、標準のテーマに戻す
+# ・3カラムの選択肢（multi-sidebar）を選んでいたテーマは、3カラムのテーマ（-3col）の調整にし、
+#   今のテーマならブログのテーマも切り替える
+sub sys_update_421 {
+	my $self = shift;
+	my $ROBJ = $self->{ROBJ};
+	my $blog = $self->{blog};
+	if (!$blog) { return; }
+	my $pub  = $self->blogpub_dir();
+	$ROBJ->mkdir( $self->plugin_pub_dir() );
+
+	# 消したテーマ
+	if ($blog->{theme} =~ m|^satsuki2-pop/|) {
+		$self->update_blogset($blog, 'theme', $self->{default_theme});
+	}
+
+	# テーマの色の調整を、ブログの設定に移す（読み方は前の load_theme_info と同じ）
+	my $css_dir = "${pub}css/";
+	foreach my $file (@{ -d $css_dir ? $ROBJ->search_files($css_dir, { ext => '.css' }) : [] }) {
+		my $lines = $ROBJ->fread_lines("$css_dir$file");
+		if (!grep { /\$c=/ } @$lines) {	# 色の調整でない（プラグインのCSS）
+			$self->move_file_421($css_dir, $self->plugin_pub_dir() . 'css/', $file);
+			next;
+		}
+		$ROBJ->file_delete("$css_dir$file");
+		if ($file !~ /^([\w\-]+)\.([\w\-]+)\.css$/) { next; }
+		my $theme = "$1/$2";
+		if ($theme =~ m|^satsuki2-pop/|) { next; }
+
+		my (%col, %opt);
+		foreach(@$lines) {
+			if ($_ =~ /\$(option\d*)=(.+)/) {
+				my ($k, $v) = ($1, $2);
+				$v =~ s|\s*\*/\s*$||;
+				$opt{$k} = $v;
+				next;
+			}
+			if ($_ !~ /(#[0-9A-Fa-f]+).*\$c=\s*(\w+)/) { next; }
+			$col{$2} = $1;
+		}
+		if (($theme eq 'satsuki2/satsuki2' || $theme eq 'satsuki2/bigblue') && $opt{option} eq 'multi-sidebar') {
+			delete $opt{option};
+			if ($blog->{theme} eq $theme) {
+				$self->update_blogset($blog, 'theme', "$theme-3col");
+				$ROBJ->message("Change theme '%s' to '%s'", $theme, "$theme-3col");
+			}
+			$theme .= '-3col';
+		}
+		$self->save_theme_custom_values($theme, \%col, \%opt);
+	}
+	rmdir($css_dir);
+
+	# 色の調整を使っているか（前はCSSのパスを入れていた）
+	my $use = $blog->{theme_custom} ne '' && $blog->{"theme_custom:$blog->{theme}"} ne '';
+	$self->update_blogset($blog, 'theme_custom', $use ? 1 : '');
+
+	# 動的CSSの材料は公開しない。プラグインのJSの写しは pub/plugin/ へ（入れ直しで、ここから消して写し直す）
+	$self->move_dir_files_410("${pub}css.d/", $self->dynamic_css_dir());
+	$self->move_dir_files_410("${pub}js/",    $self->plugin_pub_dir() . 'js/');
+	$ROBJ->file_delete("${pub}dynamic.css");
+	$self->update_dynamic_css();
+}
+sub move_file_421 {
+	my ($self, $src, $des, $file) = @_;
+	my $ROBJ = $self->{ROBJ};
+	$ROBJ->mkdir($des);
+	if (-e "$des$file") {
+		$ROBJ->message("Already exists '%s'", "$des$file");
+		return;
+	}
+	rename("$src$file", "$des$file") || $ROBJ->message("Rename '%s' failed", "$src$file");
+}
+
+#-------------------------------------------------------------------------------
 # ●データの持ち方の変更（Ver4.10）
 #-------------------------------------------------------------------------------
 # ブログは1つだけにしたので、ブログIDを使わない持ち方にする。
@@ -636,7 +598,7 @@ sub sys_update_411 {
 	# fb_admins、fb_app_id、asid：使われていなかった設定（4.09）
 	# spmenu、spmenu_info_all：スマホ用のメニュー（4.09）
 	# album_blogs：ブログを選ぶアルバム（4.10）、rst：reStructuredTextで入力する設定（4.10）
-	# sysmode_notheme：システムモードでテーマを使わない警告（管理画面は常に標準テーマ）
+	# sysmode_notheme：システムモードでテーマを使わない警告（管理画面はテーマを使わなくなった）
 	foreach(qw(tw_ping gaid fb_admins fb_app_id asid spmenu spmenu_info_all album_blogs rst sysmode_notheme)) {
 		if (!exists($blog->{$_})) { next; }
 		$self->update_blogset($blog, $_, undef);

@@ -150,7 +150,7 @@ sub update_dynamic_css {
 		push(@ary, $css);
 	}
 
-	my $file = $self->{blogpub_dir} . 'dynamic.css';
+	my $file = $self->dynamic_css_url_file(1);
 	$ROBJ->fwrite_lines($file, \@ary);
 	return 0;
 }
@@ -169,9 +169,23 @@ sub check_dynamic_css {
 #-------------------------------------------------------------------------------
 # ●動的CSS保管領域
 #-------------------------------------------------------------------------------
+# モジュールのCSSの断片と、ユーザーCSSの原本（_usercss）。dynamic.css の材料なので公開しない
 sub dynamic_css_dir {
 	my $self = shift;
-	return $self->{blogpub_dir} . 'css.d/';
+	return $self->{blog_dir} . 'css.d/';
+}
+# このブログ用に作ったCSS（dynamic.css、テーマの色の調整の theme.css）の置き場所
+sub custom_css_dir {
+	my $self  = shift;
+	my $mkdir = shift;
+	my $dir   = $self->{blogpub_dir} . 'custom/';
+	$mkdir && $self->{ROBJ}->mkdir($dir);
+	return $dir;
+}
+# 動的CSSをまとめたもの（公開画面で読む）
+sub dynamic_css_url_file {
+	my $self = shift;
+	return $self->custom_css_dir(@_) . 'dynamic.css';
 }
 sub dynamic_css_file {
 	my $self = shift;
@@ -522,9 +536,10 @@ sub plugin_install {
 	# 必要なディレクトリの作成
 	$ROBJ->mkdir( $self->{blog_dir} . 'func/' );
 	$ROBJ->mkdir( $self->{blog_dir} . 'skel/' );
-	$ROBJ->mkdir( $self->{blogpub_dir} . 'js/'    );
-	$ROBJ->mkdir( $self->{blogpub_dir} . 'css/'   );
-	$ROBJ->mkdir( $self->{blogpub_dir} . 'css.d/' );
+	$ROBJ->mkdir( $self->plugin_pub_dir() );
+	$ROBJ->mkdir( $self->plugin_pub_dir() . 'js/'  );
+	$ROBJ->mkdir( $self->plugin_pub_dir() . 'css/' );
+	$ROBJ->mkdir( $self->dynamic_css_dir() );
 
 	# インストールディレクトリ
 	my $plg_dir  = $self->plugin_name_dir($n);	# plugin/ : 読み込み用
@@ -597,13 +612,18 @@ sub get_plugin_install_dir() {
 	my $file = shift;
 	my ($dir, $file) = $self->split_equal($_, '/');
 
-	if ($dir eq 'func' || $dir eq 'skel' || $dir eq 'etc') {
+	if ($dir eq 'func' || $dir eq 'skel' || $dir eq 'etc' || $dir eq 'css.d') {
 		return $self->{blog_dir};
 	}
-	if ($dir eq 'js' || $dir eq 'css' || $dir eq 'css.d') {
-		return $self->{blogpub_dir};
+	if ($dir eq 'js' || $dir eq 'css') {
+		return $self->plugin_pub_dir();
 	}
 	return ;
+}
+# プラグインの公開するファイル（js/、css/）の写しの置き場所。plugin/名前/ の公開する部分
+sub plugin_pub_dir {
+	my $self = shift;
+	return $self->{blogpub_dir} . 'plugin/';
 }
 
 #-------------------------------------------------------------------------------
@@ -1042,9 +1062,9 @@ sub generate_design_skeleton {
 	my $ROBJ = $self->{ROBJ};
 
 	# 元にするテンプレートのスケルトンに差し替える
-	my @bak;
+	# 標準のもの（$tplなし）を作るときも、今のテーマのスケルトンを外す（外さないと、今のテーマの雛形で作ってしまう）
+	my @bak = $ROBJ->delete_skeleton($self->{theme_skeleton_level});
 	if ($tpl ne '') {
-		@bak = $ROBJ->delete_skeleton($self->{theme_skeleton_level});
 		$ROBJ->regist_skeleton($self->{theme_dir} . "${tpl}/_skel/", $self->{theme_skeleton_level});
 	}
 	my $ret = 0;
@@ -1188,11 +1208,9 @@ sub generate_design_skeleton {
 	}
 
 	# テーマのスケルトンを元に戻す
-	if ($tpl ne '') {
-		$ROBJ->delete_skeleton($self->{theme_skeleton_level});
-		foreach(@bak) {
-			$ROBJ->regist_skeleton($_->{dir}, $_->{level});
-		}
+	$ROBJ->delete_skeleton($self->{theme_skeleton_level});
+	foreach(@bak) {
+		$ROBJ->regist_skeleton($_->{dir}, $_->{level});
 	}
 	return $ret;
 }
@@ -1481,25 +1499,25 @@ sub save_theme {
 		return 1;
 	}
 
-	# テーマ保存
+	# テーマ保存。色の調整のCSS（今のテーマの分だけ）は、使うときに作り直す
 	$self->update_cur_blogset('theme', $theme);
 	$self->update_cur_blogset('theme_custom', '');
+	$ROBJ->file_delete( $self->get_theme_custom_css() );
 
 	# テーマカスタマイズ情報の保存
 	if (!$form->{custom}) { return 0; }
 	my ($c,$opt,$css) = $self->load_theme_colors( $theme );
 	if (!$css) { return 0; }
-	my $file = $self->get_theme_custom_css($theme, 1);
 
 	my %col;
 	my %opt;
 	my $diff;
 	foreach(keys(%$opt)) {
 		if ($_ !~ /^(.*)-default$/) { next; }
-		# デフォルトを含む
+		# デフォルトを含む。外したときは、外したことを保存する
 		$diff=1;
 		if ($form->{$1} ne '') { next; }
-		$css .= "\n/* \$$1= */";
+		$opt{$1} = '';
 	}
 	foreach(keys(%$form)) {
 		if ($_ =~ /^option\d*$/ && $form->{$_} ne '') {
@@ -1515,16 +1533,13 @@ sub save_theme {
 		if ($c->{$name} ne $col{$name}) { $diff=1; }
 	}
 	if (!$diff) {	# カスタマイズしてない
-		$ROBJ->file_delete( $file );
+		$self->save_theme_custom_values($theme);
 		return 0;
 	}
 
-	# CSS書き換え
-	my $ary = $self->css_rewrite($css, \%col, \%opt);
-	$ROBJ->fwrite_lines($file, $ary);
-
-	# カスタマイズ情報の保存
-	$self->update_cur_blogset('theme_custom', $file);
+	# カスタマイズ情報の保存と、CSSの作成
+	$self->save_theme_custom_values($theme, \%col, \%opt);
+	$self->write_theme_custom_css($theme);
 
 	# イベント
 	$self->call_event('EDIT_THEME');
@@ -1599,21 +1614,66 @@ sub load_theme_info {
 	my ($col, $opt, $css) = $self->load_theme_colors($theme);
 	if (!$css) { return ($col, $opt); }
 
-	# カスタマイズ情報のロード
-	my $file = $self->get_theme_custom_css($theme);
-	if (-r $file) {
-		my $lines = $ROBJ->fread_lines( $file );
-		foreach(@$lines) {
-			if ($_ =~ /\$(option\d*)=(.+)/) {
-				$opt->{"$1$append"} = $2;
-				$opt->{"$1$append"} =~ s|\s*\*/$||;
-				next;
-			}
-			if ($_ !~ /(#[0-9A-Fa-f]+).*\$c=\s*(\w+)/) { next; }
-			$col->{"$2$append"} = $1;
-		}
+	# カスタマイズ情報のロード（ブログの設定）
+	my ($c, $o) = $self->load_theme_custom_values($theme);
+	foreach(keys(%$o)) {
+		$opt->{"$_$append"} = $o->{$_};
+	}
+	foreach(keys(%$c)) {
+		$col->{"$_$append"} = $c->{$_};
 	}
 	return ($col, $opt, $css);
+}
+
+#-------------------------------------------------------------------------------
+# ●テーマの色の調整の値（ブログの設定）
+#-------------------------------------------------------------------------------
+# テーマごとに theme_custom:テンプレート/テーマ に、「選択肢=値」と「色の名前=#色」の行で保存する。
+# テーマを切り替えて戻しても、前の調整が残る
+sub load_theme_custom_values {
+	my ($self, $theme) = @_;
+	my (%col, %opt);
+	foreach(split(/\n/, ($self->{blog} || {})->{"theme_custom:$theme"})) {
+		if ($_ !~ /^(\w+)=(.*)$/) { next; }
+		my ($k, $v) = ($1, $2);
+		if ($k =~ /^option\d*$/) {
+			$opt{$k} = $v;
+		} elsif ($v =~ /^#[0-9A-Fa-f]+$/) {
+			$col{$k} = $v;
+		}
+	}
+	return (\%col, \%opt);
+}
+# 値を渡さなければ消す
+sub save_theme_custom_values {
+	my ($self, $theme, $col, $opt) = @_;
+	$col ||= {};
+	$opt ||= {};
+	my $text = join('', map { "$_=$opt->{$_}\n" } sort(keys(%$opt)))
+		 . join('', map { "$_=$col->{$_}\n" } sort(keys(%$col)));
+	chomp($text);
+	$self->update_cur_blogset("theme_custom:$theme", $text ne '' ? $text : undef);
+}
+
+#-------------------------------------------------------------------------------
+# ●テーマの色の調整のCSSを作る
+#-------------------------------------------------------------------------------
+# 今のテーマの分だけを、テーマのCSSと保存した値から作る。値が無ければ消す
+sub write_theme_custom_css {
+	my $self  = shift;
+	my $theme = shift || $self->{blog}->{theme};
+	my $ROBJ  = $self->{ROBJ};
+
+	my $file = $self->get_theme_custom_css();
+	my ($col, $opt, $css) = $self->load_theme_info($theme, '');
+	if (!$css || ($self->{blog} || {})->{"theme_custom:$theme"} eq '') {
+		$ROBJ->file_delete($file);
+		$self->update_cur_blogset('theme_custom', '');
+		return 0;
+	}
+	$ROBJ->fwrite_lines($self->get_theme_custom_css(1), $self->css_rewrite($css, $col, $opt));
+	$self->update_cur_blogset('theme_custom', 1);
+	return 0;
 }
 
 #-------------------------------------------------------------------------------
@@ -1772,13 +1832,10 @@ sub load_theme_colors {
 #-------------------------------------------------------------------------------
 # ●テーマカスタムファイルの取得
 #-------------------------------------------------------------------------------
+# 今のテーマの分だけ置く
 sub get_theme_custom_css {
-	my ($self, $theme, $mkdir) = @_;
-	my $ROBJ = $self->{ROBJ};
-	my $dir = $self->{blogpub_dir} . 'css/';
-	$mkdir && $ROBJ->mkdir($dir);
-	$theme =~ s|/|.|g;
-	return $dir . $theme . '.css';
+	my ($self, $mkdir) = @_;
+	return $self->custom_css_dir($mkdir) . 'theme.css';
 }
 
 ################################################################################

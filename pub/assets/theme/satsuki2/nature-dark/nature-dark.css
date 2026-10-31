@@ -32,23 +32,28 @@ body
 	min-width:		700px;
 	max-width:		960px;
 }
-#hatena-body:after {
-	content:		"";
-	clear:			both;
-	display:		block;
+/* 本文とサイドバーをGridで並べる（HTMLは本文、サイドバーの順。JavaScriptで入れ替えない） */
+#hatena-body > div {
+	display:		grid;
+	grid-template-columns:	minmax(0, 1fr) 220px;
+	grid-template-areas:	"main side";
+	column-gap:		20px;
+	align-items:		start;
+}
+/* 本文とサイドバーのほか（デバッグ表示など）は、幅いっぱいに出す */
+#hatena-body > div > :not(.main):not(#sidebar) {
+	grid-column:		1 / -1;
 }
 
 /* 記事部 */
 .main {
-	float:			left;
-	width:			calc(100% - 240px);
+	grid-area:		main;
 }
 
-/* 左側にメニューを配置 */
+/* 右側にメニューを配置 */
 #sidebar
 {
-	float:			right;
-	width:			220px;
+	grid-area:		side;
 	margin:			0;
 	padding-top:		1em;
 
@@ -152,7 +157,7 @@ button:disabled
 /*--------------------------------------------------------------------
 ■ヘッダ部
 --------------------------------------------------------------------*/
-#header, #sp-header {
+#header {
 	background-color:	#333;		/* $c=headerbg */
 	color:			#fff;		/* $c=fixheaderfont */
 }
@@ -193,7 +198,6 @@ h1 img, h1 a img {
 	background-color:	transparent;
 }
 /* 背景色（非選択色） */
-.ddmenu.sp, 
 .ddmenu>ul>li>ul li {
 	background-color:	#311;		/* $c=ddbg = headerbg */
 }
@@ -215,11 +219,10 @@ h1 img, h1 a img {
 	color:			#fee;		/* $c=ddfont = link */
 }
 /* 矢印の色 */
-.ddmenu li ul li ul:before,
-.ddmenu.sp li ul:before {
+.ddmenu li ul li ul:before {
 	border-left-color:	#fee;		/* $c=ddarrow = link */
 }
-.ddmenu:not(.sp) li:last-child:not(:first-child) ul li ul:before {
+.ddmenu li:last-child:not(:first-child) ul li ul:before {
 	border-left-color:	transparent;
 	border-right-color:	#fee;		/* $c=ddarrow */
 }
@@ -675,7 +678,7 @@ table.calendar td.day-selected {
 /******************************************************************************/
 /******************************************************************************/
 /* ここより下は、システムの部品（フォーム、ヘルプ、ダイアログ、メッセージなど）のクラス。 */
-/*	公開画面と、テーマで表示するシステム画面（デザイン編集）で使う */
+/*	公開画面で使う（デザイン編集などの画面は js/design.css） */
 /******************************************************************************/
 /*--------------------------------------------------------------------
 ●システム画面
@@ -869,4 +872,195 @@ nav.tree {
 }
 .design-module-edit:hover:not(.hoverstop) {
 	background-color:	#a00;
+}
+
+/******************************************************************************/
+/*--------------------------------------------------------------------
+■狭い画面（スマホ）
+--------------------------------------------------------------------*/
+/* 前のスマホ用のCSS（sphone.css）を移したもの。
+   本文の枠はGridにせず、前と同じく本文、サイドバーの順に縦に並べる */
+@media screen and (max-width: 640px) {
+	#hatena-body > div {
+		display:		block;
+	}
+
+	/*--------------------------------------------------------------------
+	■全体配置
+	--------------------------------------------------------------------*/
+	body {
+		width:			auto;
+		margin:			0 2px;
+	}
+	div.main {
+		margin-left:		0px;
+		margin-right:		0px;
+		padding:		0 4px;
+		width:			auto;
+		float:			none;
+	}
+	#hatena-body>div,
+	#footer>div {
+		margin:			0;
+		width:			auto;
+		min-width:		1px;	/* for GC bugs */
+		max-width:		none;
+	}
+	#sidebar {
+		float:			none;
+		margin:			0 4px;
+		padding:		0;
+		width:			auto;
+		border:			none;
+	}
+
+	/*--------------------------------------------------------------------
+	■ヘッダ
+	--------------------------------------------------------------------*/
+	#header {
+		color:			#fff;
+	}
+	#nav-header {
+		font-size:		10pt;
+		text-align:		right;
+		vertical-align:		top;
+		float:			right;
+	}
+	#header a,
+	#header a:link,
+	#header a:visited {
+		color:			#fff;
+	}
+	#page-title {
+		margin:			0px;
+		font-weight:		bold;
+		background-color:	#000;
+		text-shadow:
+			-1px -1px 0px #666,
+			 1px -1px 0px #666,
+			 1px  1px 0px #666,
+			-1px  1px 0px #666,
+			 3px  3px 2px #888;
+	}
+	h1 {
+		padding:		40px 6px 24px 6px;
+		margin:			0;
+	}
+
+	/*--------------------------------------------------------------------
+	■サイドバー
+	--------------------------------------------------------------------*/
+	#sidebar {
+		margin-top:		3em;
+		font-size:		12pt;
+	}
+	span.switch-icon {
+		margin-right:		1em;
+	}
+	#sidebar ul.hatena-section {
+		line-height:		200%;
+	}
+	#side-search input.search-box {
+		width:			180px;
+	}
+	table.calendar {
+		margin:			0 8px;
+	}
+
+	/*--------------------------------------------------------------------
+	■コメント欄
+	--------------------------------------------------------------------*/
+	#com {
+		font-size:		10pt;
+	}
+	#com form input.comment-author {
+		width:			100px;
+	}
+	#com form textarea {
+		width:			340px;
+	}
+
+	/*--------------------------------------------------------------------
+	■記事部の設定
+	--------------------------------------------------------------------*/
+	#adiary-body {
+		word-wrap:		break-word;
+	}
+	#adiary-body img,
+	#adiary-body figure {
+		max-width:		100%;
+		height:			auto;
+		float:			none;
+	}
+	#adiary-body textarea,
+	#adiary-body input,
+	#adiary-body video,
+	#adiary-body audio {
+		max-width:		100%;
+	}
+	article ul,
+	article ol {
+		padding-left:		2em;
+	}
+	article ul ul,
+	article ol ol {
+		padding-left:		1em;
+	}
+	article div.body {
+		padding-left:		12px;
+		padding-right:		12px;
+	}
+
+	/*--------------------------------------------------------------------
+	○table, blockquote, pre
+	--------------------------------------------------------------------*/
+	#adiary-body article.system {
+		padding:		6px;
+	}
+	article {
+		padding:		10px 6px;
+	}
+	article.system div.body {
+		padding-left:		0;
+		padding-right:		0;
+	}
+	.body table {
+		margin-left:		1em;
+		margin-right:		1em;
+	}
+	.body blockquote table,
+	.body div.box table {
+		margin-left:		0;
+		margin-right:		0;
+	}
+	blockquote,
+	pre,
+	div.box {
+		margin:			0.5em 1.0em 0.5em 1.0em;
+		padding:		0.2em 0.5em 0.2em 0.5em;
+	}
+	pre {
+		margin-left:		0;
+		margin-right:		0;
+		overflow-x:		scroll;
+	}
+
+	/*--------------------------------------------------------------------
+	■システムモード
+	--------------------------------------------------------------------*/
+	article.system div.body {
+		padding-left:		6px;
+		padding-right:		6px;
+	}
+	article.system div.body table {
+		margin-left:		0px;
+		margin-right:		0px;
+	}
+}
+
+/* 前のスマホ用のヘッダ（別のマークアップ）には効いていなかった、PCのヘッダの幅を外す */
+@media screen and (max-width: 640px) {
+	#header>div {
+		min-width:		0;
+	}
 }

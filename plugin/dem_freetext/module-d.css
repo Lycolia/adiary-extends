@@ -6,9 +6,6 @@
 /*************************************************
  * for <@name>  <@Timestamp>
  **************************************************/
-.sp <@id> {
-	clear:			both;
-}
 <@id> {
 <@ifexec(ps.text_centering, begin)>
 	text-align:		center;

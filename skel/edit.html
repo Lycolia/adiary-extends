@@ -224,7 +224,7 @@
 			<li>親 <select name="upnode" id="upnode-select" data-default="<@art.upnode>" data-this-pkey="<@edit_pkey>" data-url="<@Basepath><@v.blogpub_dir>contents.json?<@v.blog.json_tm>">
 				<option value="0">*トップ(root)</option>
 			</select></li>
-			<li>コンテンツkey<input type="text" name="link_key_txt" id="link-key" class="w240" value="<@if(art.ctype, esc(art.link_key))>" data-suggest="<@s.suggest_link_key>"><span class="help-text">"http://", "https://" や "/" ではじまるkeyを指定すると指定URLへのリンクになります。"FrontPage", "top", "index"のいずれかを指定するとブログトップの固定記事になります。</span></li>
+			<li>コンテンツkey<input type="text" name="link_key_txt" id="link-key" class="w240" value="<@if(art.ctype, esc(art.link_key))>" data-suggest="<@s.suggest_link_key>"><span class="help-text">"FrontPage", "top", "index"のいずれかを指定するとブログトップの固定記事になります。</span></li>
 		</ul>
 		</li>
 	</ul>
@@ -263,7 +263,7 @@
 		<@ifexec(!art.draft && edit_pkey, begin)>
 			<li><label><input type="checkbox" name="draft" value="1"<@if(art.draft, ' checked')> id="draft-chk" data-on='下書き'>下書きに戻す</label><span class="help-text">初公開日時の情報も消去されます。</span></li>
 		<$end>
-		<@ifexec(Develop && !v.sphone, begin)>
+		<@ifexec(Develop, begin)>
 			<li><label><input type="checkbox" class="js-save" id="parser-debug" name="parser_debug" value="1"><em>[develop]</em> パーサーのデバッグ</label></li>
 		<$end>
 		</ul></li>

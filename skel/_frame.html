@@ -22,23 +22,35 @@
 <meta name="rating" content="adult">
 <script>try { if (localStorage.getItem('adiary-nsfw-ok') || sessionStorage.getItem('adiary-nsfw-ok')) document.documentElement.classList.add('nsfw-ok'); } catch(e) {}</script>
 <$end>
+<@> JavaScriptが使えるときは、サイドバーを引き出しにする（adiary.js、docs/仕様/引き出し.md）。
+<@> 表示した後にサイドバーが本文の下から消えて、ずれないように、本文を描く前にここで付ける
+<@ifexec(!v.system_mode, begin)>
+<script>document.documentElement.classList.add('has-drawer');</script>
+<$end>
 <@>-----------------------------------------------------------------------------
 <@forexec(t, v.load_jscss('csslib'), begin)>
 <link rel="stylesheet" href="<@t>">
 <$end>
 <@>
 <@> テーマとユーザーCSSは最後に読み込む
-<@if(v.sphone || v.responsive,	#'<meta name="viewport" id="viewport" content="width=device-width">\n')>
-<@if(299 < v.sphone,	#'<style type="text/css"><!-- body { max-width: <@v.sphone>px; }</style>\n')>
+<@> テーマはどれもレスポンシブ。デザイン編集などの管理画面（design.css）は、PCの幅のまま表示する
+<@if(!v.system_mode,	#'<meta name="viewport" id="viewport" content="width=device-width">\n')>
 <@> 読み込むファイルには更新日時を付ける（長くキャッシュさせても、更新したら読み直させるため。docs/config-example/nginx.conf）
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir>base.css?<@get_lastmodified(v.theme_dir . 'base.css')>">
+<@> 公開画面のフレームを使う管理画面（デザイン編集など）は、テーマに頼らず、テーマのCSSの代わりに design.css を読む
+<@ifexec(v.system_mode, begin, begin)>
+<link rel="stylesheet" href="<@Basepath><@v.script_dir>design.css?<@get_lastmodified(v.script_dir . 'design.css')>">
+<$else>
 <link rel="stylesheet" href="<@Basepath><@v.theme_dir><@v.theme>/<@v.theme_name>.css?<@get_lastmodified("<@v.theme_dir><@v.theme>/<@v.theme_name>.css")>" id="theme-css">
-<@>
-<@ifexec(!v.system_theme && s.theme_custom && s.theme eq v.theme, begin)>
-<link rel="stylesheet" href="<@Basepath><@s.theme_custom>?<@get_lastmodified(s.theme_custom)>" id="theme-custom-css">
 <$end>
 <@>
-<$file = "<@v.blogpub_dir>dynamic.css">
+<@> このブログ用に作ったCSS（pub/custom/）。テーマの色の調整（get_theme_custom_css）と、動的CSS（dynamic_css_url_file）
+<$file = "<@v.blogpub_dir>custom/theme.css">
+<@ifexec(!v.system_theme && s.theme_custom && s.theme eq v.theme && file_size(file), begin)>
+<link rel="stylesheet" href="<@Basepath><@file>?<@get_lastmodified(file)>" id="theme-custom-css">
+<$end>
+<@>
+<$file = "<@v.blogpub_dir>custom/dynamic.css">
 <@ifexec(!v.system_mode && !v.stop_all_plugins && file_size(file), begin)>
 <link rel="stylesheet" href="<@Basepath><@file>?<@get_lastmodified(file)>" id="user-css">
 <$end>
@@ -80,7 +92,7 @@
 <script defer src="<@t>"></script>
 <$end>
 <$file = "<@v.theme_dir><@v.theme>/<@v.theme_name>.js">
-<@if(!js_stop && file_size(file), #'<script defer src="<@Basepath><@file>?<@get_lastmodified(file)>" id="theme-js"></script>\n')>
+<@if(!js_stop && !v.system_mode && file_size(file), #'<script defer src="<@Basepath><@file>?<@get_lastmodified(file)>" id="theme-js"></script>\n')>
 	<title><@v.subtitle><@if(v.subtitle ne '',' - ')><@v.title></title>
 <@v.extra_header>
 <@if(!v.system_mode, s.html_header_txt)>
@@ -108,7 +120,7 @@
 </script>
 
 </head>
-<body id="body" class="<@if(v.blog_admin, 'blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.system_mode, ' system')><@if(v.sphone,' sp')><@if(v.responsive,' responsive')><@if(nsfw_site, ' nsfw nsfw-site')>">
+<body id="body" class="<@if(v.blog_admin, 'blog-owner')><@if(v.allow_edit, ' blog-editor')><@if(v.system_mode, ' system')><@if(nsfw_site, ' nsfw nsfw-site')>">
 <@>
 <@ifexec(v.special_system_mode, begin.sp_sysmode, begin.sp_sysmode)>
 <@inframe>
@@ -123,6 +135,13 @@
 <@> header
 <@>-----------------------------------------------------------------------------
 <@call('_header')>
+<@> 狭い画面で、サイドバー（#sidebar）を引き出しにして開くボタン。出すかどうかは base.css が決める。
+<@> テーマの雛形が自分のボタンを持つとき（lyndbaum）は、#sidebar が無いので出さない
+<@ifexec(!v.system_mode, begin)>
+<button type="button" class="sidebar-toggle sidebar-toggle-menu" aria-controls="sidebar" aria-expanded="false" aria-label="サイドバー">
+	<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+</button>
+<$end>
 
 <@>-----------------------------------------------------------------------------
 <@> main

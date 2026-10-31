@@ -142,16 +142,16 @@ adiary.session($('#static-export, #static-export-format'), {
 	<$dir_copy("<@v.theme_dir><@v.theme>", "<@dir><@v.theme>")>
 	<$dir_copy("<@v.theme_dir>_img", "<@dir>_img")>
 
-	<@> テーマカスタムCSS
+	<@> テーマカスタムCSS（pub/custom/theme.css は、書き出したHTMLでは theme/theme.css になる）
 	<@ifexec(option.custom_css && s.theme_custom, begin)>
-		<$session.msg("\tcopy to 'custom.css'")>
-		<$file_copy( s.theme_custom, "<@dir>custom.css")>
+		<$session.msg("\tcopy to '<@dir>theme.css'")>
+		<$file_copy( v.get_theme_custom_css(), "<@dir>theme.css")>
 	<$end>
 
-	<@> dynamic.css
-	<@ifexec(file_readable("<@v.blogpub_dir>dynamic.css"), begin)>
+	<@> dynamic.css（pub/custom/dynamic.css は、書き出したHTMLでは theme/dynamic.css になる）
+	<@ifexec(file_readable(v.dynamic_css_url_file()), begin)>
 		<$session.msg("\tcopy to '<@dir>dynamic.css'")>
-		<$file_copy("<@v.blogpub_dir>dynamic.css", "<@dir>dynamic.css")>
+		<$file_copy(v.dynamic_css_url_file(), "<@dir>dynamic.css")>
 	<$end>
 
 
@@ -186,8 +186,9 @@ adiary.session($('#static-export, #static-export-format'), {
 <@>/////////////////////////////////////////////////////////////////////////////
 
 <$dir = export_dir . theme_dir>
+<@> pub/plugin/js/ は、書き出したHTMLでは theme/js/ になる
 <$session.msg("Plugin's js files copy to '<@dir>'")>
-<$dir_copy(v.blogpub_dir() . 'js/', dir)>
+<$dir_copy(v.plugin_pub_dir(), dir)>
 
 
 <@>/////////////////////////////////////////////////////////////////////////////

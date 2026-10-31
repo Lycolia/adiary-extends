@@ -397,22 +397,12 @@ sub parse_design_dat {
 #-------------------------------------------------------------------------------
 # ●テーマカスタム情報の再生成
 #-------------------------------------------------------------------------------
+# 色の調整の値（ブログの設定）と今のテーマのCSSから、pub/custom/theme.css を作り直す
 sub remake_theme_custom_css {
 	my $self  = shift;
-	my $theme = shift || $self->{blog}->{theme};
-	my $ROBJ  = $self->{ROBJ};
-	if (!$theme) { return 0; }
-
-	my $file = $self->get_theme_custom_css($theme);
-	if (!-r $file) { return 0; }	# カスタムファイルが無い
-
-	# 再度書き換える
-	my ($col,$opt,$css) = $self->load_theme_info( $theme, '' );
-	if (!$css) { return; }
-
-	my $ary = $self->css_rewrite($css, $col, $opt);
-	$ROBJ->fwrite_lines($file, $ary);
-	return 0;
+	my $theme = $self->{blog}->{theme};
+	if (!$theme || !$self->{blog}->{theme_custom}) { return 0; }	# 色の調整を使っていない
+	return $self->write_theme_custom_css($theme);
 }
 
 ################################################################################
@@ -453,8 +443,7 @@ sub regist_cache_checker {
 		if ($ENV{REQUEST_METHOD} ne 'GET' && $ENV{REQUEST_METHOD} ne 'HEAD') { return; }
 		if (index($ENV{HTTP_COOKIE}, 'session=') >= 0) { return; }
 
-		my $sphone = &{ \&sphone_checker }();
-		my $key    = $sphone . $ENV{REQUEST_URI};
+		my $key    = $ENV{REQUEST_URI};
 		my $query  = $ENV{QUERY_STRING};
 		if (!$search_cache && $query ne '') { return; }
 		if ($query !~ /^q=/ && $query =~ /^\w+/) { return; }

@@ -11,9 +11,6 @@ adiary_version=3.21
 module_type=main,header
 load_module_html_in_edit=1
 
-# スマホメニュー対応
-sphone_menu=1
-
 *sample_html=<<HTML
 <div class="ddmenu">
 <ul class="js-auto-width">

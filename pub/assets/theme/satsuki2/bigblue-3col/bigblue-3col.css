@@ -1,0 +1,33 @@
+@charset "UTF-8";
+/*******************************************************************************
+  BigBlue（3カラム）
+	bigblueテーマを読み込み、3カラムの配置だけを足したもの。
+	色の調整と選択肢は、bigblueテーマのものを使う（$color_info）。
+*******************************************************************************/
+/* [TAB=8] */
+@import url("../bigblue/bigblue.css");
+/* $color_info = bigblue */
+
+/*--------------------------------------------------------------------
+■全体配置（3カラム）
+--------------------------------------------------------------------*/
+/* サイドバーA、本文、サイドバーBの順に並べる。
+   サイドバーの枠（#sidebar）を消して、サイドバーAとBをGridに直に並べる（JavaScriptで入れ替えない）。
+   右サイドバーの選択肢より優先させるため、セレクタに body を付ける。
+   狭い画面（640px以下）では、bigblueテーマと同じく1列 */
+@media screen and (min-width: 641px) {
+	body #hatena-body > div {
+		grid-template-columns:	160px minmax(0, 1fr) 160px;
+		grid-template-areas:	"side-a main side-b";
+		column-gap:		10px;
+	}
+	#sidebar {
+		display:		contents;
+	}
+	#side-a {
+		grid-area:		side-a;
+	}
+	#side-b {
+		grid-area:		side-b;
+	}
+}
