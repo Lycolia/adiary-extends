@@ -217,8 +217,6 @@ sub export {
 	my @files;
 	my %ymd;
 	foreach (@$logs) {
-		if ($_->{ctype} eq 'link') { next; }
-
 		# URL系の書き換え
 		my $file = $_->{link_key};
 		if ($file =~ m|^[/\.]|) { next; }

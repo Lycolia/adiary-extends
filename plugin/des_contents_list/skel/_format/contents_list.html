@@ -25,12 +25,12 @@
 <$ifnext(t.tstat & v.tstat_nomenu)>
 <@ifexec(t.children && depth<max_depth, begin, begin)>
 <@p>	<li><@if(switch, if(nclose, '<details>', '<details open>') . '<summary>', ' ')><@\>
-	<a href="<@if(t.ctype eq 'link', t.elink_key, "<@v.myself2><@t.elink_key>")>"><@t.title></a><@if(switch, '</summary>')>
+	<a href="<@v.myself2><@t.elink_key>"><@t.title></a><@if(switch, '</summary>')>
 <@exec(sub, t, depth+1)>
 <@p>	<@if(switch, '</details>')></li>
 <$else>
 <@p>	<li> <@\>
-	<a href="<@if(t.ctype eq 'link', t.elink_key, "<@v.myself2><@t.elink_key>")>"><@t.title></a></li>
+	<a href="<@v.myself2><@t.elink_key>"><@t.title></a></li>
 <$end>
 <$end.forexec>
 <@p></ul>

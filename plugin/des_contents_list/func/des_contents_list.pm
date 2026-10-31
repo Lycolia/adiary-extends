@@ -12,15 +12,6 @@ sub {
 		$root = $self->load_contents_tree();
 	}
 
-	# コンテンツキーの加工
-	my $all = $root->{_all};
-	foreach(@$all) {
-		if ($_->{ctype} ne 'link') { next; }
-		$_->{elink_key} =~ s/%25/%/g;
-		$_->{elink_key} =~ s/%2[bB]/+/g;
-		$_->{elink_key} =~ s/%3[fF]/?/;
-	}
-
 	my $node = int($self->load_plgset($name, 'node'));
 	my $tree = {};
 	if ($node) {

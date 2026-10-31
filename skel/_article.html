@@ -69,9 +69,6 @@
 	<@if( t.draft,  '<div><strong class="warning">【この記事は下書きです】</strong></div>' )>
 	<@if(!t.draft && !t.enable, '<div><strong class="warning">【この記事は非公開です】</strong></div>')>
 <@t.text>
-	<@ifexec(t.ctype eq 'link', begin)>
-	<$x=esc(t.link_key)><p class="link"><a href="<@x>"><@x></a></p>
-	<$end>
 <@if(t.nsfw && !s.nsfw_force, '</div><!-- nsfw-content -->')>
 </div><!-- body-main -->
 <div class="body-footer">

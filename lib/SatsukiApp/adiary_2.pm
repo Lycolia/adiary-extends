@@ -396,9 +396,6 @@ sub regist_article {
 
 		# ctype
 		$ctype = 'wiki';
-		if ($link_key =~ m[^(?:/|https?://)]) {
-			$ctype = 'link';
-		}
 	}
 	$art{ctype} = $ctype;
 	if ($ctype eq '') {
@@ -598,6 +595,7 @@ sub regist_article {
 #-------------------------------------------------------------------------------
 # 使えなければ、form_errorに渡すメッセージと引数を返す
 #
+# ・/で始まるkeyや、://を含むkeyは、URLとして組み立てられない
 # ・数字だけのkeyは、記事番号（0始まり）か日付として解釈される
 # ・&で始まるkeyは、コンテンツとして解釈されない
 # ・先頭の階層がadiaryの置き場所にあるファイルやフォルダと同じだと、
@@ -607,8 +605,12 @@ sub regist_article {
 #
 sub check_link_key_path {
 	my ($self, $link_key) = @_;
-	if ($link_key =~ m[^(?:/|https?://)]) { return; }	# リンク
-
+	if ($link_key =~ m|^/|) {
+		return ('Can not use character "%s" in content key', '/');
+	}
+	if ($link_key =~ m|://|) {
+		return ('Can not use string "%s" in content key', '://');
+	}
 	if ($link_key =~ /^\d+$/) {
 		return ('Content key can not be only numbers');
 	}

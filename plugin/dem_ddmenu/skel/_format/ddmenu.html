@@ -29,12 +29,12 @@
 <$end>
 <$ifnext(t.tstat & v.tstat_nomenu)>
 <@ifexec(t.children && depth<max_depth, begin, begin)>
-<@p>	<li><a href="<@if(t.ctype eq 'link', link, "<@myself><@link>")>"><@if(tagmode, t.sname, t.title)></a>
+<@p>	<li><a href="<@myself><@link>"><@if(tagmode, t.sname, t.title)></a>
 <@exec(sub, t, depth+1)>
 <@p>	</li>
 <$else>
 <@p>	<li> <@\>
-	<a href="<@if(t.ctype eq 'link', link, "<@myself><@link>")>"><@if(tagmode, t.sname, t.title)></a></li>
+	<a href="<@myself><@link>"><@if(tagmode, t.sname, t.title)></a></li>
 <$end>
 <$end.forexec>
 <@p></ul>
