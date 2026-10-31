@@ -240,19 +240,6 @@ blockquote p:last-child {
 	margin-bottom:	0;
 }
 
-/* スマホ用出力。PC用出力（[sp:]、[pc:]の記法）。狭い画面かどうかで出し分ける */
-.for-sp {
-	display:	none;
-}
-@media screen and (max-width: 640px) {
-	.for-pc {
-		display:	none;
-	}
-	.for-sp {
-		display:	revert;
-	}
-}
-
 /* pre */
 pre {
 	font-family:		monospace;
