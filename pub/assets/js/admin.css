@@ -442,6 +442,28 @@ table.list-table.list-card tr {
 table.blog-setting th {
 	white-space:		nowrap;
 }
+/* 狭い画面では、項目名と値を横に並べると収まらない（ファイルの入力欄は縮まない）ので、項目名の下に値を置く（基本設定） */
+@media (max-width: 40rem) {
+	table.blog-setting-stack,
+	table.blog-setting-stack tbody,
+	table.blog-setting-stack tr,
+	table.blog-setting-stack th,
+	table.blog-setting-stack td {
+		display:		block;
+	}
+	table.blog-setting-stack th {
+		white-space:		normal;
+		padding-bottom:		0.2rem;
+	}
+	table.blog-setting-stack td {
+		padding-bottom:		0.8rem;
+	}
+	table.blog-setting-stack input,
+	table.blog-setting-stack textarea {
+		max-width:		100%;
+		box-sizing:		border-box;
+	}
+}
 table.blog-setting td.c,
 .body table td.c {
 	text-align:		center;
