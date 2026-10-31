@@ -14,34 +14,6 @@ package SatsukiApp::adiary;
 # ■ワンライナーなサブルーチン等
 ################################################################################
 my @update_versions = (
-	{ ver => 2.93, plugin=>1, rebuild=>1, func=>'sys_update_293' },
-	{ ver => 2.94, func=>'sys_update_294' },
-	{ ver => 2.95, plugin=>1 },
-	{ ver => 2.96, plugin=>1, theme=>1, func=>'sys_update_296' },
-	{ ver => 2.97, plugin=>1, theme=>1, rebuild=>1, func=>'sys_update_297' },
-	{ ver => 2.98, plugin=>1, theme=>1 },
-	{ ver => 3.00, plugin=>1 },
-	{ ver => 3.01, plugin=>1 },
-	{ ver => 3.04, plugin=>1 },
-	{ ver => 3.05, plugin=>1 },
-	{ ver => 3.09, plugin=>1 },
-	{ ver => 3.10, plugin=>1, theme=>1, func => 'sys_update_310', system=>1 },
-	{ ver => 3.11, plugin=>1 },
-	{ ver => 3.14, plugin=>1 },
-	{ ver => 3.15, plugin=>1, func => 'sys_update_315', system=>1 },
-	{ ver => 3.20, plugin=>1 },
-	{ ver => 3.21, plugin=>1, theme=>1, rebuild_cond=>[
-		'\[&https?://github\.com',
-		'\[&https?://gist\.github\.com'
-	]},
-	{ ver => 3.22, plugin=>1 },
-	{ ver => 3.23, plugin=>1 },
-	{ ver => 3.24, plugin=>1 },
-	{ ver => 3.30, plugin=>1, theme=>1 },
-	{ ver => 3.31, plugin=>1, theme=>1 },
-	{ ver => 3.32, plugin=>1 },
-	{ ver => 3.34, plugin=>1 },
-	{ ver => 3.40, plugin=>1 },
 	{ ver => 3.50, plugin=>1, func => 'sys_update_350', system=>1 },
 	{ ver => 3.52, func => 'sys_update_352' },
 	{ ver => 3.53, rebuild=>1, func => 'sys_update_353' },
@@ -149,99 +121,6 @@ sub system_update {
 
 	$self->update_sysdat('VERSION', $cur);
 	return 0;
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver2.93
-#-------------------------------------------------------------------------------
-sub sys_update_293 {
-	my $self = shift;
-	my $blog = $self->{blog};
-	$self->update_blogset($blog, 'http_rel');
-	$self->update_blogset($blog, 'image_rel');
-	$self->update_blogset($blog, 'image_data', 'lightbox=%k');
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver2.94
-#-------------------------------------------------------------------------------
-sub sys_update_294 {
-	my $self = shift;
-	my $ROBJ = $self->{ROBJ};
-	my $file = $self->{blogpub_dir} . 'usercss.css';
-	if (-r $file) {
-		my $lines = $ROBJ->fread_lines( $file );
-		my $css = join('', @$lines);
-		$self->save_usercss( $css );
-		unlink( $file );
-	}
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver2.96
-#-------------------------------------------------------------------------------
-sub sys_update_296 {
-	my $self = shift;
-	my $blog = $self->{blog};
-	$self->update_blogset($blog, 'bgfile_fit');
-	$self->update_blogset($blog, 'bgfile_w');
-	$self->update_blogset($blog, 'bgfile_h');
-	$self->update_blogset($blog, 'bgfile');
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver2.97 (RC1)
-#-------------------------------------------------------------------------------
-sub sys_update_297 {
-	my $self = shift;
-	my $DB   = $self->{DB};
-	my $ROBJ = $self->{ROBJ};
-	my $blog = $self->{blog};
-	my $desc = $blog->{description_txt};
-	$ROBJ->tag_delete($desc);
-	$self->update_blogset($blog, 'description_notag', $desc);
-
-	# DB変更（古いログのテーブル「ブログID_log」は、migrate_410で消す）
-	my $r=0;
-	$r += 10*$DB->add_column("art", {name=>'main_image',  type=>'text'});
-	$r += 10*$DB->add_column("art", {name=>'description', type=>'text'});
-
-	if ($r) { $ROBJ->message("Blog database error(%s)", $r); }
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver3.10
-#-------------------------------------------------------------------------------
-sub sys_update_310 {
-	my $self  = shift;
-	my $ROBJ = $self->{ROBJ};
-	if ($ROBJ->{FastCGI}) {
-		my $soft = ($ENV{SERVER_SOFTWARE} =~ /Apache/i) ? 'Apache' : 'FastCGI';
-		$ROBJ->warn("Restart of %s is required!", $soft);
-	}
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver3.15
-#-------------------------------------------------------------------------------
-sub sys_update_315 {
-	my $self  = shift;
-	my $pings = $self->{sys}->{ping_servers_txt};
-	$pings =~ s!(^|\n)(http://blogsearch\.google\.(?:co\.jp|com)/ping/RPC2)!$1# $2!;
-	$self->update_sysdat('ping_servers_txt', $pings);
-}
-
-#-------------------------------------------------------------------------------
-# ●システムアップデート for Ver3.30
-#-------------------------------------------------------------------------------
-sub sys_update_330 {
-	my $self = shift;
-	my $blog = $self->{blog};
-	foreach(qw(http_target http_class http_data image_target image_class image_data section_anchor subsection_anchor)) {
-		$self->update_blogset($blog, $_, undef);
-	}
-	$self->update_sysdat('edit_lock_interval', $self->{sys}->{edit_lock_time});
-	$self->update_sysdat('edit_lock_time', undef);
 }
 
 #-------------------------------------------------------------------------------
