@@ -21,7 +21,7 @@
 <div class="body">
 	<form action="<@v.myself>?<@v.skeleton>" method="POST" enctype="multipart/form-data">
 	<input type="hidden" name="action" value="<@v.skeleton>" >
-	<table class="blog-setting">
+	<table class="blog-setting blog-setting-stack">
 	<tbody>
 	<tr>
 		<th>ブログ名</th><td<@err.c_blog_name>><input type="text" name="blog_name" class="w280" value="<@s.blog_name>" required></td>
@@ -64,7 +64,7 @@
 	</tbody>
 	</table>
 
-	<table class="blog-setting">
+	<table class="blog-setting blog-setting-stack">
 	<tbody>
 	<tr><th>Google Analytics ID</th>
 		<td>
